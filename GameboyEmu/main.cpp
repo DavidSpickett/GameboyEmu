@@ -7,9 +7,13 @@
 //
 
 #include <iostream>
+#include "MemoryMap.hpp"
+#include "Z80.hpp"
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    MemoryMap mem;
+    Z80 proc(mem);
+    
+    std::cout << "out\n";
     return 0;
 }
