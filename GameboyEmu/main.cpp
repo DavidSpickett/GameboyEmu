@@ -12,6 +12,7 @@
 
 int main(int argc, const char * argv[]) {
     MemoryMap mem;
+    mem.AddFile("GameBoyBios.gb", 0);
     Z80 proc(mem);
     
     std::cout << "out\n";

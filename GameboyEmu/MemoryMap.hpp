@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <vector>
+#include <string>
 
 const uint16_t MAX_MEM = 0xffff;
 
@@ -29,6 +30,9 @@ public:
     
     uint16_t read16(uint16_t addr);
     void write16(uint16_t addr, uint16_t value);
+    
+    void AddFile(std::string path, uint16_t addr);
+    void AddBlock(std::vector<uint8_t>&, uint16_t addr);
     
 private:
     std::vector<uint8_t> m_mem;
