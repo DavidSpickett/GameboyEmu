@@ -7,3 +7,14 @@
 //
 
 #include "Z80.hpp"
+
+uint8_t Z80::fetch_byte() {
+    uint8_t ret = mem.read8(pc.read());
+    pc.inc(1);
+    return ret;
+}
+
+std::vector<uint8_t> Z80::fetch_bytes(uint16_t num)
+{
+    return std::vector<uint8_t>();
+}

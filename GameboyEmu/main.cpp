@@ -9,12 +9,17 @@
 #include <iostream>
 #include "MemoryMap.hpp"
 #include "Z80.hpp"
+#include "instructions.hpp"
 
 int main(int argc, const char * argv[]) {
     MemoryMap mem;
     mem.AddFile("GameBoyBios.gb", 0);
     Z80 proc(mem);
     
-    std::cout << "out\n";
+    while(1)
+    {
+        Step(proc);
+    }
+    
     return 0;
 }

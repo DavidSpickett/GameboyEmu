@@ -27,6 +27,8 @@ public:
     
     int_type read() {return m_value;}
     void write(int_type val) {m_value = val;}
+    void inc(int_type val) {m_value+=val;}
+    void dec(int_type val) {m_value+=val;}
     
 protected:
     int_type m_value;
@@ -71,6 +73,9 @@ public:
     Register <uint8_t> l;
     
     MemoryMap mem;
+    
+    uint8_t fetch_byte();
+    std::vector<uint8_t> fetch_bytes(uint16_t num);
     
     uint16_t get_af() { return get_pair(a, f); }
     uint16_t get_bc() { return get_pair(b, c); }

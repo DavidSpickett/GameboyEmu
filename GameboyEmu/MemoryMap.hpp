@@ -31,6 +31,8 @@ public:
     uint16_t read16(uint16_t addr);
     void write16(uint16_t addr, uint16_t value);
     
+    std::vector<uint8_t> read_bytes(uint16_t addr, uint16_t num);
+    
     void AddFile(std::string path, uint16_t addr);
     void AddBlock(std::vector<uint8_t>&, uint16_t addr);
     

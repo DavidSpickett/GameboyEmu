@@ -8,6 +8,7 @@
 
 #include "MemoryMap.hpp"
 #include <fstream>
+#include "utils.hpp"
 
 //Again, bounds
 void MemoryMap::AddFile(std::string path, uint16_t addr)
@@ -55,4 +56,19 @@ uint16_t MemoryMap::read16(uint16_t addr)
 void MemoryMap::write16(uint16_t addr, uint16_t value)
 {
     m_mem[addr] = value>>8; m_mem[addr+1] = value&0xff;
+}
+
+std::vector<uint8_t> MemoryMap::read_bytes(uint16_t addr, uint16_t num)
+{
+    if ((addr + num) > m_mem.size())
+    {
+        throw std::runtime_error(formatted_string("Read of 0x%04x, %d bytes would go off the end of memory.", addr, num));
+    }
+    
+    std::vector<uint8_t> ret(num);
+    
+    std::vector<uint8_t>::const_iterator begin(m_mem.begin()+addr);
+    std::copy(begin, begin+num, ret.begin());
+    
+    return ret;
 }
