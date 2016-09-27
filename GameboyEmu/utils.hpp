@@ -12,7 +12,13 @@
 #include <stdio.h>
 #include <string>
 
-template< typename... Args >
-std::string formatted_string(const char* format, Args... args);
+/*template< typename... Args >
+std::string formatted_string(const char* format, Args... args);*/
+
+template <typename T>
+std::string formatted_string_(const char* format, T arg)
+{
+    return "foo";
+}
 
 #endif /* utils_hpp */

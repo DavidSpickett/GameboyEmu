@@ -8,11 +8,11 @@
 
 #include "utils.hpp"
 
-template< typename... Args >
+/*template< typename... Args >
 std::string formatted_string(const char* format, Args... args)
 {
     //Nullptr doesn't write anything, just returns length needed
-    /*int length = std::snprintf(nullptr, 0, format, args...);
+    int length = std::snprintf(nullptr, 0, format, args...);
     
     if (length < 0)
     {
@@ -24,6 +24,5 @@ std::string formatted_string(const char* format, Args... args)
     
     std::string str(buf);
     delete[] buf;
-    return std::move(str);*/
-    return "foo";
-}
+    return std::move(str);
+}*/

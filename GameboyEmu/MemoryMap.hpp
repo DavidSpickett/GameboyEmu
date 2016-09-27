@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <vector>
 #include <string>
+#include "utils.hpp"
 
 const uint16_t MAX_MEM = 0xffff;
 
@@ -23,6 +24,8 @@ public:
     MemoryMap()
     {
         m_mem.resize(MAX_MEM);
+        std::string f = formatted_string_("%d", 1);
+        (void)f;
     }
     
     uint8_t read8(uint16_t addr);

@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		2F72BC391D9AFCF6009CC1CC /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F72BC381D9AFCF6009CC1CC /* main.cpp */; };
+		2FF17E591D9B32D800D2E207 /* instructions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF17E511D9B32D800D2E207 /* instructions.cpp */; };
+		2FF17E5A1D9B32D800D2E207 /* MemoryMap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF17E531D9B32D800D2E207 /* MemoryMap.cpp */; };
+		2FF17E5B1D9B32D800D2E207 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF17E551D9B32D800D2E207 /* utils.cpp */; };
+		2FF17E5C1D9B32D800D2E207 /* Z80.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF17E571D9B32D800D2E207 /* Z80.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +29,14 @@
 /* Begin PBXFileReference section */
 		2F72BC351D9AFCF6009CC1CC /* GameboyEmu */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GameboyEmu; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F72BC381D9AFCF6009CC1CC /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		2FF17E511D9B32D800D2E207 /* instructions.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = instructions.cpp; sourceTree = "<group>"; };
+		2FF17E521D9B32D800D2E207 /* instructions.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = instructions.hpp; sourceTree = "<group>"; };
+		2FF17E531D9B32D800D2E207 /* MemoryMap.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MemoryMap.cpp; sourceTree = "<group>"; };
+		2FF17E541D9B32D800D2E207 /* MemoryMap.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MemoryMap.hpp; sourceTree = "<group>"; };
+		2FF17E551D9B32D800D2E207 /* utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = utils.cpp; sourceTree = "<group>"; };
+		2FF17E561D9B32D800D2E207 /* utils.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = utils.hpp; sourceTree = "<group>"; };
+		2FF17E571D9B32D800D2E207 /* Z80.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Z80.cpp; sourceTree = "<group>"; };
+		2FF17E581D9B32D800D2E207 /* Z80.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Z80.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +69,14 @@
 		2F72BC371D9AFCF6009CC1CC /* GameboyEmu */ = {
 			isa = PBXGroup;
 			children = (
+				2FF17E511D9B32D800D2E207 /* instructions.cpp */,
+				2FF17E521D9B32D800D2E207 /* instructions.hpp */,
+				2FF17E531D9B32D800D2E207 /* MemoryMap.cpp */,
+				2FF17E541D9B32D800D2E207 /* MemoryMap.hpp */,
+				2FF17E551D9B32D800D2E207 /* utils.cpp */,
+				2FF17E561D9B32D800D2E207 /* utils.hpp */,
+				2FF17E571D9B32D800D2E207 /* Z80.cpp */,
+				2FF17E581D9B32D800D2E207 /* Z80.hpp */,
 				2F72BC381D9AFCF6009CC1CC /* main.cpp */,
 			);
 			path = GameboyEmu;
@@ -119,7 +139,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2FF17E5C1D9B32D800D2E207 /* Z80.cpp in Sources */,
+				2FF17E591D9B32D800D2E207 /* instructions.cpp in Sources */,
+				2FF17E5A1D9B32D800D2E207 /* MemoryMap.cpp in Sources */,
 				2F72BC391D9AFCF6009CC1CC /* main.cpp in Sources */,
+				2FF17E5B1D9B32D800D2E207 /* utils.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -216,6 +240,7 @@
 		2F72BC3D1D9AFCF6009CC1CC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LIBRARY = "libc++";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -223,6 +248,7 @@
 		2F72BC3E1D9AFCF6009CC1CC /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LIBRARY = "libc++";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -246,6 +272,7 @@
 				2F72BC3E1D9AFCF6009CC1CC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
