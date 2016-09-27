@@ -16,5 +16,7 @@ uint8_t Z80::fetch_byte() {
 
 std::vector<uint8_t> Z80::fetch_bytes(uint16_t num)
 {
-    return std::vector<uint8_t>();
+    std::vector<uint8_t> ret = mem.read_bytes(pc.read(), num);
+    pc.inc(num);
+    return ret;
 }

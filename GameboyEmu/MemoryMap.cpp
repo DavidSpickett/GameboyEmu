@@ -62,8 +62,7 @@ std::vector<uint8_t> MemoryMap::read_bytes(uint16_t addr, uint16_t num)
 {
     if ((addr + num) > m_mem.size())
     {
-        //throw std::runtime_error(formatted_string("Read of 0x%04x, %d bytes would go off the end of memory.", addr, num));
-        throw -1;
+        throw std::runtime_error(formatted_string("Read of 0x%04x, %d bytes would go off the end of memory.", addr, num));
     }
     
     std::vector<uint8_t> ret(num);

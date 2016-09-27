@@ -28,8 +28,7 @@ void Step(Z80& proc)
             break;
         default:
         {
-            throw formatted_string_("Unknown opcode byte: 0x%02x", b1);
-            throw "foo:";
+            throw formatted_string("Unknown opcode byte: 0x%02x", b1);
         }
     }
     
