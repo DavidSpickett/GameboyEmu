@@ -90,10 +90,10 @@ private:
 class Z80
 {
 public:
-    Z80(MemoryMap& mem):
+    Z80():
         pc(0, "pc"),
         sp(0xFFFE, "sp"),
-        mem(mem),
+        mem(MemoryMap()),
         a("a"),
         b("b"),
         c("c"),

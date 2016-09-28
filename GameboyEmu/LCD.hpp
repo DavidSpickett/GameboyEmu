@@ -20,23 +20,8 @@ class LCD: public MemoryManager
         {
         }
     
-    private:
-        void write8(uint16_t addr, uint8_t value)
-        {
-            printf("8 bit write to addr: 0x%04x value: 0x%02x\n", addr, value);
-        }
-    
-        uint8_t read8(uint16_t addr)
-        {
-            printf("8 bit read from addr: 0x%04x\n", addr);
-            if (addr == 0xff44)
-            {
-                //Bodge, pretend to be in blank timeslot
-                return 144;
-            }
-            return 0;
-        }
-    
+        void write8(uint16_t addr, uint8_t value);
+        uint8_t read8(uint16_t addr);
 };
 
 #endif /* LCD_hpp */

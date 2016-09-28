@@ -13,6 +13,7 @@
 		2FF17E5B1D9B32D800D2E207 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF17E551D9B32D800D2E207 /* utils.cpp */; };
 		2FF17E5C1D9B32D800D2E207 /* Z80.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF17E571D9B32D800D2E207 /* Z80.cpp */; };
 		2FF17E5F1D9C428F00D2E207 /* LCD.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF17E5D1D9C428F00D2E207 /* LCD.cpp */; };
+		2FF17E621D9C54C400D2E207 /* RomHandler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF17E601D9C54C400D2E207 /* RomHandler.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -40,6 +41,8 @@
 		2FF17E581D9B32D800D2E207 /* Z80.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Z80.hpp; sourceTree = "<group>"; };
 		2FF17E5D1D9C428F00D2E207 /* LCD.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LCD.cpp; sourceTree = "<group>"; };
 		2FF17E5E1D9C428F00D2E207 /* LCD.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LCD.hpp; sourceTree = "<group>"; };
+		2FF17E601D9C54C400D2E207 /* RomHandler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RomHandler.cpp; sourceTree = "<group>"; };
+		2FF17E611D9C54C400D2E207 /* RomHandler.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RomHandler.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +80,8 @@
 				2FF17E531D9B32D800D2E207 /* MemoryMap.cpp */,
 				2FF17E541D9B32D800D2E207 /* MemoryMap.hpp */,
 				2FF17E5D1D9C428F00D2E207 /* LCD.cpp */,
+				2FF17E601D9C54C400D2E207 /* RomHandler.cpp */,
+				2FF17E611D9C54C400D2E207 /* RomHandler.hpp */,
 				2FF17E5E1D9C428F00D2E207 /* LCD.hpp */,
 				2FF17E551D9B32D800D2E207 /* utils.cpp */,
 				2FF17E561D9B32D800D2E207 /* utils.hpp */,
@@ -147,6 +152,7 @@
 				2FF17E5C1D9B32D800D2E207 /* Z80.cpp in Sources */,
 				2FF17E591D9B32D800D2E207 /* instructions.cpp in Sources */,
 				2FF17E5A1D9B32D800D2E207 /* MemoryMap.cpp in Sources */,
+				2FF17E621D9C54C400D2E207 /* RomHandler.cpp in Sources */,
 				2FF17E5F1D9C428F00D2E207 /* LCD.cpp in Sources */,
 				2F72BC391D9AFCF6009CC1CC /* main.cpp in Sources */,
 				2FF17E5B1D9B32D800D2E207 /* utils.cpp in Sources */,

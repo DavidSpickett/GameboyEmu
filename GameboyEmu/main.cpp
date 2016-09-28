@@ -7,24 +7,25 @@
 //
 
 #include <iostream>
-#include "MemoryMap.hpp"
 #include "Z80.hpp"
 #include "instructions.hpp"
 #include "LCD.hpp"
+#include "RomHandler.cpp"
 
 int main(int argc, const char * argv[]) {
-    MemoryMap mem;
-    mem.AddFile("GameBoyBios.gb", 0);
+    Z80 proc;
+    proc.mem.AddFile("GameBoyBios.gb", 0);
     LCD lcd;
-    mem.AddMemoryManager(lcd);
-    Z80 proc(mem);
+    proc.mem.AddMemoryManager(lcd);
+    ROMHandler rhandler("Super Mario Land (World).gb");
+    proc.mem.AddMemoryManager(rhandler);
     
     while(1)
     {
         Step(proc);
         
         //Uncomment to break on a particular PC
-        if (proc.pc.read() == 0x8f)
+        if (proc.pc.read() == 0xe7)
         {
             uint8_t foo = 1;
             (void)foo;
