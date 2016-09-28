@@ -18,19 +18,46 @@ template <class int_type> class Register
 {
 public:
     Register(std::string name):
-        m_value(0), name(name)
+        m_value(0), name(name), logging(false)
     {}
     
     Register(int_type value, std::string name):
-        m_value(value), name(name)
+        m_value(value), name(name), logging(false)
     {}
     
     int_type read() {return m_value;}
-    void write(int_type val) {m_value = val;}
-    void inc(int_type val) {m_value+=val;}
-    void dec(int_type val) {m_value+=val;}
+    void write(int_type val)
+    {
+        m_value = val;
+        
+        if (logging)
+        {
+            printf("Reg: %s new value: 0x%x\n", name.c_str(), val);
+        }
+    }
+    
+    void inc(int_type val)
+    {
+        m_value+=val;
+        
+        if (logging)
+        {
+            printf("Reg: %s inc by %d to: 0x%x\n", name.c_str(), val, m_value);
+        }
+    }
+    
+    void dec(int_type val)
+    {
+        m_value-=val;
+        
+        if (logging)
+        {
+            printf("Reg: %s dec by %d to: 0x%x\n", name.c_str(), val, m_value);
+        }
+    }
     
     const std::string name;
+    bool logging;
     
 protected:
     int_type m_value;
