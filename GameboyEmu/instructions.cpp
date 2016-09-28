@@ -157,6 +157,17 @@ void Step(Z80& proc)
         case 0xf0:
             cycles = ldh_a_n(proc);
             break;
+        case 0x97:
+        case 0x90:
+        case 0x91:
+        case 0x92:
+        case 0x93:
+        case 0x94:
+        case 0x95:
+        case 0x96:
+        case 0xd6:
+            cycles = sub_n(proc, b1);
+            break;
         default:
         {
             throw std::runtime_error(formatted_string("Unknown opcode byte: 0x%02x", b1));
@@ -165,6 +176,77 @@ void Step(Z80& proc)
     (void)cycles;
     //std::cout << formatted_string("Took %d cycles.\n", cycles);
     //std::cout << proc.status_string();
+}
+
+namespace
+{
+    void generic_sub_n(Z80& proc, uint8_t value)
+    {
+        uint8_t orig_val = proc.a.read();
+        uint8_t new_value = orig_val - value;
+        
+        proc.f.set_z(new_value==0);
+        proc.f.set_n(true);
+        proc.f.set_h((orig_val & 0xF) < (value & 0xF));
+        //I think...acts as an underflow flag?
+        proc.f.set_c(orig_val<value);
+        
+        proc.a.write(new_value);
+    }
+}
+
+uint8_t sub_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0x97:
+            reg = &proc.a;
+            break;
+        case 0x90:
+            reg = &proc.b;
+            break;
+        case 0x91:
+            reg = &proc.c;
+            break;
+        case 0x92:
+            reg = &proc.d;
+            break;
+        case 0x93:
+            reg = &proc.e;
+            break;
+        case 0x94:
+            reg = &proc.h;
+            break;
+        case 0x95:
+            reg = &proc.l;
+            break;
+        //(hl) as an addr
+        case 0x96:
+        {
+            uint16_t addr = proc.get_hl();
+            uint8_t value = proc.mem.read8(addr);
+            generic_sub_n(proc, value);
+            
+            printf("%s", "sub (hl)\n");
+            return 8;
+        }
+        //Next byte is value
+        case 0xd6:
+        {
+            uint8_t value = proc.fetch_byte();
+            generic_sub_n(proc, value);
+            
+            printf("sub 0x%02x\n", value);
+            return 8;
+        }
+    }
+    
+    generic_sub_n(proc, reg->read());
+    
+    printf("sub %s\n", reg->name.c_str());
+    return 4;
 }
 
 uint8_t ldh_a_n(Z80& proc)

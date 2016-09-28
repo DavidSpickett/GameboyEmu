@@ -24,7 +24,7 @@ int main(int argc, const char * argv[]) {
         Step(proc);
         
         //Uncomment to break on a particular PC
-        if (proc.pc.read() == 0x53)
+        if (proc.pc.read() == 0x8f)
         {
             uint8_t foo = 1;
             (void)foo;
