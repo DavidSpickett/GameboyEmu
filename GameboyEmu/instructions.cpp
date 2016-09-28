@@ -154,6 +154,9 @@ void Step(Z80& proc)
         case 0x18:
             cycles = jr_n(proc);
             break;
+        case 0xf0:
+            cycles = ldh_a_n(proc);
+            break;
         default:
         {
             throw std::runtime_error(formatted_string("Unknown opcode byte: 0x%02x", b1));
@@ -162,6 +165,16 @@ void Step(Z80& proc)
     (void)cycles;
     //std::cout << formatted_string("Took %d cycles.\n", cycles);
     //std::cout << proc.status_string();
+}
+
+uint8_t ldh_a_n(Z80& proc)
+{
+    uint8_t offs = proc.fetch_byte();
+    uint16_t addr = 0xff00 + offs;
+    proc.a.write(proc.mem.read8(addr));
+    
+    printf("ldh a, (0xff00+0x%02x)\n", offs);
+    return 12;
 }
 
 uint8_t jr_n(Z80& proc)

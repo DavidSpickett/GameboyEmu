@@ -24,6 +24,7 @@ uint8_t ld_offs_n_a(Z80& proc);
 
 uint8_t ld_hl_dec_a(Z80& proc, uint8_t b1);
 uint8_t ld_hl_plus_a(Z80& proc);
+uint8_t ldh_a_n(Z80& proc);
 
 uint8_t xor_n(Z80& proc, uint8_t b1);
 uint8_t rl_n(Z80& proc, uint8_t b1);
