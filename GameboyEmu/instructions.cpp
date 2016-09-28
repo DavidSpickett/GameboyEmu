@@ -13,6 +13,8 @@
 void Step(Z80& proc)
 {
     //Fetch first byte from PC
+    printf("PC: 0x%02x - ", proc.pc.read());
+    
     uint8_t b1 = proc.fetch_byte();
     uint8_t cycles = 0;
     
@@ -69,6 +71,19 @@ void Step(Z80& proc)
         case 0x3e:
             cycles = ld_a_n(proc, b1);
             break;
+        case 0xe2:
+            cycles = ld_offs_c_a(proc);
+            break;
+        case 0x3c:
+        case 0x04:
+        case 0x0c:
+        case 0x14:
+        case 0x1c:
+        case 0x24:
+        case 0x2c:
+        case 0x34:
+            cycles = inc_n(proc, b1);
+            break;
         default:
         {
             throw std::runtime_error(formatted_string("Unknown opcode byte: 0x%02x", b1));
@@ -77,6 +92,75 @@ void Step(Z80& proc)
     (void)cycles;
     //std::cout << formatted_string("Took %d cycles.\n", cycles);
     //std::cout << proc.status_string();
+}
+
+uint8_t inc_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0x3c:
+            reg = &proc.a;
+            break;
+        case 0x04:
+            reg = &proc.b;
+            break;
+        case 0x0c:
+            reg = &proc.c;
+            break;
+        case 0x14:
+            reg = &proc.d;
+            break;
+        case 0x1c:
+            reg = &proc.e;
+            break;
+        case 0x24:
+            reg = &proc.h;
+            break;
+        case 0x2c:
+            reg = &proc.l;
+            break;
+        //Inc memory at address (hl)
+        case 0x34:
+        {
+            uint16_t addr = proc.get_hl();
+            uint8_t orig_val = proc.mem.read8(addr);
+            uint8_t new_val = orig_val + 1;
+            proc.mem.write8(addr, new_val);
+            
+            proc.f.set_z(new_val==0);
+            proc.f.set_n(false);
+            proc.f.set_h((orig_val & 0xf) == 0xf);
+            
+            printf("%s", "inc (hl)\n");
+            
+            return 12;
+        }
+    }
+    
+    uint8_t orig_val = reg->read();
+    uint8_t new_val = orig_val+1;
+    reg->write(new_val);
+    
+    proc.f.set_z(new_val==0);
+    proc.f.set_n(false);
+    //Check for half carry
+    //Because we only ever add one, the only time a carry happens is from 0xf to 0x10
+    proc.f.set_h((orig_val & 0xf) == 0xf);
+    
+    printf("inc %s\n", reg->name.c_str());
+    
+    return 4;
+}
+
+uint8_t ld_offs_c_a(Z80& proc)
+{
+    uint16_t addr = 0xff00 + proc.c.read();
+    proc.mem.write8(addr, proc.a.read());
+    
+    printf("%s", "ld (c), a\n");
+    return 8;
 }
 
 uint8_t ld_a_n(Z80& proc, uint8_t b1)
@@ -688,7 +772,7 @@ uint8_t ld_hl_dec_a(Z80& proc, uint8_t b1)
     uint16_t addr = proc.get_hl();
     proc.mem.write16(addr, temp8);
     
-    printf("ld (hl-), a(0x%04x, 0x%02x)\n", addr, temp8);
+    printf("ld (hl-), a (0x%04x, 0x%02x)\n", addr, temp8);
     
     //Now decrement HL
     proc.set_hl(addr-1);
