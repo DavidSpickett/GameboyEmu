@@ -12,13 +12,24 @@
 #include <stdio.h>
 #include <string>
 
-/*template< typename... Args >
-std::string formatted_string(const char* format, Args... args);*/
-
-template <typename T>
-std::string formatted_string_(const char* format, T arg)
+//For reasons unknown to me, if this is in a cpp file, the linker complains.
+template< typename... Args >
+std::string formatted_string(const char* format, Args... args)
 {
-    return "foo";
+    //Nullptr doesn't write anything, just returns length needed
+    int length = std::snprintf(nullptr, 0, format, args...);
+ 
+    if (length < 0)
+    {
+        throw "Error formatting string.";
+    }
+ 
+    char* buf = new char[length + 1];
+    std::snprintf( buf, length + 1, format, args... );
+ 
+    std::string str(buf);
+    delete[] buf;
+    return std::move(str);
 }
-
+ 
 #endif /* utils_hpp */

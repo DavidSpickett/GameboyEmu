@@ -17,18 +17,20 @@
 template <class int_type> class Register
 {
 public:
-    Register():
-        m_value(0)
+    Register(std::string name):
+        m_value(0), name(name)
     {}
     
-    Register(int_type value):
-        m_value(value)
+    Register(int_type value, std::string name):
+        m_value(value), name(name)
     {}
     
     int_type read() {return m_value;}
     void write(int_type val) {m_value = val;}
     void inc(int_type val) {m_value+=val;}
     void dec(int_type val) {m_value+=val;}
+    
+    const std::string name;
     
 protected:
     int_type m_value;
@@ -37,6 +39,10 @@ protected:
 class FlagRegister: public Register<uint8_t>
 {
 public:
+    FlagRegister(std::string name):
+        Register(name)
+    {}
+    
     bool get_z() { return get_bit(7); }
     bool get_n() { return get_bit(6); }
     bool get_h() { return get_bit(5); }
@@ -47,6 +53,8 @@ public:
     void set_h(bool val) { return set_bit(5, val); }
     void set_c(bool val) { return set_bit(4, val); }
     
+    std::string to_string();
+    
 private:
     bool get_bit(uint8_t bit) { return m_value & (1<<bit); }
     void set_bit(uint8_t bit, bool val) { m_value &= ~(1<<bit); m_value |= uint8_t(val) << bit; }
@@ -56,7 +64,17 @@ class Z80
 {
 public:
     Z80(MemoryMap& mem):
-        pc(0), sp(0xFFFE), mem(mem)
+        pc(0, "pc"),
+        sp(0xFFFE, "sp"),
+        mem(mem),
+        a("a"),
+        b("b"),
+        c("c"),
+        d("d"),
+        e("e"),
+        f("f"),
+        h("h"),
+        l("l")
     {
     }
     
@@ -86,6 +104,8 @@ public:
     void set_bc(uint16_t value) { return set_pair(b, c, value); }
     void set_de(uint16_t value) { return set_pair(d, e, value); }
     void set_hl(uint16_t value) { return set_pair(h, l, value); }
+    
+    std::string status_string();
     
 private:
     uint16_t get_pair(Register<uint8_t> high, Register<uint8_t> low)

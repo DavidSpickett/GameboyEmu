@@ -10,6 +10,10 @@
 #include <fstream>
 #include "utils.hpp"
 
+
+
+//I NEED A WAY TO DETECT ACCESS TO MEMORY WE HAVEN"T SET UP!!!!!"
+
 //Again, bounds
 void MemoryMap::AddFile(std::string path, uint16_t addr)
 {
