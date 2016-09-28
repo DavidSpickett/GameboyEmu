@@ -10,11 +10,11 @@
 #include <fstream>
 #include "utils.hpp"
 
+void MemoryMap::AddMemoryManager(MemoryManager& manager)
+{
+    m_memory_managers.push_back(std::reference_wrapper<MemoryManager>(manager));
+}
 
-
-//I NEED A WAY TO DETECT ACCESS TO MEMORY WE HAVEN"T SET UP!!!!!"
-
-//Again, bounds
 void MemoryMap::AddFile(std::string path, uint16_t addr)
 {
     //Copy file into memory at given location
@@ -42,11 +42,30 @@ void MemoryMap::AddBlock(std::vector<uint8_t>& block, uint16_t addr)
 
 uint8_t MemoryMap::read8(uint16_t addr)
 {
+    std::vector<std::reference_wrapper<MemoryManager>>::const_iterator it = m_memory_managers.begin();
+    for (; it != m_memory_managers.end(); ++it)
+    {
+        if (it->get().m_address_range.contains_addr(addr))
+        {
+            return it->get().read8(addr);
+        }
+    }
+    
     return m_mem[addr];
 }
 
 void MemoryMap::write8(uint16_t addr, uint8_t value)
 {
+    std::vector<std::reference_wrapper<MemoryManager>>::const_iterator it = m_memory_managers.begin();
+    for (; it != m_memory_managers.end(); ++it)
+    {
+        if (it->get().m_address_range.contains_addr(addr))
+        {
+            it->get().write8(addr, value);
+            return;
+        }
+    }
+    
     m_mem[addr] = value;
 }
 

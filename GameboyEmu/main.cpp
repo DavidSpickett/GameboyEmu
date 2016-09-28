@@ -10,10 +10,13 @@
 #include "MemoryMap.hpp"
 #include "Z80.hpp"
 #include "instructions.hpp"
+#include "LCD.hpp"
 
 int main(int argc, const char * argv[]) {
     MemoryMap mem;
     mem.AddFile("GameBoyBios.gb", 0);
+    LCD lcd;
+    mem.AddMemoryManager(lcd);
     Z80 proc(mem);
     
     while(1)

@@ -15,15 +15,56 @@
 #include <string>
 #include "utils.hpp"
 
-const uint16_t MAX_MEM = 0xffff;
+struct address_range {
+    address_range(uint16_t start, uint16_t end):
+        start(start), end(end)
+    {}
+    
+    uint16_t start;
+    uint16_t end;
+    
+    uint16_t size() const
+    {
+        return end-start;
+    }
+    
+    bool contains_addr(uint16_t addr) const
+    {
+        //Inclusive, so I don't have to deal with the end of memory
+        return ((addr >= start) && (addr <= end));
+    }
+};
+
+class MemoryManager
+{
+public:
+    MemoryManager(address_range rng):
+        m_address_range(rng)
+    {
+    }
+    
+    virtual uint8_t read8(uint16_t addr) = 0;
+    virtual void write8(uint16_t addr, uint8_t value) = 0;
+    
+    address_range m_address_range;
+};
+
+struct address_range_entry
+{
+    address_range_entry(address_range rng, MemoryManager& manager):
+        rng(rng), manager(manager)
+    {}
+    
+    address_range rng;
+    MemoryManager& manager;
+};
 
 class MemoryMap
 {
-    //NOTE: little endian!!
 public:
     MemoryMap()
     {
-        m_mem.resize(MAX_MEM);
+        m_mem.resize(0xffff);
     }
     
     uint8_t read8(uint16_t addr);
@@ -37,8 +78,12 @@ public:
     void AddFile(std::string path, uint16_t addr);
     void AddBlock(std::vector<uint8_t>&, uint16_t addr);
     
+    //Note: only affects 8 bit accesses for now.
+    void AddMemoryManager(MemoryManager& manager);
+    
 private:
     std::vector<uint8_t> m_mem;
+    std::vector<std::reference_wrapper<MemoryManager> > m_memory_managers;
 };
 
 
