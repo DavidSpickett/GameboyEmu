@@ -29,10 +29,17 @@ std::string Z80::status_string()
     return pc_+f.to_string()+sp_+_1+_2+_3+_4;
 }
 
-uint8_t Z80::fetch_byte() {
+uint8_t Z80::fetch_byte()
+{
     uint8_t ret = mem.read8(pc.read());
     pc.inc(1);
     return ret;
+}
+
+uint16_t Z80::fetch_short()
+{
+    std::vector<uint8_t> bs = fetch_bytes(2);
+    return (bs[1] << 8) | bs[0];
 }
 
 std::vector<uint8_t> Z80::fetch_bytes(uint16_t num)

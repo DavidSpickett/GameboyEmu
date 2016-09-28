@@ -49,6 +49,26 @@ void Step(Z80& proc)
         case 0xCB:
             cycles = cb_prefix_instr(proc);
             break;
+        case 0x20:
+        case 0x28:
+        case 0x30:
+        case 0x38:
+            cycles = jr_cc_n(proc, b1);
+            break;
+        case 0x7f:
+        case 0x78:
+        case 0x79:
+        case 0x7a:
+        case 0x7b:
+        case 0x7c:
+        case 0x7d:
+        case 0x0a:
+        case 0x1a:
+        case 0x7e:
+        case 0xfa:
+        case 0x3e:
+            cycles = ld_a_n(proc, b1);
+            break;
         default:
         {
             throw std::runtime_error(formatted_string("Unknown opcode byte: 0x%02x", b1));
@@ -57,6 +77,135 @@ void Step(Z80& proc)
     (void)cycles;
     //std::cout << formatted_string("Took %d cycles.\n", cycles);
     //std::cout << proc.status_string();
+}
+
+uint8_t ld_a_n(Z80& proc, uint8_t b1)
+{
+    uint8_t cycles = 4;
+    std::string reg_name;
+    uint8_t temp8 = 0;
+    
+    switch (b1)
+    {
+        case 0x7f:
+            temp8 = proc.a.read();
+            reg_name = proc.a.name;
+            break;
+        case 0x78:
+            temp8 = proc.b.read();
+            reg_name = proc.b.name;
+            break;
+        case 0x79:
+            temp8 = proc.c.read();
+            reg_name = proc.c.name;
+            break;
+        case 0x7a:
+            temp8 = proc.d.read();
+            reg_name = proc.d.name;
+            break;
+        case 0x7b:
+            temp8 = proc.e.read();
+            reg_name = proc.e.name;
+            break;
+        case 0x7c:
+            temp8 = proc.h.read();
+            reg_name = proc.h.name;
+            break;
+        case 0x7d:
+            temp8 = proc.l.read();
+            reg_name = proc.l.name;
+            break;
+        case 0x0a:
+        case 0x1a:
+        case 0x7e:
+        {
+            //Use register pairs as mem address
+            uint16_t addr = 0;
+            switch (b1)
+            {
+                case 0xa:
+                    addr = proc.get_bc();
+                    reg_name = "(bc)";
+                    break;
+                case 0x1a:
+                    addr = proc.get_de();
+                    reg_name = "(de)";
+                    break;
+                case 0x7e:
+                    addr = proc.get_hl();
+                    reg_name = "(hl)";
+                    break;
+            }
+            
+            temp8 = proc.mem.read8(addr);
+            break;
+        }
+        case 0xfa:
+        {
+            //Use next two instr bytes as address
+            uint16_t addr = proc.fetch_short();
+            temp8 = proc.mem.read8(addr);
+            
+            reg_name = formatted_string("(0x%02x)", addr);
+            cycles = 16;
+            
+            break;
+        }
+        case 0x3e:
+            //Load next instr byte into A
+            temp8 = proc.fetch_byte();
+            reg_name = formatted_string("0x%02x", temp8);
+            break;
+    }
+    
+    proc.a.write(temp8);
+    
+    printf("ld a, %s\n", reg_name.c_str());
+    
+    return cycles;
+}
+
+uint8_t jr_cc_n(Z80& proc, uint8_t b1)
+{
+    uint8_t cycles = 8;
+    int8_t offset = proc.fetch_byte();
+    bool jump = false;
+    std::string type = "?";
+    
+    switch (b1)
+    {
+        case 0x20:
+            jump = !proc.f.get_z();
+            type = "nz";
+            break;
+        case 0x28:
+            jump = proc.f.get_z();
+            type = "z";
+            break;
+        case 0x30:
+            jump = !proc.f.get_c();
+            type = "nc";
+            break;
+        case 0x38:
+            jump = proc.f.get_c();
+            type = "c";
+            break;
+    }
+    
+    //Alway calculate it so we can show it in the dasm
+    uint16_t new_pc = proc.pc.read();
+    //Note: can be -ve
+    new_pc += offset;
+    
+    if (jump)
+    {
+        cycles = 12;
+        proc.pc.write(new_pc);
+    }
+    
+    printf("jr %s, %d (0x%04x)\n", type.c_str(), offset, new_pc);
+
+    return cycles;
 }
 
 uint8_t cb_prefix_instr(Z80& proc)
@@ -466,7 +615,7 @@ uint8_t xor_n(Z80& proc, uint8_t b1)
 uint8_t ld_nn_n(Z80& proc, uint8_t b1)
 {
     uint8_t b2 = proc.fetch_byte();
-    std::string fmt = "ld %s, 0x%02x";
+    std::string fmt = "ld %s, 0x%02x\n";
     
     Register<uint8_t>* reg = nullptr;
     
@@ -501,8 +650,7 @@ uint8_t ld_nn_n(Z80& proc, uint8_t b1)
 
 uint8_t ld_n_nn(Z80& proc, uint8_t b1)
 {
-    std::vector<uint8_t> bs = proc.fetch_bytes(2);
-    uint16_t imm = (bs[1] << 8) | bs[0];
+    uint16_t imm = proc.fetch_short();
     
     std::string fmt = "ld %s, 0x%02x\n";
     std::string r = "?";
@@ -536,15 +684,14 @@ uint8_t ld_n_nn(Z80& proc, uint8_t b1)
 
 uint8_t ld_hl_dec_a(Z80& proc, uint8_t b1)
 {
-    std::string fmt = "ld (hl-), a(0x%04x, 0x%02x)\n";
-    
     uint8_t temp8 = proc.a.read();
     uint16_t addr = proc.get_hl();
     proc.mem.write16(addr, temp8);
     
-    printf(fmt.c_str(), addr, temp8);
+    printf("ld (hl-), a(0x%04x, 0x%02x)\n", addr, temp8);
     
     //Now decrement HL
     proc.set_hl(addr-1);
     return 8;
 }
+

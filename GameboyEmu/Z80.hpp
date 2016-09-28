@@ -93,6 +93,7 @@ public:
     MemoryMap mem;
     
     uint8_t fetch_byte();
+    uint16_t fetch_short();
     std::vector<uint8_t> fetch_bytes(uint16_t num);
     
     uint16_t get_af() { return get_pair(a, f); }
