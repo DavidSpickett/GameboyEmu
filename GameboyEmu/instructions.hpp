@@ -28,6 +28,7 @@ uint8_t ld_hl_plus_a(Z80& proc);
 uint8_t xor_n(Z80& proc, uint8_t b1);
 uint8_t rl_n(Z80& proc, uint8_t b1);
 uint8_t rla(Z80& proc);
+uint8_t cp_n(Z80& proc, uint8_t b1);
 
 uint8_t inc_n(Z80& proc, uint8_t b1);
 uint8_t inc_nn(Z80& proc, uint8_t b1);
@@ -39,6 +40,7 @@ uint8_t bit_b_hl(Z80& proc, uint8_t b1);
 uint8_t jr_cc_n(Z80& proc, uint8_t b1);
 uint8_t call_nn(Z80& proc);
 uint8_t ret(Z80& proc);
+uint8_t jr_n(Z80& proc);
 
 uint8_t push_nn(Z80& proc, uint8_t b1);
 uint8_t pop_nn(Z80& proc, uint8_t b1);

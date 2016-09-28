@@ -140,6 +140,20 @@ void Step(Z80& proc)
         case 0xc9:
             cycles = ret(proc);
             break;
+        case 0xbf:
+        case 0xb8:
+        case 0xb9:
+        case 0xba:
+        case 0xbb:
+        case 0xbc:
+        case 0xbd:
+        case 0xbe:
+        case 0xfe:
+            cycles = cp_n(proc, b1);
+            break;
+        case 0x18:
+            cycles = jr_n(proc);
+            break;
         default:
         {
             throw std::runtime_error(formatted_string("Unknown opcode byte: 0x%02x", b1));
@@ -148,6 +162,81 @@ void Step(Z80& proc)
     (void)cycles;
     //std::cout << formatted_string("Took %d cycles.\n", cycles);
     //std::cout << proc.status_string();
+}
+
+uint8_t jr_n(Z80& proc)
+{
+    int8_t offs = proc.fetch_byte();
+    
+    //We jump from the address of the next instr, not the jr itself.
+    proc.pc.write(proc.pc.read()+offs);
+    
+    printf("jr 0x%02x (%d)\n", uint8_t(offs), offs);
+    return 8;
+}
+
+namespace
+{
+    void generic_cmp_n(Z80& proc, uint8_t value)
+    {
+        uint8_t a = proc.a.read();
+        uint8_t res = value - a;
+        
+        proc.f.set_z(res==0);
+        proc.f.set_n(true);
+        proc.f.set_h((a & 0xF) > (value & 0xF));
+        proc.f.set_c(a<value);
+    }
+}
+
+uint8_t cp_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0xbf:
+            reg = &proc.a;
+            break;
+        case 0xb8:
+            reg = &proc.b;
+            break;
+        case 0xb9:
+            reg = &proc.c;
+            break;
+        case 0xba:
+            reg = &proc.d;
+            break;
+        case 0xbb:
+            reg = &proc.e;
+            break;
+        case 0xbc:
+            reg = &proc.h;
+            break;
+        case 0xbd:
+            reg = &proc.l;
+            break;
+        //Use (hl) as addr
+        case 0xbe:
+        {
+            generic_cmp_n(proc, proc.mem.read8(proc.get_hl()));
+            printf("%s\n", "cmp (hl)");
+            return 8;
+        }
+        //Compare with immediate byte
+        case 0xfe:
+        {
+            uint8_t value = proc.fetch_byte();
+            generic_cmp_n(proc, value);
+            printf("cmp 0x%02x\n", value);
+            return 8;
+        }
+    }
+    
+    generic_cmp_n(proc, reg->read());
+    printf("cmp %s\n", reg->name.c_str());
+    
+    return 4;
 }
 
 uint8_t ret(Z80& proc)
@@ -345,8 +434,10 @@ uint8_t push_nn(Z80& proc, uint8_t b1)
             break;
     }
     
-    proc.mem.write16(proc.sp.read(), value);
+    //Decrement SP !!BEFORE!! we write the value.
     proc.sp.dec(2);
+    proc.mem.write16(proc.sp.read(), value);
+    
     
     printf("push %s\n", pair.c_str());
     return 16;
@@ -356,8 +447,11 @@ uint8_t call_nn(Z80& proc)
 {
     //Equivalent of push pc, jump addr
     uint16_t j_addr = proc.fetch_short();
-    proc.mem.write16(proc.sp.read(), proc.pc.read());
+    
+    //Decrement stack pointer !!BEFORE!! writing new value
     proc.sp.dec(2);
+    proc.mem.write16(proc.sp.read(), proc.pc.read());
+    
     proc.pc.write(j_addr);
     
     printf("call 0x%02x\n", j_addr);
@@ -1136,6 +1230,8 @@ uint8_t ld_nn_n(Z80& proc, uint8_t b1)
         default:
             throw std::runtime_error(formatted_string("Unknown byte 0x%02x for opcode ld_nn_n", b1));
     }
+    
+    reg->write(b2);
     
     printf(fmt.c_str(), reg->name.c_str(), b2);
     

@@ -19,6 +19,13 @@ int main(int argc, const char * argv[]) {
     while(1)
     {
         Step(proc);
+        
+        //Uncomment to break on a particular PC
+        if (proc.pc.read() == 0x53)
+        {
+            uint8_t foo = 1;
+            (void)foo;
+        }
     }
     
     return 0;
