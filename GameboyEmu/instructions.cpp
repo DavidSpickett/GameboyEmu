@@ -112,6 +112,34 @@ void Step(Z80& proc)
         case 0x17:
             cycles = rla(proc);
             break;
+        case 0xf1:
+        case 0xc1:
+        case 0xd1:
+        case 0xe1:
+            cycles = pop_nn(proc, b1);
+            break;
+        case 0x3d:
+        case 0x05:
+        case 0x0d:
+        case 0x15:
+        case 0x1d:
+        case 0x25:
+        case 0x2d:
+        case 0x35:
+            cycles = dec_n(proc, b1);
+            break;
+        case 0x22:
+            cycles = ld_hl_plus_a(proc);
+            break;
+        case 0x03:
+        case 0x13:
+        case 0x23:
+        case 0x33:
+            cycles = inc_nn(proc, b1);
+            break;
+        case 0xc9:
+            cycles = ret(proc);
+            break;
         default:
         {
             throw std::runtime_error(formatted_string("Unknown opcode byte: 0x%02x", b1));
@@ -120,6 +148,148 @@ void Step(Z80& proc)
     (void)cycles;
     //std::cout << formatted_string("Took %d cycles.\n", cycles);
     //std::cout << proc.status_string();
+}
+
+uint8_t ret(Z80& proc)
+{
+    //Get addr from stack
+    uint16_t new_addr = proc.mem.read16(proc.sp.read());
+    proc.sp.inc(2);
+    proc.pc.write(new_addr);
+    
+    printf("%s", "ret\n");
+    return 8;
+}
+
+uint8_t inc_nn(Z80& proc, uint8_t b1)
+{
+    std::string pair = "?";
+    
+    switch (b1)
+    {
+        case 0x03:
+            proc.set_bc(proc.get_bc()+1);
+            pair = "(bc)";
+            break;
+        case 0x13:
+            proc.set_de(proc.get_de()+1);
+            pair = "(de)";
+            break;
+        case 0x23:
+            proc.set_hl(proc.get_hl()+1);
+            pair = "(hl)";
+            break;
+        case 0x33:
+            proc.sp.inc(1);
+            pair = "sp";
+            break;
+    }
+
+    printf("inc %s\n", pair.c_str());
+    return 8;
+}
+
+uint8_t ld_hl_plus_a(Z80& proc)
+{
+    //Write A to addr (hl)
+    uint16_t hl = proc.get_hl();
+    proc.mem.write8(hl, proc.a.read());
+    //inc (hl)
+    proc.set_hl(hl+1);
+    
+    printf("%s", "ld (hl+), a\n");
+    return 8;
+}
+
+namespace
+{
+    //Underflow???
+    uint8_t generic_dec_n(Z80& proc, uint8_t value)
+    {
+        uint8_t new_value = value-1;
+        
+        proc.f.set_z(new_value==0);
+        proc.f.set_n(true);
+        proc.f.set_h((value & 0x1f)==0x10);
+        
+        return new_value;
+    }
+}
+
+uint8_t dec_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0x3d:
+            reg = &proc.a;
+            break;
+        case 0x05:
+            reg = &proc.b;
+            break;
+        case 0x0d:
+            reg = &proc.c;
+            break;
+        case 0x15:
+            reg = &proc.d;
+            break;
+        case 0x1d:
+            reg = &proc.e;
+            break;
+        case 0x25:
+            reg = &proc.h;
+            break;
+        case 0x2d:
+            reg = &proc.l;
+            break;
+        //Use (hl) as address of value
+        case 0x35:
+        {
+            uint16_t addr = proc.get_hl();
+            uint8_t new_val = generic_dec_n(proc, proc.mem.read8(addr));
+            proc.mem.write8(addr, new_val);
+            
+            printf("%s", "dec (hl)\n");
+            return 12;
+        }
+    }
+    
+    uint8_t new_val = generic_dec_n(proc, reg->read());
+    reg->write(new_val);
+    
+    printf("dec %s\n", reg->name.c_str());
+    return 4;
+}
+
+uint8_t pop_nn(Z80& proc, uint8_t b1)
+{
+    std::string pair = "?";
+    uint16_t value = proc.mem.read16(proc.sp.read());
+    proc.sp.inc(2);
+    
+    switch (b1)
+    {
+        case 0xf1:
+            proc.set_af(value);
+            pair = "af";
+            break;
+        case 0xc1:
+            proc.set_bc(value);
+            pair = "bc";
+            break;
+        case 0xd1:
+            proc.set_de(value);
+            pair = "de";
+            break;
+        case 0xe1:
+            proc.set_hl(value);
+            pair = "hl";
+            break;
+    }
+    
+    printf("pop (%s)\n", pair.c_str());
+    return 12;
 }
 
 namespace {
@@ -275,6 +445,23 @@ uint8_t ld_n_a(Z80& proc, uint8_t b1)
     
     return 4;
 }
+                     
+namespace
+{
+    //Overflow?????
+    uint8_t generic_inc_n(Z80& proc, uint8_t value)
+    {
+        uint8_t new_val = value+1;
+        
+        proc.f.set_z(new_val==0);
+        proc.f.set_n(false);
+        //Check for half carry
+        //Because we only ever add one, the only time a carry happens is from 0xf to 0x10
+        proc.f.set_h((value & 0xf) == 0xf);
+        
+        return new_val;
+    }
+}
 
 uint8_t inc_n(Z80& proc, uint8_t b1)
 {
@@ -308,12 +495,9 @@ uint8_t inc_n(Z80& proc, uint8_t b1)
         {
             uint16_t addr = proc.get_hl();
             uint8_t orig_val = proc.mem.read8(addr);
-            uint8_t new_val = orig_val + 1;
-            proc.mem.write8(addr, new_val);
             
-            proc.f.set_z(new_val==0);
-            proc.f.set_n(false);
-            proc.f.set_h((orig_val & 0xf) == 0xf);
+            uint8_t new_val = generic_inc_n(proc, orig_val);
+            proc.mem.write8(addr, new_val);
             
             printf("%s", "inc (hl)\n");
             
@@ -322,14 +506,8 @@ uint8_t inc_n(Z80& proc, uint8_t b1)
     }
     
     uint8_t orig_val = reg->read();
-    uint8_t new_val = orig_val+1;
+    uint8_t new_val = generic_inc_n(proc, orig_val);
     reg->write(new_val);
-    
-    proc.f.set_z(new_val==0);
-    proc.f.set_n(false);
-    //Check for half carry
-    //Because we only ever add one, the only time a carry happens is from 0xf to 0x10
-    proc.f.set_h((orig_val & 0xf) == 0xf);
     
     printf("inc %s\n", reg->name.c_str());
     
