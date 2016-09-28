@@ -57,7 +57,7 @@ void Step(Z80& proc)
         case 0x38:
             cycles = jr_cc_n(proc, b1);
             break;
-        case 0x7f:
+        //case 0x7f: this is ld a,a so we'll just pick on of the handlers to use
         case 0x78:
         case 0x79:
         case 0x7a:
@@ -84,6 +84,19 @@ void Step(Z80& proc)
         case 0x34:
             cycles = inc_n(proc, b1);
             break;
+        case 0x7f:
+        case 0x47:
+        case 0x4f:
+        case 0x57:
+        case 0x5f:
+        case 0x67:
+        case 0x6f:
+        case 0x02:
+        case 0x12:
+        case 0x77:
+        case 0xea:
+            cycles = ld_n_a(proc, b1);
+            break;
         default:
         {
             throw std::runtime_error(formatted_string("Unknown opcode byte: 0x%02x", b1));
@@ -92,6 +105,79 @@ void Step(Z80& proc)
     (void)cycles;
     //std::cout << formatted_string("Took %d cycles.\n", cycles);
     //std::cout << proc.status_string();
+}
+
+uint8_t ld_n_a(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0x7f:
+            reg = &proc.a;
+            break;
+        case 0x47:
+            reg = &proc.b;
+            break;
+        case 0x4f:
+            reg = &proc.c;
+            break;
+        case 0x57:
+            reg = &proc.d;
+            break;
+        case 0x5f:
+            reg = &proc.e;
+            break;
+        case 0x67:
+            reg = &proc.h;
+            break;
+        case 0x6f:
+            reg = &proc.l;
+            break;
+        case 0x02:
+        case 0x12:
+        case 0x77:
+        {
+            //Use pair as memory address to write to
+            uint16_t addr = 0;
+            std::string r_name = "?";
+            
+            switch (b1)
+            {
+                case 0x02:
+                    addr = proc.get_bc();
+                    r_name = "(bc)";
+                    break;
+                case 0x12:
+                    addr = proc.get_de();
+                    r_name = "(de)";
+                    break;
+                case 0x77:
+                    addr = proc.get_hl();
+                    r_name = "(hl)";
+                    break;
+            }
+            
+            proc.mem.write8(addr, proc.a.read());
+            
+            printf("ld %s, a\n", r_name.c_str());
+            return 8;
+        }
+        case 0xea:
+        {
+            //Use next 2 bytes as address to store to
+            uint16_t addr = proc.fetch_short();
+            proc.mem.write8(addr, proc.a.read());
+            
+            printf("ld (0x%02x), a\n", addr);
+            return 16;
+        }
+    }
+    
+    reg->write(proc.a.read());
+    printf("ld %s, a\n", reg->name.c_str());
+    
+    return 4;
 }
 
 uint8_t inc_n(Z80& proc, uint8_t b1)
