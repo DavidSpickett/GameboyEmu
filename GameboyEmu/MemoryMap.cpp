@@ -59,7 +59,8 @@ uint16_t MemoryMap::read16(uint16_t addr)
 //Check bounds!
 void MemoryMap::write16(uint16_t addr, uint16_t value)
 {
-    m_mem[addr] = value>>8; m_mem[addr+1] = value&0xff;
+    m_mem[addr] = value&0xff;
+    m_mem[addr+1] = value>>8;
 }
 
 std::vector<uint8_t> MemoryMap::read_bytes(uint16_t addr, uint16_t num)

@@ -97,6 +97,21 @@ void Step(Z80& proc)
         case 0xea:
             cycles = ld_n_a(proc, b1);
             break;
+        case 0xe0:
+            cycles = ld_offs_n_a(proc);
+            break;
+        case 0xcd:
+            cycles = call_nn(proc);
+            break;
+        case 0xf5:
+        case 0xc5:
+        case 0xd5:
+        case 0xe5:
+            cycles = push_nn(proc, b1);
+            break;
+        case 0x17:
+            cycles = rla(proc);
+            break;
         default:
         {
             throw std::runtime_error(formatted_string("Unknown opcode byte: 0x%02x", b1));
@@ -105,6 +120,87 @@ void Step(Z80& proc)
     (void)cycles;
     //std::cout << formatted_string("Took %d cycles.\n", cycles);
     //std::cout << proc.status_string();
+}
+
+namespace {
+    uint8_t generic_rl_n(Z80& proc, uint8_t value)
+    {
+        //Rotate, apply flags and return new value
+        
+        uint8_t new_val = value << 1;
+        //Carry rotates into the bottom bit
+        new_val |= proc.f.get_c();
+        
+        //Top bit of original goes into the carry
+        proc.f.set_c(value >> 7);
+        proc.f.set_z(new_val==0);
+        proc.f.set_n(false);
+        proc.f.set_h(false);
+        
+        return new_val;
+    }
+}
+
+uint8_t rla(Z80& proc)
+{
+    uint8_t new_val = generic_rl_n(proc, proc.a.read());
+    proc.a.write(new_val);
+    
+    printf("%s", "rla\n");
+    return 4;
+}
+
+uint8_t push_nn(Z80& proc, uint8_t b1)
+{
+    uint16_t value=0;
+    std::string pair = "?";
+    
+    switch(b1)
+    {
+        case 0xf5:
+            value = proc.get_af();
+            pair = "(af)";
+            break;
+        case 0xc5:
+            value = proc.get_bc();
+            pair = "(bc)";
+            break;
+        case 0xd5:
+            value = proc.get_de();
+            pair = "(de)";
+            break;
+        case 0xe5:
+            value = proc.get_hl();
+            pair = "(hl)";
+            break;
+    }
+    
+    proc.mem.write16(proc.sp.read(), value);
+    proc.sp.dec(2);
+    
+    printf("push %s\n", pair.c_str());
+    return 16;
+}
+
+uint8_t call_nn(Z80& proc)
+{
+    //Equivalent of push pc, jump addr
+    uint16_t j_addr = proc.fetch_short();
+    proc.mem.write16(proc.sp.read(), proc.pc.read());
+    proc.sp.dec(2);
+    proc.pc.write(j_addr);
+    
+    printf("call 0x%02x\n", j_addr);
+    return 12;
+}
+
+uint8_t ld_offs_n_a(Z80& proc)
+{
+    uint16_t addr = 0xff00 + proc.fetch_byte();
+    proc.mem.write8(addr, proc.a.read());
+    
+    printf("ldh (0x%02x), a\n", addr);
+    return 12;
 }
 
 uint8_t ld_n_a(Z80& proc, uint8_t b1)
@@ -387,6 +483,10 @@ uint8_t cb_prefix_instr(Z80& proc)
     {
         cycles = bit_b_r(proc, temp8);
     }
+    else if ((temp8 >= 0x10) && (temp8 <= 0x17))
+    {
+        cycles = rl_n(proc, temp8);
+    }
     else
     {
         throw std::runtime_error(
@@ -394,6 +494,52 @@ uint8_t cb_prefix_instr(Z80& proc)
     }
     
     return cycles;
+}
+
+uint8_t rl_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0x17:
+            reg = &proc.a;
+            break;
+        case 0x10:
+            reg = &proc.b;
+            break;
+        case 0x11:
+            reg = &proc.c;
+            break;
+        case 0x12:
+            reg = &proc.d;
+            break;
+        case 0x13:
+            reg = &proc.e;
+            break;
+        case 0x14:
+            reg = &proc.h;
+            break;
+        case 0x15:
+            reg = &proc.l;
+            break;
+        //Use (hl) as address to rotate
+        case 0x16:
+        {
+            uint16_t addr = proc.get_hl();
+            uint8_t new_val = generic_rl_n(proc, proc.mem.read8(addr));
+            proc.mem.write8(addr, new_val);
+            
+            printf("%s", "rl (hl)\n");
+            return 16;
+        }
+    }
+    
+    uint8_t new_val = generic_rl_n(proc, reg->read());
+    reg->write(new_val);
+    
+    printf("rl %s\n", reg->name.c_str());
+    return 8;
 }
 
 uint8_t bit_b_r(Z80& proc, uint8_t b1)
