@@ -265,80 +265,129 @@ uint8_t bit_b_r(Z80& proc, uint8_t b1)
             break;
         case 0x71:
             reg = &proc.c;
-            bit = 5;
+            bit = 6;
             break;
         case 0x72:
             reg = &proc.d;
-            bit = 5;
+            bit = 6;
             break;
         case 0x73:
             reg = &proc.e;
-            bit = 5;
+            bit = 6;
             break;
         case 0x74:
             reg = &proc.h;
-            bit = 5;
+            bit = 6;
             break;
         case 0x75:
             reg = &proc.l;
-            bit = 5;
+            bit = 6;
             break;
         case 0x77:
             reg = &proc.a;
-            bit = 5;
+            bit = 6;
             break;
             
         case 0x78:
             reg = &proc.b;
-            bit = 6;
+            bit = 7;
             break;
         case 0x79:
             reg = &proc.c;
-            bit = 6;
+            bit = 7;
             break;
         case 0x7a:
             reg = &proc.d;
-            bit = 6;
+            bit = 7;
             break;
         case 0x7b:
             reg = &proc.e;
-            bit = 6;
+            bit = 7;
             break;
         case 0x7c:
             reg = &proc.h;
-            bit = 6;
+            bit = 7;
             break;
         case 0x7d:
             reg = &proc.l;
-            bit = 6;
+            bit = 7;
             break;
         case 0x7f:
             reg = &proc.a;
-            bit = 6;
+            bit = 7;
             break;
         //(HL) variants
         case 0x46:
-            break;
         case 0x4e:
-            break;
         case 0x56:
-            break;
         case 0x5e:
-            break;
         case 0x66:
-            break;
         case 0x6e:
-            break;
         case 0x76:
-            break;
         case 0x7e:
-            break;
+            return bit_b_hl(proc, b1);
         default:
             throw std::runtime_error(
-                                     formatted_string("Unknown byte for bit b,r instruction: 0x%02x", temp8));
+                formatted_string("Unknown byte for bit b,r instruction: 0x%02x",
+                b1));
     }
     
+    uint8_t to_test = reg->read();
+    bool bit_set = to_test & (1<<bit);
+    proc.f.set_z(!bit_set);
+    proc.f.set_n(false);
+    proc.f.set_h(true);
+    
+    printf("bit %d, %s\n", bit, reg->name.c_str());
+    
     return cycles;
+}
+
+uint8_t bit_b_hl(Z80& proc, uint8_t b1)
+{
+    uint16_t addr = proc.get_hl();
+    uint8_t to_test = proc.mem.read8(addr);
+    uint8_t bit;
+    
+    switch (b1)
+    {
+        //(HL) variants
+        case 0x46:
+            bit = 0;
+            break;
+        case 0x4e:
+            bit = 1;
+            break;
+        case 0x56:
+            bit = 2;
+            break;
+        case 0x5e:
+            bit = 3;
+            break;
+        case 0x66:
+            bit = 4;
+            break;
+        case 0x6e:
+            bit = 5;
+            break;
+        case 0x76:
+            bit = 6;
+            break;
+        case 0x7e:
+            bit = 7;
+            break;
+        default:
+            throw std::runtime_error(formatted_string("Unknown byte for bit r, (hl): 0x%02x", b1));
+    }
+    
+    bool bit_set = to_test & (1<<bit);
+    proc.f.set_z(!bit_set);
+    proc.f.set_n(false);
+    proc.f.set_h(true);
+    
+    printf("bit %d, (hl) (0x%04x, 0x%02x)\n", bit, addr, to_test);
+    
+    return 12;
 }
 
 uint8_t xor_n(Z80& proc, uint8_t b1)

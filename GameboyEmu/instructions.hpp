@@ -23,5 +23,6 @@ uint8_t ld_hl_dec_a(Z80& proc, uint8_t b1);
 uint8_t xor_n(Z80& proc, uint8_t b1);
 
 uint8_t bit_b_r(Z80& proc, uint8_t b1);
+uint8_t bit_b_hl(Z80& proc, uint8_t b1);
 
 #endif /* instructions_hpp */
