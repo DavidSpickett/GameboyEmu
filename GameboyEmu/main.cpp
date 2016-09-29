@@ -14,10 +14,18 @@
 
 int main(int argc, const char * argv[]) {
     Z80 proc;
+    
     proc.mem.AddFile("GameBoyBios.gb", 0);
+    
     LCD lcd;
     proc.mem.AddMemoryManager(lcd);
+    
     ROMHandler rhandler("Super Mario Land (World).gb");
+    printf("%s\n", rhandler.get_info().c_str());
+    if (rhandler.is_cgb_only())
+    {
+        throw std::runtime_error("ROM is CGB only.");
+    }
     proc.mem.AddMemoryManager(rhandler);
     
     while(1)

@@ -11,8 +11,8 @@
 
 #include <stdio.h>
 #include <string>
-#include "MemoryMap.hpp"
 #include <fstream>
+#include "MemoryMap.hpp"
 
 class ROMHandler: public MemoryManager
 {
@@ -20,24 +20,20 @@ public:
     ROMHandler(std::string file_path):
         MemoryManager(address_range(0x0100, 0x3fff)),
         m_file_path(file_path),
-    file_str(std::ifstream(file_path.c_str(), std::ifstream::binary))
+        file_str(std::ifstream(file_path.c_str(), std::ifstream::binary))
     {
     }
     
-    //For some reason I can't define these in a cpp file
-    //even though LCD does the same thing AFAIK.
-    void write8(uint16_t addr, uint8_t value)
-    {
-    }
+    //Not sure if inline is actually the right soloution here
+    inline void write8(uint16_t addr, uint8_t value);
+    inline uint8_t read8(uint16_t addr);
     
-    uint8_t read8(uint16_t addr)
-    {
-        printf("Read addr: 0x%04x from ROM\n", addr);
-        file_str.seekg(addr);
-        return file_str.get();
-    }
+    inline bool is_cgb_only();
+    inline std::string get_info();
     
 private:
+    inline uint8_t get_byte(uint16_t addr);
+    
     std::string m_file_path;
     std::ifstream file_str;
 };
