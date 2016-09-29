@@ -291,6 +291,21 @@ namespace
         file.seekg(0x014C);
         return file.get();
     }
+    
+    uint8_t get_checksum(std::ifstream& file)
+    {
+        //Sum of all header bytes, plus the number of header bytes must equal 0.
+        uint8_t chksum = 0;
+        file.seekg(0x0134);
+        
+        for (uint16_t i=0; i<26; ++i)
+        {
+            uint8_t val = file.get();
+            chksum += val;
+        }
+        
+        return chksum+0x19;
+    }
 }
 
 bool ROMHandler::is_cgb_only()
@@ -310,6 +325,7 @@ std::string ROMHandler::get_info()
     std::string ram_size = ram_size_to_str(get_ram_size(file_str));
     std::string dest_code = dest_code_to_str(get_dest_code(file_str));
     std::string rom_version = formatted_string("%d", get_rom_version(file_str));
+    std::string header_chksm = formatted_string("0x%02x", get_checksum(file_str));
     
     return formatted_string(
         "           Title: %s\n"
@@ -321,7 +337,8 @@ std::string ROMHandler::get_info()
         "        ROM Size: %s\n"
         "        RAM Size: %s\n"
         "       Dest Code: %s\n"
-        "     ROM Version: %s\n",
+        "     ROM Version: %s\n"
+        " Header Checksum: %s\n",
         title.c_str(),
         game_code.c_str(),
         cgb_supp.c_str(),
@@ -331,7 +348,8 @@ std::string ROMHandler::get_info()
         rom_size.c_str(),
         ram_size.c_str(),
         dest_code.c_str(),
-        rom_version.c_str()
+        rom_version.c_str(),
+        header_chksm.c_str()
         );
 }
 

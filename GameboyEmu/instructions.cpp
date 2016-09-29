@@ -168,6 +168,17 @@ void Step(Z80& proc)
         case 0xd6:
             cycles = sub_n(proc, b1);
             break;
+        case 0x87:
+        case 0x80:
+        case 0x81:
+        case 0x82:
+        case 0x83:
+        case 0x84:
+        case 0x85:
+        case 0x86:
+        case 0xC6:
+            cycles = add_a_n(proc, b1);
+            break;
         default:
         {
             throw std::runtime_error(formatted_string("Unknown opcode byte: 0x%02x", b1));
@@ -176,6 +187,74 @@ void Step(Z80& proc)
     (void)cycles;
     //std::cout << formatted_string("Took %d cycles.\n", cycles);
     //std::cout << proc.status_string();
+}
+
+namespace
+{
+    void generic_add_a_n(Z80& proc, uint8_t value)
+    {
+        uint8_t original_value = proc.a.read();
+        uint8_t new_value = original_value + value;
+        proc.a.write(new_value);
+        
+        proc.f.set_z(new_value==0);
+        proc.f.set_n(false);
+        proc.f.set_h(((original_value&0xf) + (value&0xf)) & 0x10);
+        proc.f.set_c((uint16_t(original_value)+uint16_t(value)) > 0xff);
+    }
+}
+
+uint8_t add_a_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0x87:
+            reg = &proc.a;
+            break;
+        case 0x80:
+            reg = &proc.b;
+            break;
+        case 0x81:
+            reg = &proc.c;
+            break;
+        case 0x82:
+            reg = &proc.d;
+            break;
+        case 0x83:
+            reg = &proc.e;
+            break;
+        case 0x84:
+            reg = &proc.h;
+            break;
+        case 0x85:
+            reg = &proc.l;
+            break;
+        //Use (hl) as addr
+        case 0x86:
+        {
+            uint16_t addr = proc.get_hl();
+            generic_add_a_n(proc, proc.mem.read8(addr));
+            
+            printf("%s", "add a, (hl)\n");
+            return 8;
+        }
+        //Use next byte as value
+        case 0xC6:
+        {
+            uint8_t value = proc.fetch_byte();
+            generic_add_a_n(proc, value);
+            
+            printf("add a, 0x%02x\n", value);
+            return 8;
+        }
+    }
+    
+    generic_add_a_n(proc, reg->read());
+    
+    printf("add a, %s\n", reg->name.c_str());
+    return 4;
 }
 
 namespace

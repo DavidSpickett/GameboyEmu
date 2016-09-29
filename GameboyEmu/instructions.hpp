@@ -34,6 +34,7 @@ uint8_t cp_n(Z80& proc, uint8_t b1);
 uint8_t inc_n(Z80& proc, uint8_t b1);
 uint8_t inc_nn(Z80& proc, uint8_t b1);
 uint8_t dec_n(Z80& proc, uint8_t b1);
+uint8_t add_a_n(Z80& proc, uint8_t b1);
 uint8_t sub_n(Z80& proc, uint8_t b1);
 
 uint8_t bit_b_r(Z80& proc, uint8_t b1);

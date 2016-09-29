@@ -20,7 +20,7 @@ int main(int argc, const char * argv[]) {
     LCD lcd;
     proc.mem.AddMemoryManager(lcd);
     
-    ROMHandler rhandler("Super Mario Land (World).gb");
+    ROMHandler rhandler("Legend of Zelda, The - Link's Awakening (USA, Europe).gb");
     printf("%s\n", rhandler.get_info().c_str());
     if (rhandler.is_cgb_only())
     {
@@ -33,7 +33,7 @@ int main(int argc, const char * argv[]) {
         Step(proc);
         
         //Uncomment to break on a particular PC
-        if (proc.pc.read() == 0xe7)
+        if (proc.pc.read() == 0x100)
         {
             uint8_t foo = 1;
             (void)foo;
