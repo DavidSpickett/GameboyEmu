@@ -23,9 +23,7 @@ int main(int argc, const char * argv[]) {
     
     LCD lcd;
     proc.mem.AddMemoryManager(lcd);
-    
     lcd.show_display();
-    lcd.draw();
     
     ROMHandler rhandler("Legend of Zelda, The - Link's Awakening (USA, Europe).gb");
     printf("%s\n", rhandler.get_info().c_str());
@@ -42,6 +40,7 @@ int main(int argc, const char * argv[]) {
         //Uncomment to break on a particular PC
         if (proc.pc.read() == 0x100)
         {
+            lcd.draw();
             return 0;
             //uint8_t foo = 1;
             //void)foo;

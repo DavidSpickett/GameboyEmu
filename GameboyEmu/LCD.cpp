@@ -8,13 +8,55 @@
 
 #include "LCD.hpp"
 
+//Video memory is 256x256 but the viewport is smaller and moves around
 const size_t LCD_WIDTH  = 160;
 const size_t LCD_HEIGHT = 144;
 
+std::string Tile::to_string() const
+{
+    std::vector<Pixel> pixels = to_pixels();
+    std::string ret;
+    
+    //Using an index to make splitting the lines easier
+    for (size_t i=0; i != 56; ++i)
+    {
+        if ((i != 0) && ((i % 8) == 0))
+        {
+            ret += "\n";
+        }
+        
+        ret += formatted_string("%d", pixels[i].c);
+    }
+    
+    return ret;
+}
+
+std::vector<Pixel> Tile::to_pixels() const
+{
+    std::vector<Pixel> pixels;
+    
+    for (size_t row=0; row!=8; ++row)
+    {
+        uint8_t b1 = data[row*2];
+        uint8_t b2 = data[(row*2)+1];
+        
+        for (uint8_t shift=7; shift>0; --shift)
+        {
+            uint8_t lsb = (b1 >> shift) & 0x1;
+            uint8_t msb = (b2 >> shift) & 0x1;
+            uint8_t c = (msb << 1) | lsb;
+            
+            pixels.push_back(Pixel(x+(7-shift), y+row, c));
+        }
+    }
+    
+    return pixels;
+}
+
 LCDWindow::LCDWindow()
 {
-    std::vector<uint8_t> row(LCD_WIDTH, 0);
-    for (size_t i=0; i<LCD_HEIGHT; ++i)
+    std::vector<uint8_t> row(256, 0);
+    for (size_t i=0; i<256; ++i)
     {
         m_pixels.push_back(row);
     }
@@ -63,16 +105,23 @@ namespace
     }
 }
 
-void LCDWindow::draw()
+void LCDWindow::draw(std::vector<Pixel>& pixels)
 {
     if (m_window == NULL)
     {
         throw std::runtime_error("Cannot draw, the LCD window has not been init.");
     }
-
-    for (int y=0; y!=LCD_HEIGHT; ++y)
+    
+    //Set new pixel values in array
+    std::vector<Pixel>::const_iterator it = pixels.begin();
+    for (; it != pixels.end(); ++it)
     {
-        for (int x=0; x!=LCD_WIDTH; ++x)
+        m_pixels[it->y][it->x] = it->c;
+    }
+
+    for (int y=m_y_origin; y!=(m_y_origin+LCD_HEIGHT); ++y)
+    {
+        for (int x=m_x_origin; x!=(m_x_origin+LCD_WIDTH); ++x)
         {
             SDL_Rect r = make_pixel_rect(x, y);
             if (SDL_FillRect(m_surface, &r, m_colours[m_pixels[y][x]]) != 0)
@@ -102,7 +151,45 @@ LCDWindow::~LCDWindow()
 
 void LCD::draw()
 {
-    m_display.draw();
+    std::vector<Tile> tiles;
+    
+    //Assume bg map 1 for the time being
+    uint16_t bg_map_1_start = 0x9800;
+    uint16_t char_ram_start = 0x8000;
+    
+    //1024 bytes where each byte represents an index into the character RAM
+    //So there are 32x32 indexes, each pointing to an 8x8 character
+    //256*256 == (32*32)*(8*8)
+    
+    for (size_t index=0; index != 1024; ++index)
+    {
+        uint8_t ptr_val = m_data[bg_map_1_start+index];
+        uint16_t char_addr = char_ram_start + ptr_val;
+        
+        std::vector<uint8_t> tile_data;
+        for (size_t i=0; i!=16; ++i)
+        {
+            tile_data.push_back(m_data[char_addr+i]);
+        }
+        
+        //TODO: double height mode
+        tiles.push_back(Tile(index%32, index/32, 8, tile_data));
+    }
+    
+    //Now we have all the tiles, convert them into pixel co-ords
+    std::vector<Pixel> pixels;
+    
+    std::vector<Tile>::const_iterator it = tiles.begin();
+    for (; it != tiles.end(); ++it)
+    {
+        printf("%s", it->to_string().c_str());
+        printf("%s", "\n\n");
+        std::vector<Pixel> ps = it->to_pixels();
+        pixels.reserve(pixels.size() + distance(ps.begin(), ps.end()));
+        pixels.insert(pixels.end(), ps.begin(), ps.end());
+    }
+    
+    m_display.draw(pixels);
 }
 
 void LCD::show_display()
@@ -113,10 +200,11 @@ void LCD::show_display()
 uint8_t LCD::read8(uint16_t addr)
 {
     printf("8 bit read from addr: 0x%04x\n", addr);
-    return 0;
+    return m_data[addr-m_address_range.start];
 }
 
 void LCD::write8(uint16_t addr, uint8_t value)
 {
     printf("8 bit write to addr: 0x%04x value: 0x%02x\n", addr, value);
+    m_data[addr-m_address_range.start] = value;
 }
