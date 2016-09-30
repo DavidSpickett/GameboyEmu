@@ -18,7 +18,7 @@ class ROMHandler: public MemoryManager
 {
 public:
     ROMHandler(std::string file_path):
-        MemoryManager(address_range(0x0100, 0x3fff)),
+        MemoryManager(to_vector(address_range(0x0100, 0x3fff))),
         m_file_path(file_path),
         file_str(std::ifstream(file_path.c_str(), std::ifstream::binary))
     {

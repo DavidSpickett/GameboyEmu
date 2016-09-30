@@ -200,11 +200,11 @@ void LCD::show_display()
 uint8_t LCD::read8(uint16_t addr)
 {
     printf("8 bit read from addr: 0x%04x\n", addr);
-    return m_data[addr-m_address_range.start];
+    return m_data[addr-m_address_ranges[0].start];
 }
 
 void LCD::write8(uint16_t addr, uint8_t value)
 {
     printf("8 bit write to addr: 0x%04x value: 0x%02x\n", addr, value);
-    m_data[addr-m_address_range.start] = value;
+    m_data[addr-m_address_ranges[0].start] = value;
 }

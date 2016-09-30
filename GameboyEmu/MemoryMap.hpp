@@ -35,18 +35,20 @@ struct address_range {
     }
 };
 
+std::vector<address_range> to_vector(address_range rng);
+
 class MemoryManager
 {
 public:
-    MemoryManager(address_range rng):
-        m_address_range(rng)
+    MemoryManager(std::vector<address_range> rngs):
+        m_address_ranges(rngs)
     {
     }
     
     virtual uint8_t read8(uint16_t addr) = 0;
     virtual void write8(uint16_t addr, uint8_t value) = 0;
     
-    address_range m_address_range;
+    std::vector<address_range> m_address_ranges;
 };
 
 struct address_range_entry

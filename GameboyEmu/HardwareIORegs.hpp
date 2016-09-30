@@ -16,7 +16,7 @@ class HardwareIORegs: public MemoryManager
 {
 public:
     HardwareIORegs():
-        MemoryManager(address_range(0xff00, 0xff7f))
+    MemoryManager(to_vector(address_range(0xff00, 0xff7f)))
     {
     }
     

@@ -66,7 +66,7 @@ class LCD: public MemoryManager
 {
     public:
         LCD():
-            MemoryManager(address_range(0x8000, 0x9fff)),
+            MemoryManager(to_vector(address_range(0x8000, 0x9fff))),
             m_display()
         {
             m_data = std::vector<uint8_t>(0x2000, 0);
