@@ -29,8 +29,8 @@ public:
 class Tile
 {
 public:
-    Tile(uint16_t x, uint16_t y, uint16_t h, std::vector<uint8_t>& data):
-    x(x), y(y), h(h), data(data)
+    Tile(uint16_t x, uint16_t y, uint16_t h, std::vector<uint8_t>::const_iterator data_b, std::vector<uint8_t>::const_iterator data_e):
+    x(x), y(y), h(h), data_b(data_b), data_e(data_e)
     {
     }
     
@@ -41,7 +41,8 @@ public:
     uint16_t x;
     uint16_t y;
     uint16_t h; //For potential double height mode
-    std::vector<uint8_t>& data;
+    std::vector<uint8_t>::const_iterator data_b;
+    std::vector<uint8_t>::const_iterator data_e;
 };
 
 struct colour

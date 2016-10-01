@@ -9,10 +9,10 @@
 #include "LCD.hpp"
 
 //Video memory is 256x256 but the viewport is smaller and moves around
-//const size_t LCD_WIDTH  = 160;
-//const size_t LCD_HEIGHT = 144;
-const size_t LCD_WIDTH  = 256;
-const size_t LCD_HEIGHT = 256;
+const size_t LCD_WIDTH  = 160;
+const size_t LCD_HEIGHT = 144;
+//const size_t LCD_WIDTH  = 256;
+//const size_t LCD_HEIGHT = 256;
 
 std::string Tile::to_string(std::vector<uint8_t>& pallette) const
 {
@@ -42,17 +42,18 @@ namespace {
 
 bool Tile::has_some_colour() const
 {
-    return std::find_if(data.begin(), data.end(), non_zero) != data.end();
+    return std::find_if(data_b, data_e, non_zero) != data_e;
 }
 
 std::vector<Pixel> Tile::to_pixels(std::vector<uint8_t>& pallette) const
 {
     std::vector<Pixel> pixels;
+    pixels.reserve(8*h);
     
     for (size_t row=0; row!=h; ++row)
     {
-        uint8_t b1 = data[row*2];
-        uint8_t b2 = data[(row*2)+1];
+        uint8_t b1 = *(data_b + (row*2));
+        uint8_t b2 = *(data_b + (row*2)+1);
         
         //Signed int!!
         for (int shift=7; shift>= 0; --shift)
@@ -133,29 +134,21 @@ void LCDWindow::draw(std::vector<Pixel>& pixels, uint8_t win_pos_x, uint8_t win_
             //Skip off memory pixels
             continue;
         }
-        
-        //Get existing
-        uint8_t new_c = it->c;
-        //Is checking for change actually helping?
-        if (true)//new_c != m_pixels[y][x])
-        {
-            m_pixels[y][x] = new_c;
+
+        m_pixels[y][x] = it->c;
             
-            //TODO: window scrolling
-//            if((x>=win_pos_x) && (x<(LCD_WIDTH+win_pos_x)) && (y>=win_pos_y) && ((y<(LCD_HEIGHT+win_pos_y))))
-            if ((x < LCD_WIDTH) && (y < LCD_HEIGHT))
-            {
-                colour c = m_colours[new_c];
-                SDL_SetRenderDrawColor(m_renderer, c.r, c.g, c.b, c.a);
-                SDL_RenderDrawPoint(m_renderer, x, y);
-            }
+        //TODO: window scrolling
+//      if((x>=win_pos_x) && (x<(LCD_WIDTH+win_pos_x)) && (y>=win_pos_y) && ((y<(LCD_HEIGHT+win_pos_y))))
+        if ((x < LCD_WIDTH) && (y < LCD_HEIGHT))
+        {
+            colour c = m_colours[it->c];
+            SDL_SetRenderDrawColor(m_renderer, c.r, c.g, c.b, c.a);
+            SDL_RenderDrawPoint(m_renderer, x, y);
         }
     }
     
     //Draw
     SDL_RenderPresent(m_renderer);
-    
-    //SDL_Delay(2000);
 }
 
 LCDWindow::~LCDWindow()
@@ -175,8 +168,6 @@ void LCD::draw()
         return;
     }
     
-    std::vector<Tile> tiles;
-    
     //Assume bg map 1 for the time being
     uint16_t bg_map_start = m_control_reg.get_bgrnd_tile_table_addr();
     uint16_t char_ram_start = m_control_reg.get_tile_patt_table_addr();
@@ -191,6 +182,7 @@ void LCD::draw()
     
     //Generate background pixels
     std::vector<Pixel> pixels;
+    pixels.reserve(1024*8*sprite_size);
     
     if (m_control_reg.background_display())
     {
@@ -207,18 +199,18 @@ void LCD::draw()
             
             uint16_t char_addr = char_ram_start + (ptr_val*bytes_per_sprite) - m_address_ranges[0].start;
             
-            //Copy data that describes colour values
-            //2 bits per pixel in alternating words
-            std::vector<uint8_t> tile_data(m_data.begin()+char_addr, m_data.begin()+char_addr+bytes_per_sprite);
-            
             //Note that the y scroll is minus because the y co-ordinite is inverted
-            Tile t(((index % 32)*8)+m_scroll_x, ((index/32)*sprite_size)-m_scroll_y, sprite_size, tile_data);
+            Tile t(((index % 32)*8)+m_scroll_x,
+                   ((index/32)*sprite_size)-m_scroll_y,
+                   sprite_size,
+                   m_data.begin()+char_addr,
+                   m_data.begin()+char_addr+bytes_per_sprite);
             
             //Renderer clears to white so don't bother with those tiles
             if (t.has_some_colour())
             {
                 std::vector<Pixel> ps = t.to_pixels(m_pallette);
-                pixels.reserve(pixels.size() + distance(ps.begin(), ps.end()));
+                //pixels.reserve(pixels.size() + distance(ps.begin(), ps.end()));
                 pixels.insert(pixels.end(), ps.begin(), ps.end());
             }
         }

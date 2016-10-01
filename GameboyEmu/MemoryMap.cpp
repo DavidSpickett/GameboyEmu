@@ -10,6 +10,20 @@
 #include <fstream>
 #include "utils.hpp"
 
+bool MemoryManager::contains(uint16_t addr) const
+{
+    std::vector<address_range>::const_iterator it = m_address_ranges.begin();
+    for ( ; it!= m_address_ranges.end(); ++it)
+    {
+        if (it->contains_addr(addr))
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 std::vector<address_range> to_vector(address_range rng)
 {
     std::vector<address_range> ret;
@@ -59,13 +73,9 @@ uint8_t MemoryMap::read8(uint16_t addr)
     std::vector<std::reference_wrapper<MemoryManager>>::const_iterator it = m_memory_managers.begin();
     for (; it != m_memory_managers.end(); ++it)
     {
-        std::vector<address_range>::const_iterator ar = it->get().m_address_ranges.begin();
-        for (; ar != it->get().m_address_ranges.end(); ++ar)
+        if (it->get().contains(addr))
         {
-            if (ar->contains_addr(addr))
-            {
-                return it->get().read8(addr);
-            }
+            return it->get().read8(addr);
         }
     }
     
@@ -80,10 +90,9 @@ void MemoryMap::write8(uint16_t addr, uint8_t value)
         std::vector<address_range>::const_iterator ar = it->get().m_address_ranges.begin();
         for (; ar != it->get().m_address_ranges.end(); ++ar)
         {
-            if (ar->contains_addr(addr))
+            if (it->get().contains(addr))
             {
-                it->get().write8(addr, value);
-                return;
+                return it->get().write8(addr, value);
             }
         }
     }
@@ -97,13 +106,9 @@ uint16_t MemoryMap::read16(uint16_t addr)
     std::vector<std::reference_wrapper<MemoryManager>>::const_iterator it = m_memory_managers.begin();
     for (; it != m_memory_managers.end(); ++it)
     {
-        std::vector<address_range>::const_iterator ar = it->get().m_address_ranges.begin();
-        for (; ar != it->get().m_address_ranges.end(); ++ar)
+        if (it->get().contains(addr))
         {
-            if (ar->contains_addr(addr))
-            {
-                return it->get().read16(addr);
-            }
+            return it->get().read16(addr);
         }
     }
     
@@ -116,14 +121,9 @@ void MemoryMap::write16(uint16_t addr, uint16_t value)
     std::vector<std::reference_wrapper<MemoryManager>>::const_iterator it = m_memory_managers.begin();
     for (; it != m_memory_managers.end(); ++it)
     {
-        std::vector<address_range>::const_iterator ar = it->get().m_address_ranges.begin();
-        for (; ar != it->get().m_address_ranges.end(); ++ar)
+        if (it->get().contains(addr))
         {
-            if (ar->contains_addr(addr))
-            {
-                it->get().write16(addr, value);
-                return;
-            }
+            return it->get().write16(addr, value);
         }
     }
     

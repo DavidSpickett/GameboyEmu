@@ -52,6 +52,8 @@ public:
     virtual uint16_t read16(uint16_t addr) = 0;
     virtual void write16(uint16_t addr, uint8_t value) = 0;
     
+    bool contains(uint16_t addr) const;
+    
     std::vector<address_range> m_address_ranges;
 };
 
