@@ -44,6 +44,19 @@ public:
     std::vector<uint8_t> data;
 };
 
+struct colour
+{
+    colour(uint8_t r, uint8_t g, uint8_t b):
+    a(SDL_ALPHA_OPAQUE), r(r), g(g), b(b)
+    {
+    }
+    
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t a;
+};
+
 class LCDWindow
 {
 public:
@@ -56,9 +69,9 @@ public:
 
 private:
     SDL_Window* m_window;
-    SDL_Surface* m_surface;
+    SDL_Renderer* m_renderer;
     std::vector<std::vector<uint8_t>> m_pixels;
-    std::vector<uint32_t> m_colours;
+    std::vector<colour> m_colours;
     uint16_t m_x_origin;
     uint16_t m_y_origin;
 };

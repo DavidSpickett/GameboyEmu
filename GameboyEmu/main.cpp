@@ -35,18 +35,11 @@ int main(int argc, const char * argv[]) {
     
     while(1)
     {
+        SDL_Event event;
+        SDL_PollEvent(&event);
+        
         Step(proc);
         
-        //Polling events makes the title bar show up.
-        SDL_Event e;
-        SDL_PollEvent(&e);
-        
-        /*if (!(proc.pc.read() % 32))
-        {
-            lcd.draw();
-        }*/
-        
-        //Uncomment to break on a particular PC
         if (proc.pc.read() == 0x100)
         {
             lcd.draw();

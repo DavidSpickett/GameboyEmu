@@ -78,19 +78,6 @@ LCDWindow::LCDWindow()
     }
 }
 
-namespace
-{
-    SDL_Rect make_pixel_rect(int x, int y)
-    {
-        SDL_Rect r;
-        r.h = 1;
-        r.w = 1;
-        r.x = x;
-        r.y = y;
-        return r;
-    }
-}
-
 void LCDWindow::init()
 {
     //Initialize SDL
@@ -112,24 +99,16 @@ void LCDWindow::init()
             "Window could not be created! SDL_Error: %s\n", SDL_GetError()));
     }
     
-    //Get window surface
-    m_surface = SDL_GetWindowSurface(m_window);
+    m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED);
+
+    m_colours.push_back(colour(0xff, 0xff, 0xff));
+    m_colours.push_back(colour(0xb9, 0xb9, 0xb9));
+    m_colours.push_back(colour(0x6b, 0x6b, 0x6b));
+    m_colours.push_back(colour(0x00, 0x00, 0x00));
     
-    m_colours.push_back(SDL_MapRGB(m_surface->format, 0xFF, 0xFF, 0xFF)); //white
-    m_colours.push_back(SDL_MapRGB(m_surface->format, 0xB9, 0xB9, 0xB9)); //lighter grey
-    m_colours.push_back(SDL_MapRGB(m_surface->format, 0x6B, 0x6B, 0x6B)); //darker grey
-    m_colours.push_back(SDL_MapRGB(m_surface->format, 0x00, 0x00, 0x00)); //black
-    
-    //Initial blit of white
-    if (SDL_FillRect(m_surface, NULL, m_colours[0]) != 0)
-    {
-        throw std::runtime_error("Something went wrong init-ing the screen.");
-    }
-    
-    if (SDL_UpdateWindowSurface(m_window) != 0)
-    {
-        throw std::runtime_error("Something went wrong updating screen.");
-    }
+    SDL_SetRenderDrawColor(m_renderer, m_colours[0].r, m_colours[0].g, m_colours[0].b, m_colours[0].a);
+    SDL_RenderClear(m_renderer);
+    SDL_RenderPresent(m_renderer);
 }
 
 void LCDWindow::draw(std::vector<Pixel>& pixels, uint8_t win_pos_x, uint8_t win_pos_y)
@@ -154,27 +133,23 @@ void LCDWindow::draw(std::vector<Pixel>& pixels, uint8_t win_pos_x, uint8_t win_
         
         //Get existing
         uint8_t new_c = it->c;
-        if (new_c != m_pixels[y][x])
+        if (true)//new_c != m_pixels[y][x])
         {
             m_pixels[y][x] = new_c;
             
+            //TODO: window scrolling
 //            if((x>=win_pos_x) && (x<(LCD_WIDTH+win_pos_x)) && (y>=win_pos_y) && ((y<(LCD_HEIGHT+win_pos_y))))
             if ((x < LCD_WIDTH) && (y < LCD_HEIGHT))
             {
-                SDL_Rect r = make_pixel_rect(x, y);
-                if (SDL_FillRect(m_surface, &r, m_colours[new_c]) != 0)
-                {
-                    throw std::runtime_error("Something went wrong drawing a pixel");
-                }
+                colour c = m_colours[new_c];
+                SDL_SetRenderDrawColor(m_renderer, c.r, c.g, c.b, c.a);
+                SDL_RenderDrawPoint(m_renderer, x, y);
             }
         }
     }
-
+    
     //Draw
-    if (SDL_UpdateWindowSurface(m_window) != 0)
-    {
-        throw std::runtime_error("Something went wrong updating screen.");
-    }
+    SDL_RenderPresent(m_renderer);
     
     //SDL_Delay(2000);
 }
@@ -184,6 +159,7 @@ LCDWindow::~LCDWindow()
     if (m_window != NULL)
     {
         SDL_DestroyWindow(m_window);
+        SDL_DestroyRenderer(m_renderer);
         SDL_Quit();
     }
 }
