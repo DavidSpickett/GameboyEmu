@@ -26,8 +26,7 @@ bool MemoryManager::contains(uint16_t addr) const
 
 std::vector<address_range> to_vector(address_range rng)
 {
-    std::vector<address_range> ret;
-    ret.push_back(rng);
+    std::vector<address_range> ret(1, rng);
     return ret;
 }
 std::vector<address_range> to_vector(address_range rng, address_range rng2)

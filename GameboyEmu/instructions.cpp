@@ -10,10 +10,23 @@
 #include <iostream>
 #include "utils.hpp"
 
+#define DEBUG_INSTR 0
+
+namespace
+{
+    template< typename... Args >
+    void debug_print(const char* format, Args... args)
+    {
+#if DEBUG_INSTR
+        printf(format, args...);
+#endif
+    }
+}
+
 void Step(Z80& proc)
 {
     //Fetch first byte from PC
-    printf("PC: 0x%02x - ", proc.pc.read());
+    debug_print("PC: 0x%02x - ", proc.pc.read());
     
     uint8_t b1 = proc.fetch_byte();
     uint8_t cycles = 0;
@@ -237,7 +250,7 @@ uint8_t add_a_n(Z80& proc, uint8_t b1)
             uint16_t addr = proc.get_hl();
             generic_add_a_n(proc, proc.mem.read8(addr));
             
-            printf("%s", "add a, (hl)\n");
+            debug_print("%s", "add a, (hl)\n");
             return 8;
         }
         //Use next byte as value
@@ -246,14 +259,14 @@ uint8_t add_a_n(Z80& proc, uint8_t b1)
             uint8_t value = proc.fetch_byte();
             generic_add_a_n(proc, value);
             
-            printf("add a, 0x%02x\n", value);
+            debug_print("add a, 0x%02x\n", value);
             return 8;
         }
     }
     
     generic_add_a_n(proc, reg->read());
     
-    printf("add a, %s\n", reg->name.c_str());
+    debug_print("add a, %s\n", reg->name.c_str());
     return 4;
 }
 
@@ -308,7 +321,7 @@ uint8_t sub_n(Z80& proc, uint8_t b1)
             uint8_t value = proc.mem.read8(addr);
             generic_sub_n(proc, value);
             
-            printf("%s", "sub (hl)\n");
+            debug_print("%s", "sub (hl)\n");
             return 8;
         }
         //Next byte is value
@@ -317,14 +330,14 @@ uint8_t sub_n(Z80& proc, uint8_t b1)
             uint8_t value = proc.fetch_byte();
             generic_sub_n(proc, value);
             
-            printf("sub 0x%02x\n", value);
+            debug_print("sub 0x%02x\n", value);
             return 8;
         }
     }
     
     generic_sub_n(proc, reg->read());
     
-    printf("sub %s\n", reg->name.c_str());
+    debug_print("sub %s\n", reg->name.c_str());
     return 4;
 }
 
@@ -334,7 +347,7 @@ uint8_t ldh_a_n(Z80& proc)
     uint16_t addr = 0xff00 + offs;
     proc.a.write(proc.mem.read8(addr));
     
-    printf("ldh a, (0xff00+0x%02x)\n", offs);
+    debug_print("ldh a, (0xff00+0x%02x)\n", offs);
     return 12;
 }
 
@@ -345,7 +358,7 @@ uint8_t jr_n(Z80& proc)
     //We jump from the address of the next instr, not the jr itself.
     proc.pc.write(proc.pc.read()+offs);
     
-    printf("jr 0x%02x (%d)\n", uint8_t(offs), offs);
+    debug_print("jr 0x%02x (%d)\n", uint8_t(offs), offs);
     return 8;
 }
 
@@ -394,7 +407,7 @@ uint8_t cp_n(Z80& proc, uint8_t b1)
         case 0xbe:
         {
             generic_cmp_n(proc, proc.mem.read8(proc.get_hl()));
-            printf("%s\n", "cmp (hl)");
+            debug_print("%s\n", "cmp (hl)");
             return 8;
         }
         //Compare with immediate byte
@@ -402,13 +415,13 @@ uint8_t cp_n(Z80& proc, uint8_t b1)
         {
             uint8_t value = proc.fetch_byte();
             generic_cmp_n(proc, value);
-            printf("cmp 0x%02x\n", value);
+            debug_print("cmp 0x%02x\n", value);
             return 8;
         }
     }
     
     generic_cmp_n(proc, reg->read());
-    printf("cmp %s\n", reg->name.c_str());
+    debug_print("cmp %s\n", reg->name.c_str());
     
     return 4;
 }
@@ -420,7 +433,7 @@ uint8_t ret(Z80& proc)
     proc.sp.inc(2);
     proc.pc.write(new_addr);
     
-    printf("%s", "ret\n");
+    debug_print("%s", "ret\n");
     return 8;
 }
 
@@ -448,7 +461,7 @@ uint8_t inc_nn(Z80& proc, uint8_t b1)
             break;
     }
 
-    printf("inc %s\n", pair.c_str());
+    debug_print("inc %s\n", pair.c_str());
     return 8;
 }
 
@@ -460,7 +473,7 @@ uint8_t ld_hl_plus_a(Z80& proc)
     //inc (hl)
     proc.set_hl(hl+1);
     
-    printf("%s", "ld (hl+), a\n");
+    debug_print("%s", "ld (hl+), a\n");
     return 8;
 }
 
@@ -513,7 +526,7 @@ uint8_t dec_n(Z80& proc, uint8_t b1)
             uint8_t new_val = generic_dec_n(proc, proc.mem.read8(addr));
             proc.mem.write8(addr, new_val);
             
-            printf("%s", "dec (hl)\n");
+            debug_print("%s", "dec (hl)\n");
             return 12;
         }
     }
@@ -521,7 +534,7 @@ uint8_t dec_n(Z80& proc, uint8_t b1)
     uint8_t new_val = generic_dec_n(proc, reg->read());
     reg->write(new_val);
     
-    printf("dec %s\n", reg->name.c_str());
+    debug_print("dec %s\n", reg->name.c_str());
     return 4;
 }
 
@@ -551,7 +564,7 @@ uint8_t pop_nn(Z80& proc, uint8_t b1)
             break;
     }
     
-    printf("pop (%s)\n", pair.c_str());
+    debug_print("pop (%s)\n", pair.c_str());
     return 12;
 }
 
@@ -579,7 +592,7 @@ uint8_t rla(Z80& proc)
     uint8_t new_val = generic_rl_n(proc, proc.a.read());
     proc.a.write(new_val);
     
-    printf("%s", "rla\n");
+    debug_print("%s", "rla\n");
     return 4;
 }
 
@@ -612,8 +625,7 @@ uint8_t push_nn(Z80& proc, uint8_t b1)
     proc.sp.dec(2);
     proc.mem.write16(proc.sp.read(), value);
     
-    
-    printf("push %s\n", pair.c_str());
+    debug_print("push %s\n", pair.c_str());
     return 16;
 }
 
@@ -628,7 +640,7 @@ uint8_t call_nn(Z80& proc)
     
     proc.pc.write(j_addr);
     
-    printf("call 0x%02x\n", j_addr);
+    debug_print("call 0x%02x\n", j_addr);
     return 12;
 }
 
@@ -637,7 +649,7 @@ uint8_t ld_offs_n_a(Z80& proc)
     uint16_t addr = 0xff00 + proc.fetch_byte();
     proc.mem.write8(addr, proc.a.read());
     
-    printf("ldh (0x%02x), a\n", addr);
+    debug_print("ldh (0x%02x), a\n", addr);
     return 12;
 }
 
@@ -694,7 +706,7 @@ uint8_t ld_n_a(Z80& proc, uint8_t b1)
             
             proc.mem.write8(addr, proc.a.read());
             
-            printf("ld %s, a\n", r_name.c_str());
+            debug_print("ld %s, a\n", r_name.c_str());
             return 8;
         }
         case 0xea:
@@ -703,13 +715,13 @@ uint8_t ld_n_a(Z80& proc, uint8_t b1)
             uint16_t addr = proc.fetch_short();
             proc.mem.write8(addr, proc.a.read());
             
-            printf("ld (0x%02x), a\n", addr);
+            debug_print("ld (0x%02x), a\n", addr);
             return 16;
         }
     }
     
     reg->write(proc.a.read());
-    printf("ld %s, a\n", reg->name.c_str());
+    debug_print("ld %s, a\n", reg->name.c_str());
     
     return 4;
 }
@@ -767,7 +779,7 @@ uint8_t inc_n(Z80& proc, uint8_t b1)
             uint8_t new_val = generic_inc_n(proc, orig_val);
             proc.mem.write8(addr, new_val);
             
-            printf("%s", "inc (hl)\n");
+            debug_print("%s", "inc (hl)\n");
             
             return 12;
         }
@@ -777,7 +789,7 @@ uint8_t inc_n(Z80& proc, uint8_t b1)
     uint8_t new_val = generic_inc_n(proc, orig_val);
     reg->write(new_val);
     
-    printf("inc %s\n", reg->name.c_str());
+    debug_print("inc %s\n", reg->name.c_str());
     
     return 4;
 }
@@ -787,7 +799,7 @@ uint8_t ld_offs_c_a(Z80& proc)
     uint16_t addr = 0xff00 + proc.c.read();
     proc.mem.write8(addr, proc.a.read());
     
-    printf("%s", "ld (c), a\n");
+    debug_print("%s", "ld (c), a\n");
     return 8;
 }
 
@@ -872,7 +884,7 @@ uint8_t ld_a_n(Z80& proc, uint8_t b1)
     
     proc.a.write(temp8);
     
-    printf("ld a, %s\n", reg_name.c_str());
+    debug_print("ld a, %s\n", reg_name.c_str());
     
     return cycles;
 }
@@ -915,7 +927,7 @@ uint8_t jr_cc_n(Z80& proc, uint8_t b1)
         proc.pc.write(new_pc);
     }
     
-    printf("jr %s, %d (0x%04x)\n", type.c_str(), offset, new_pc);
+    debug_print("jr %s, %d (0x%04x)\n", type.c_str(), offset, new_pc);
 
     return cycles;
 }
@@ -976,7 +988,7 @@ uint8_t rl_n(Z80& proc, uint8_t b1)
             uint8_t new_val = generic_rl_n(proc, proc.mem.read8(addr));
             proc.mem.write8(addr, new_val);
             
-            printf("%s", "rl (hl)\n");
+            debug_print("%s", "rl (hl)\n");
             return 16;
         }
     }
@@ -984,7 +996,7 @@ uint8_t rl_n(Z80& proc, uint8_t b1)
     uint8_t new_val = generic_rl_n(proc, reg->read());
     reg->write(new_val);
     
-    printf("rl %s\n", reg->name.c_str());
+    debug_print("rl %s\n", reg->name.c_str());
     return 8;
 }
 
@@ -1249,7 +1261,7 @@ uint8_t bit_b_r(Z80& proc, uint8_t b1)
     proc.f.set_n(false);
     proc.f.set_h(true);
     
-    printf("bit %d, %s\n", bit, reg->name.c_str());
+    debug_print("bit %d, %s\n", bit, reg->name.c_str());
     
     return cycles;
 }
@@ -1296,7 +1308,7 @@ uint8_t bit_b_hl(Z80& proc, uint8_t b1)
     proc.f.set_n(false);
     proc.f.set_h(true);
     
-    printf("bit %d, (hl) (0x%04x, 0x%02x)\n", bit, addr, to_test);
+    debug_print("bit %d, (hl) (0x%04x, 0x%02x)\n", bit, addr, to_test);
     
     return 12;
 }
@@ -1369,7 +1381,7 @@ uint8_t xor_n(Z80& proc, uint8_t b1)
     proc.f.set_z(temp8==0);
     proc.a.write(temp8);
     
-    printf("%s\n", prt.c_str());
+    debug_print("%s\n", prt.c_str());
 
     return cycles;
 }
@@ -1407,7 +1419,7 @@ uint8_t ld_nn_n(Z80& proc, uint8_t b1)
     
     reg->write(b2);
     
-    printf(fmt.c_str(), reg->name.c_str(), b2);
+    debug_print(fmt.c_str(), reg->name.c_str(), b2);
     
     return 8;
 }
@@ -1441,7 +1453,7 @@ uint8_t ld_n_nn(Z80& proc, uint8_t b1)
             throw std::runtime_error(formatted_string("Unknown byte 0x%02x for opcode ld_n_nn", b1));
     }
     
-    printf(fmt.c_str(), r.c_str(), imm);
+    debug_print(fmt.c_str(), r.c_str(), imm);
 
     return 12;
 }
@@ -1452,7 +1464,7 @@ uint8_t ld_hl_dec_a(Z80& proc, uint8_t b1)
     uint16_t addr = proc.get_hl();
     proc.mem.write8(addr, temp8);
     
-    printf("ld (hl-), a (0x%04x, 0x%02x)\n", addr, temp8);
+    debug_print("ld (hl-), a (0x%04x, 0x%02x)\n", addr, temp8);
     
     //Now decrement HL
     proc.set_hl(addr-1);
