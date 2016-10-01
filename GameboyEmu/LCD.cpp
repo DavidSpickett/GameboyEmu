@@ -118,6 +118,9 @@ void LCDWindow::draw(std::vector<Pixel>& pixels, uint8_t win_pos_x, uint8_t win_
         throw std::runtime_error("Cannot draw, the LCD window has not been init.");
     }
     
+    SDL_SetRenderDrawColor(m_renderer, m_colours[0].r, m_colours[0].g, m_colours[0].b, m_colours[0].a);
+    SDL_RenderClear(m_renderer);
+    
     //Update what has changed
     std::vector<Pixel>::const_iterator it = pixels.begin();
     for (; it!=pixels.end(); ++it)
@@ -133,6 +136,7 @@ void LCDWindow::draw(std::vector<Pixel>& pixels, uint8_t win_pos_x, uint8_t win_
         
         //Get existing
         uint8_t new_c = it->c;
+        //Is checking for change actually helping?
         if (true)//new_c != m_pixels[y][x])
         {
             m_pixels[y][x] = new_c;
@@ -211,8 +215,14 @@ void LCD::draw()
                 tile_data.push_back(m_data[char_addr+i]);
             }
             
-            Tile t = Tile(((index % 32)*8)+m_scroll_x, ((index/32)*sprite_size)+m_scroll_y, sprite_size, tile_data);
-            tiles.push_back(t);
+            //Note that the y scroll is minus because the y co-ordinite is inverted
+            Tile t = Tile(((index % 32)*8)+m_scroll_x, ((index/32)*sprite_size)-m_scroll_y, sprite_size, tile_data);
+            
+            //Renderer clears to white so don't bother with those tiles
+            if (t.has_some_colour())
+            {
+                tiles.push_back(t);
+            }
         }
         
         //Now we have all the tiles, convert them into pixel co-ords
