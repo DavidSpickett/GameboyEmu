@@ -12,6 +12,7 @@
 #include "LCD.hpp"
 #include "HardwareIORegs.hpp"
 #include "RomHandler.hpp"
+#include <SDL2/SDL.h>
 
 int main(int argc, const char * argv[]) {
     Z80 proc;
@@ -23,7 +24,6 @@ int main(int argc, const char * argv[]) {
     
     LCD lcd;
     proc.mem.AddMemoryManager(lcd);
-    lcd.show_display();
     
     ROMHandler rhandler("Legend of Zelda, The - Link's Awakening (USA, Europe).gb");
     printf("%s\n", rhandler.get_info().c_str());
@@ -37,13 +37,22 @@ int main(int argc, const char * argv[]) {
     {
         Step(proc);
         
+        //Polling events makes the title bar show up.
+        SDL_Event e;
+        SDL_PollEvent(&e);
+        
+        /*if (!(proc.pc.read() % 32))
+        {
+            lcd.draw();
+        }*/
+        
         //Uncomment to break on a particular PC
         if (proc.pc.read() == 0x100)
         {
             lcd.draw();
             return 0;
-            //uint8_t foo = 1;
-            //void)foo;
+            uint8_t foo = 1;
+            (void)foo;
         }
     }
     

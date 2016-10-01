@@ -432,15 +432,15 @@ uint8_t inc_nn(Z80& proc, uint8_t b1)
     {
         case 0x03:
             proc.set_bc(proc.get_bc()+1);
-            pair = "(bc)";
+            pair = "bc";
             break;
         case 0x13:
             proc.set_de(proc.get_de()+1);
-            pair = "(de)";
+            pair = "de";
             break;
         case 0x23:
             proc.set_hl(proc.get_hl()+1);
-            pair = "(hl)";
+            pair = "hl";
             break;
         case 0x33:
             proc.sp.inc(1);
@@ -906,7 +906,7 @@ uint8_t jr_cc_n(Z80& proc, uint8_t b1)
     
     //Alway calculate it so we can show it in the dasm
     uint16_t new_pc = proc.pc.read();
-    //Note: can be -ve
+    
     new_pc += offset;
     
     if (jump)
@@ -1450,7 +1450,7 @@ uint8_t ld_hl_dec_a(Z80& proc, uint8_t b1)
 {
     uint8_t temp8 = proc.a.read();
     uint16_t addr = proc.get_hl();
-    proc.mem.write16(addr, temp8);
+    proc.mem.write8(addr, temp8);
     
     printf("ld (hl-), a (0x%04x, 0x%02x)\n", addr, temp8);
     

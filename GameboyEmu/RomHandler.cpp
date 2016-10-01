@@ -358,3 +358,13 @@ uint8_t ROMHandler::get_byte(uint16_t addr)
     file_str.seekg(addr);
     return file_str.get();
 }
+
+uint16_t ROMHandler::read16(uint16_t addr)
+{
+    throw std::runtime_error("Implement me!");
+}
+
+void ROMHandler::write16(uint16_t addr, uint8_t value)
+{
+    throw std::runtime_error("Implement me!");
+}

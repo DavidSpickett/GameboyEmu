@@ -9,12 +9,14 @@
 #include "LCD.hpp"
 
 //Video memory is 256x256 but the viewport is smaller and moves around
-const size_t LCD_WIDTH  = 160;
-const size_t LCD_HEIGHT = 144;
+//const size_t LCD_WIDTH  = 160;
+//const size_t LCD_HEIGHT = 144;
+const size_t LCD_WIDTH  = 256;
+const size_t LCD_HEIGHT = 256;
 
-std::string Tile::to_string() const
+std::string Tile::to_string(std::vector<uint8_t>& pallette) const
 {
-    std::vector<Pixel> pixels = to_pixels();
+    std::vector<Pixel> pixels = to_pixels(pallette);
     std::string ret;
     
     //Using an index to make splitting the lines easier
@@ -31,22 +33,36 @@ std::string Tile::to_string() const
     return ret;
 }
 
-std::vector<Pixel> Tile::to_pixels() const
+namespace {
+    bool non_zero(uint8_t val)
+    {
+        return val != 0;
+    }
+}
+
+bool Tile::has_some_colour() const
+{
+    return std::find_if(data.begin(), data.end(), non_zero) != data.end();
+}
+
+std::vector<Pixel> Tile::to_pixels(std::vector<uint8_t>& pallette) const
 {
     std::vector<Pixel> pixels;
     
-    for (size_t row=0; row!=8; ++row)
+    for (size_t row=0; row!=h; ++row)
     {
         uint8_t b1 = data[row*2];
         uint8_t b2 = data[(row*2)+1];
         
-        for (uint8_t shift=7; shift>0; --shift)
+        //Signed int!!
+        for (int shift=7; shift>= 0; --shift)
         {
             uint8_t lsb = (b1 >> shift) & 0x1;
             uint8_t msb = (b2 >> shift) & 0x1;
             uint8_t c = (msb << 1) | lsb;
             
-            pixels.push_back(Pixel(x+(7-shift), y+row, c));
+            //Pallette remaps colours
+            pixels.push_back(Pixel(x+(7-shift), y+row, pallette[c]));
         }
     }
     
@@ -59,6 +75,19 @@ LCDWindow::LCDWindow()
     for (size_t i=0; i<256; ++i)
     {
         m_pixels.push_back(row);
+    }
+}
+
+namespace
+{
+    SDL_Rect make_pixel_rect(int x, int y)
+    {
+        SDL_Rect r;
+        r.h = 1;
+        r.w = 1;
+        r.x = x;
+        r.y = y;
+        return r;
     }
 }
 
@@ -86,58 +115,68 @@ void LCDWindow::init()
     //Get window surface
     m_surface = SDL_GetWindowSurface(m_window);
     
-    m_colours.push_back(SDL_MapRGB(m_surface->format, 0x00, 0x00, 0x00)); //black
-    m_colours.push_back(SDL_MapRGB(m_surface->format, 0x6B, 0x6B, 0x6B)); //darker grey
-    m_colours.push_back(SDL_MapRGB(m_surface->format, 0xB9, 0xB9, 0xB9)); //lighter grey
     m_colours.push_back(SDL_MapRGB(m_surface->format, 0xFF, 0xFF, 0xFF)); //white
-}
-
-namespace
-{
-    SDL_Rect make_pixel_rect(int x, int y)
+    m_colours.push_back(SDL_MapRGB(m_surface->format, 0xB9, 0xB9, 0xB9)); //lighter grey
+    m_colours.push_back(SDL_MapRGB(m_surface->format, 0x6B, 0x6B, 0x6B)); //darker grey
+    m_colours.push_back(SDL_MapRGB(m_surface->format, 0x00, 0x00, 0x00)); //black
+    
+    //Initial blit of white
+    if (SDL_FillRect(m_surface, NULL, m_colours[0]) != 0)
     {
-        SDL_Rect r;
-        r.h = 1;
-        r.w = 1;
-        r.x = x;
-        r.y = y;
-        return r;
+        throw std::runtime_error("Something went wrong init-ing the screen.");
+    }
+    
+    if (SDL_UpdateWindowSurface(m_window) != 0)
+    {
+        throw std::runtime_error("Something went wrong updating screen.");
     }
 }
 
-void LCDWindow::draw(std::vector<Pixel>& pixels)
+void LCDWindow::draw(std::vector<Pixel>& pixels, uint8_t win_pos_x, uint8_t win_pos_y)
 {
     if (m_window == NULL)
     {
         throw std::runtime_error("Cannot draw, the LCD window has not been init.");
     }
     
-    //Set new pixel values in array
+    //Update what has changed
     std::vector<Pixel>::const_iterator it = pixels.begin();
-    for (; it != pixels.end(); ++it)
+    for (; it!=pixels.end(); ++it)
     {
-        m_pixels[it->y][it->x] = it->c;
-    }
-
-    for (int y=m_y_origin; y!=(m_y_origin+LCD_HEIGHT); ++y)
-    {
-        for (int x=m_x_origin; x!=(m_x_origin+LCD_WIDTH); ++x)
+        uint16_t x = it->x;
+        uint16_t y = it->y;
+        
+        if ((x >= 256) || (x<0) || (y>=256) || (y<0))
         {
-            SDL_Rect r = make_pixel_rect(x, y);
-            if (SDL_FillRect(m_surface, &r, m_colours[m_pixels[y][x]]) != 0)
+            //Skip off memory pixels
+            continue;
+        }
+        
+        //Get existing
+        uint8_t new_c = it->c;
+        if (new_c != m_pixels[y][x])
+        {
+            m_pixels[y][x] = new_c;
+            
+//            if((x>=win_pos_x) && (x<(LCD_WIDTH+win_pos_x)) && (y>=win_pos_y) && ((y<(LCD_HEIGHT+win_pos_y))))
+            if ((x < LCD_WIDTH) && (y < LCD_HEIGHT))
             {
-                throw std::runtime_error("Something went wrong drawing a pixel");
+                SDL_Rect r = make_pixel_rect(x, y);
+                if (SDL_FillRect(m_surface, &r, m_colours[new_c]) != 0)
+                {
+                    throw std::runtime_error("Something went wrong drawing a pixel");
+                }
             }
         }
     }
-    
+
     //Draw
     if (SDL_UpdateWindowSurface(m_window) != 0)
     {
         throw std::runtime_error("Something went wrong updating screen.");
     }
     
-    SDL_Delay(2000);
+    //SDL_Delay(2000);
 }
 
 LCDWindow::~LCDWindow()
@@ -151,45 +190,66 @@ LCDWindow::~LCDWindow()
 
 void LCD::draw()
 {
+    if (!m_control_reg.get_lcd_operation())
+    {
+        return;
+    }
+    
     std::vector<Tile> tiles;
     
     //Assume bg map 1 for the time being
-    uint16_t bg_map_1_start = 0x9800;
-    uint16_t char_ram_start = 0x8000;
+    uint16_t bg_map_start = m_control_reg.get_bgrnd_tile_table_addr();
+    uint16_t char_ram_start = m_control_reg.get_tile_patt_table_addr();
     
     //1024 bytes where each byte represents an index into the character RAM
     //So there are 32x32 indexes, each pointing to an 8x8 character
     //256*256 == (32*32)*(8*8)
     
-    for (size_t index=0; index != 1024; ++index)
-    {
-        uint8_t ptr_val = m_data[bg_map_1_start+index];
-        uint16_t char_addr = char_ram_start + ptr_val;
-        
-        std::vector<uint8_t> tile_data;
-        for (size_t i=0; i!=16; ++i)
-        {
-            tile_data.push_back(m_data[char_addr+i]);
-        }
-        
-        //TODO: double height mode
-        tiles.push_back(Tile(index%32, index/32, 8, tile_data));
-    }
+    //The sprite height can be doubled, halving the number of sprites
+    uint8_t sprite_size = m_control_reg.get_sprite_size();
+    uint8_t bytes_per_sprite = sprite_size * 2;
     
-    //Now we have all the tiles, convert them into pixel co-ords
     std::vector<Pixel> pixels;
     
-    std::vector<Tile>::const_iterator it = tiles.begin();
-    for (; it != tiles.end(); ++it)
+    //Generate background pixels
+    if (m_control_reg.background_display())
     {
-        printf("%s", it->to_string().c_str());
-        printf("%s", "\n\n");
-        std::vector<Pixel> ps = it->to_pixels();
-        pixels.reserve(pixels.size() + distance(ps.begin(), ps.end()));
-        pixels.insert(pixels.end(), ps.begin(), ps.end());
+        for (size_t index=0; index != 1024; ++index)
+        {
+            uint8_t ptr_val = m_data[bg_map_start+index-m_address_ranges[0].start];
+            
+            //In 16 height mode pointing to an even sprite no.
+            //just points to the previous odd sprite no.
+            if (sprite_size == 16)
+            {
+                ptr_val -= ptr_val % 2;
+            }
+            
+            uint16_t char_addr = char_ram_start + (ptr_val*bytes_per_sprite) - m_address_ranges[0].start;
+            
+            //Copy data that describes colour values
+            //2 bits per pixel in alternating words
+            std::vector<uint8_t> tile_data;
+            for (size_t i=0; i!=bytes_per_sprite; ++i)
+            {
+                tile_data.push_back(m_data[char_addr+i]);
+            }
+            
+            Tile t = Tile(((index % 32)*8)+m_scroll_x, ((index/32)*sprite_size)+m_scroll_y, sprite_size, tile_data);
+            tiles.push_back(t);
+        }
+        
+        //Now we have all the tiles, convert them into pixel co-ords
+        std::vector<Tile>::const_iterator it = tiles.begin();
+        for (; it != tiles.end(); ++it)
+        {
+            std::vector<Pixel> ps = it->to_pixels(m_pallette);
+            pixels.reserve(pixels.size() + distance(ps.begin(), ps.end()));
+            pixels.insert(pixels.end(), ps.begin(), ps.end());
+        }
     }
     
-    m_display.draw(pixels);
+    m_display.draw(pixels, m_win_pos_x, m_win_pos_y);
 }
 
 void LCD::show_display()
@@ -197,14 +257,119 @@ void LCD::show_display()
     m_display.init();
 }
 
+const uint16_t LCDCONTROL = 0xff40;
+const uint16_t SCROLLY    = 0xff42;
+const uint16_t SCROLLX    = 0xff43;
+const uint16_t CURLINE    = 0xff44;
+const uint16_t BGRDPAL    = 0xff47;
+const uint16_t WINPOSX    = 0xff4a;
+const uint16_t WINPOSY    = 0xff4b;
+
 uint8_t LCD::read8(uint16_t addr)
 {
-    printf("8 bit read from addr: 0x%04x\n", addr);
-    return m_data[addr-m_address_ranges[0].start];
+    printf("8 bit read from LCD addr: 0x%04x\n", addr);
+    
+    switch (addr)
+    {
+        case WINPOSX:
+            return m_win_pos_x;
+        case WINPOSY:
+            return m_win_pos_y;
+        case LCDCONTROL:
+            return m_control_reg.read();
+        case SCROLLX:
+            return m_scroll_x;
+        case SCROLLY:
+            return m_scroll_y;
+        case CURLINE:
+            draw();
+            return 0x90; //Bodge, pretend we're in vblank area
+//            return m_curr_scanline;
+        case BGRDPAL:
+        {
+            //Not sure that anything will actually read this reg though...
+            uint8_t val = 0;
+            for (int i=0; i<4; ++i)
+            {
+                val |= m_pallette[0] << (i*8);
+            }
+            return val;
+        }
+        default:
+            return m_data[addr-m_address_ranges[0].start];
+    }
 }
 
 void LCD::write8(uint16_t addr, uint8_t value)
 {
-    printf("8 bit write to addr: 0x%04x value: 0x%02x\n", addr, value);
-    m_data[addr-m_address_ranges[0].start] = value;
+    printf("8 bit write to LCD addr: 0x%04x value: 0x%02x\n", addr, value);
+    
+    switch (addr)
+    {
+        case WINPOSX:
+            m_win_pos_x = value;
+            break;
+        case WINPOSY:
+            m_win_pos_y = value;
+            break;
+        case LCDCONTROL:
+            m_control_reg.write(value);
+            if (m_control_reg.get_lcd_operation())
+            {
+                show_display();
+            }
+            break;
+        case SCROLLX:
+            m_scroll_x = value;
+            break;
+        case SCROLLY:
+            m_scroll_y = value;
+            break;
+        case CURLINE:
+            //Writing resets the register
+            m_curr_scanline = 0;
+            break;
+        case BGRDPAL:
+        {
+            //Pallette
+            for (int i=0; i<4; ++i)
+            {
+                m_pallette[i] = value & 0x3;
+                value = value >> 2;
+            }
+            break;
+        }
+        default:
+            m_data[addr-m_address_ranges[0].start] = value;
+            break;
+    }
+}
+
+uint16_t LCD::read16(uint16_t addr)
+{
+    if (m_address_ranges[0].contains_addr(addr))
+    {
+        uint16_t offset = addr-m_address_ranges[0].start;
+        uint16_t ret = (uint16_t(m_data[offset+1]) << 8) | uint16_t(m_data[offset]);
+        return ret;
+    }
+    else
+    {
+        throw std::runtime_error(formatted_string("16 bit read of LCD addr 0x%04x", addr));
+    }
+}
+
+void LCD::write16(uint16_t addr, uint8_t value)
+{
+    if (m_address_ranges[0].contains_addr(addr))
+    {
+        uint16_t offset = addr-m_address_ranges[0].start;
+        m_data[offset] = value & 0xff;
+        m_data[offset+1] = (value >> 8) & 0xff;
+        printf("16 bit write to LCD addr 0x%04x of value 0x%04x\n", addr, value);
+    }
+    else
+    {
+        throw std::runtime_error(formatted_string("16 bit write to LCD addr 0x%04x of value 0x%04x", addr, value));
+    }
 }

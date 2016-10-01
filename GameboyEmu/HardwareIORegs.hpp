@@ -16,12 +16,15 @@ class HardwareIORegs: public MemoryManager
 {
 public:
     HardwareIORegs():
-    MemoryManager(to_vector(address_range(0xff00, 0xff7f)))
+    MemoryManager(to_vector(address_range(0xff00, 0xff26)))
     {
     }
     
     void write8(uint16_t addr, uint8_t value);
     uint8_t read8(uint16_t addr);
+    
+    uint16_t read16(uint16_t addr);
+    void write16(uint16_t addr, uint8_t value);
 };
 
 #endif /* HardwareIORegs_hpp */

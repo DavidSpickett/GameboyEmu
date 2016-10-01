@@ -10,14 +10,18 @@
 
 uint8_t HardwareIORegs::read8(uint16_t addr)
 {
-    if (addr == 0xff44)
-    {
-        //Bodge, pretend to be in blank timeslot
-        return 144;
-    }
     return 0;
 }
 
 void HardwareIORegs::write8(uint16_t addr, uint8_t value)
+{
+}
+
+uint16_t HardwareIORegs::read16(uint16_t addr)
+{
+    return 0;
+}
+
+void HardwareIORegs::write16(uint16_t addr, uint8_t value)
 {
 }

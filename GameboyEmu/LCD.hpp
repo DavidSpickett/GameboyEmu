@@ -34,8 +34,9 @@ public:
     {
     }
     
-    std::vector<Pixel> to_pixels() const;
-    std::string to_string() const;
+    std::vector<Pixel> to_pixels(std::vector<uint8_t>& pallette) const;
+    std::string to_string(std::vector<uint8_t>& pallette) const;
+    bool has_some_colour() const;
     
     uint16_t x;
     uint16_t y;
@@ -50,7 +51,7 @@ public:
     ~LCDWindow();
     
     void init();
-    void draw(std::vector<Pixel>& pixels);
+    void draw(std::vector<Pixel>& pixels, uint8_t win_pos_x, uint8_t win_pos_y);
     void set_viewport_pos(uint16_t x, uint16_t y) { m_x_origin=x; m_y_origin=y; }
 
 private:
@@ -62,18 +63,50 @@ private:
     uint16_t m_y_origin;
 };
 
+class LCDControlReg
+{
+public:
+    LCDControlReg():
+        m_value(0)
+    {
+    }
+    
+    void write(uint8_t value) { m_value=value; }
+    uint8_t read() { return m_value; }
+    
+    bool get_lcd_operation() { return m_value & (1<<7); }
+    uint16_t get_window_tile_table_addr() { return m_value & (1<<6) ? 0x9C00 : 0x9800; }
+    bool get_window_display() { return m_value & (1<<5); }
+    uint16_t get_tile_patt_table_addr() { return m_value & (1<<4) ? 0x8000 : 0x8800; }
+    uint16_t get_bgrnd_tile_table_addr() { return m_value & (1<<3) ? 0x9c00 : 0x9800; }
+    uint8_t get_sprite_size() { return m_value & (1<<2) ? 16 : 8; }
+    uint8_t get_colour_0_transp() { return m_value & (1<<1) ? 1 : 0; }
+    bool background_display() { return m_value & 1; }
+    
+private:
+    uint8_t m_value;
+};
+
 class LCD: public MemoryManager
 {
     public:
         LCD():
-            MemoryManager(to_vector(address_range(0x8000, 0x9fff))),
-            m_display()
+            MemoryManager(to_vector(address_range(0x8000, 0x9fff), address_range(0xff40, 0xff47))),
+            m_display(), m_curr_scanline(0), m_scroll_x(0), m_scroll_y(0), m_win_pos_x(0), m_win_pos_y(0)
         {
             m_data = std::vector<uint8_t>(0x2000, 0);
+            
+            for (size_t i=0; i<4; ++i)
+            {
+                m_pallette.push_back(i);
+            }
         }
     
         void write8(uint16_t addr, uint8_t value);
         uint8_t read8(uint16_t addr);
+    
+        uint16_t read16(uint16_t addr);
+        void write16(uint16_t addr, uint8_t value);
     
         void show_display();
         void draw();
@@ -81,6 +114,13 @@ class LCD: public MemoryManager
     private:
         LCDWindow m_display;
         std::vector<uint8_t> m_data;
+        std::vector<uint8_t> m_pallette;
+        uint8_t m_curr_scanline;
+        uint8_t m_scroll_x;
+        uint8_t m_scroll_y;
+        LCDControlReg m_control_reg;
+        uint8_t m_win_pos_x;
+        uint8_t m_win_pos_y;
 };
 
 #endif /* LCD_hpp */
