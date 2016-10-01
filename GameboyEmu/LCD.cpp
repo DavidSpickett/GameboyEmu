@@ -189,9 +189,9 @@ void LCD::draw()
     uint8_t sprite_size = m_control_reg.get_sprite_size();
     uint8_t bytes_per_sprite = sprite_size * 2;
     
+    //Generate background pixels
     std::vector<Pixel> pixels;
     
-    //Generate background pixels
     if (m_control_reg.background_display())
     {
         for (size_t index=0; index != 1024; ++index)
@@ -209,29 +209,18 @@ void LCD::draw()
             
             //Copy data that describes colour values
             //2 bits per pixel in alternating words
-            std::vector<uint8_t> tile_data;
-            for (size_t i=0; i!=bytes_per_sprite; ++i)
-            {
-                tile_data.push_back(m_data[char_addr+i]);
-            }
+            std::vector<uint8_t> tile_data(m_data.begin()+char_addr, m_data.begin()+char_addr+bytes_per_sprite);
             
             //Note that the y scroll is minus because the y co-ordinite is inverted
-            Tile t = Tile(((index % 32)*8)+m_scroll_x, ((index/32)*sprite_size)-m_scroll_y, sprite_size, tile_data);
+            Tile t(((index % 32)*8)+m_scroll_x, ((index/32)*sprite_size)-m_scroll_y, sprite_size, tile_data);
             
             //Renderer clears to white so don't bother with those tiles
             if (t.has_some_colour())
             {
-                tiles.push_back(t);
+                std::vector<Pixel> ps = t.to_pixels(m_pallette);
+                pixels.reserve(pixels.size() + distance(ps.begin(), ps.end()));
+                pixels.insert(pixels.end(), ps.begin(), ps.end());
             }
-        }
-        
-        //Now we have all the tiles, convert them into pixel co-ords
-        std::vector<Tile>::const_iterator it = tiles.begin();
-        for (; it != tiles.end(); ++it)
-        {
-            std::vector<Pixel> ps = it->to_pixels(m_pallette);
-            pixels.reserve(pixels.size() + distance(ps.begin(), ps.end()));
-            pixels.insert(pixels.end(), ps.begin(), ps.end());
         }
     }
     
