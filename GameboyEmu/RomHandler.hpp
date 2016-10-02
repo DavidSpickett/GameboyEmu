@@ -34,6 +34,8 @@ public:
     bool is_cgb_only();
     std::string get_info();
     
+    void tick(size_t curr_cycles) {}
+    
 private:
     std::string get_string(const uint16_t start, size_t len);
     uint8_t get_byte(uint16_t addr);

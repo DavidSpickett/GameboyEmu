@@ -101,7 +101,10 @@ public:
         e("e"),
         f("f"),
         h("h"),
-        l("l")
+        l("l"),
+        m_pending_ei(false),
+        m_pending_di(false),
+        m_total_cycles(0)
     {
     }
     
@@ -135,6 +138,11 @@ public:
     
     std::string status_string();
     
+    void set_pending_ei() { m_pending_ei = true; }
+    void set_pending_di() { m_pending_di = true; }
+    
+    void tick(uint8_t cycles);
+    
 private:
     uint16_t get_pair(Register<uint8_t> high, Register<uint8_t> low)
     {
@@ -146,6 +154,10 @@ private:
         high.write(value >> 8);
         low.write(value & 0xff);
     }
+    
+    bool m_pending_ei;
+    bool m_pending_di;
+    size_t m_total_cycles;
 };
 
 #endif /* Z80_hpp */

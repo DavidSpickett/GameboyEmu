@@ -25,6 +25,8 @@ public:
     
     uint16_t read16(uint16_t addr);
     void write16(uint16_t addr, uint8_t value);
+    
+    void tick(size_t curr_cycles) {}
 };
 
 #endif /* HardwareIORegs_hpp */

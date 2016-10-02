@@ -52,6 +52,7 @@ public:
     virtual uint16_t read16(uint16_t addr) = 0;
     virtual void write16(uint16_t addr, uint8_t value) = 0;
     
+    virtual void tick(size_t curr_cycles) = 0;
     bool contains(uint16_t addr) const;
     
     std::vector<address_range> m_address_ranges;
@@ -81,13 +82,13 @@ public:
     uint16_t read16(uint16_t addr);
     void write16(uint16_t addr, uint16_t value);
     
-    std::vector<uint8_t> read_bytes(uint16_t addr, uint16_t num);
-    
     void AddFile(std::string path, uint16_t addr);
     void AddBlock(std::vector<uint8_t>&, uint16_t addr);
     
     //Note: only affects 8 bit accesses for now.
     void AddMemoryManager(MemoryManager& manager);
+    
+    void tick(size_t curr_cycles) const;
     
 private:
     std::vector<uint8_t> m_mem;

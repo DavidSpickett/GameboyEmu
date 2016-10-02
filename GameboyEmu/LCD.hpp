@@ -106,7 +106,7 @@ class LCD: public MemoryManager
     public:
         LCD():
             MemoryManager(to_vector(address_range(0x8000, 0x9fff), address_range(0xff40, 0xff47))),
-            m_display(), m_curr_scanline(0), m_scroll_x(0), m_scroll_y(0), m_win_pos_x(0), m_win_pos_y(0)
+            m_display(), m_curr_scanline(0), m_scroll_x(0), m_scroll_y(0), m_win_pos_x(0), m_win_pos_y(0), m_last_scan_change_cycles(0)
         {
             m_data = std::vector<uint8_t>(0x2000, 0);
             
@@ -124,6 +124,7 @@ class LCD: public MemoryManager
     
         void show_display();
         void draw();
+        void tick(size_t curr_cycles);
     
     private:
         LCDWindow m_display;
@@ -135,6 +136,7 @@ class LCD: public MemoryManager
         LCDControlReg m_control_reg;
         uint8_t m_win_pos_x;
         uint8_t m_win_pos_y;
+        size_t m_last_scan_change_cycles;
 };
 
 #endif /* LCD_hpp */

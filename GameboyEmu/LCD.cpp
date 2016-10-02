@@ -219,6 +219,40 @@ void LCD::draw()
     m_display.draw(pixels, m_win_pos_x, m_win_pos_y);
 }
 
+void LCD::tick(size_t curr_cycles)
+{
+    /*
+    To explain the math ofr future reference:
+    0.954uS per instruction cycle
+    15.66m + 1.09m seconds to draw the whole frame (1.09m for vblank)
+    That makes it 0.1087mS per scan line.
+    Which is 113.941 instruction cycles, aka 114 cycles per scan line.
+    */
+//    const size_t per_scan_line = 114;
+
+    const size_t per_scan_line = 1; //Runs slooooow with the real value
+    
+    if ((curr_cycles - m_last_scan_change_cycles) > per_scan_line)
+    {
+        //154 scan lines, 144 + 10 vblank period
+        m_last_scan_change_cycles = curr_cycles;
+        
+        if (m_curr_scanline != 153)
+        {
+            m_curr_scanline++;
+        }
+        else
+        {
+            m_curr_scanline = 0;
+        }
+        
+        //TODO: tell window to draw that line
+    }
+    
+    //Uncomment to speed through the bootstrap
+    //m_curr_scanline = 0x90;
+}
+
 void LCD::show_display()
 {
     m_display.init();
@@ -249,9 +283,9 @@ uint8_t LCD::read8(uint16_t addr)
         case SCROLLY:
             return m_scroll_y;
         case CURLINE:
-            draw();
-            return 0x90; //Bodge, pretend we're in vblank area
-//            return m_curr_scanline;
+            //draw();
+            //return 0x90; //Bodge, pretend we're in vblank area
+            return m_curr_scanline;
         case BGRDPAL:
         {
             //Not sure that anything will actually read this reg though...

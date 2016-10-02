@@ -25,7 +25,7 @@ int main(int argc, const char * argv[]) {
     LCD lcd;
     proc.mem.AddMemoryManager(lcd);
     
-    ROMHandler rhandler("Legend of Zelda, The - Link's Awakening (USA, Europe).gb");
+    ROMHandler rhandler("Tetris (World).gb");
     printf("%s\n", rhandler.get_info().c_str());
     if (rhandler.is_cgb_only())
     {
@@ -40,13 +40,13 @@ int main(int argc, const char * argv[]) {
         
         Step(proc);
         
-        if (proc.pc.read() == 0x100)
+        /*if (proc.pc.read() == 0x100)
         {
             lcd.draw();
             return 0;
             uint8_t foo = 1;
             (void)foo;
-        }
+        }*/
     }
     
     return 0;

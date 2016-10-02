@@ -83,6 +83,20 @@ uint8_t MemoryMap::read8(uint16_t addr)
 
 void MemoryMap::write8(uint16_t addr, uint8_t value)
 {
+    //Bodge to get the bootstrap out of memory
+    if ((addr == 0xff50) && (value == 1))
+    {
+        //Find memory manager that starts at 0x100 currently
+        std::vector<std::reference_wrapper<MemoryManager>>::iterator it = m_memory_managers.begin();
+        for (; it != m_memory_managers.end(); ++it)
+        {
+            if (it->get().contains(0x100))
+            {
+                it->get().m_address_ranges.push_back(address_range(0, 0xff));
+            }
+        }
+    }
+    
     std::vector<std::reference_wrapper<MemoryManager>>::const_iterator it = m_memory_managers.begin();
     for (; it != m_memory_managers.end(); ++it)
     {
@@ -130,17 +144,11 @@ void MemoryMap::write16(uint16_t addr, uint16_t value)
     m_mem[addr+1] = value>>8;
 }
 
-std::vector<uint8_t> MemoryMap::read_bytes(uint16_t addr, uint16_t num)
+void MemoryMap::tick(size_t curr_cycles) const
 {
-    if ((addr + num) > m_mem.size())
+    std::vector<std::reference_wrapper<MemoryManager>>::const_iterator it = m_memory_managers.begin();
+    for( ; it != m_memory_managers.end(); ++it)
     {
-        throw std::runtime_error(formatted_string("Read of 0x%04x, %d bytes would go off the end of memory.", addr, num));
+        it->get().tick(curr_cycles);
     }
-    
-    std::vector<uint8_t> ret(num);
-    
-    std::vector<uint8_t>::const_iterator begin(m_mem.begin()+addr);
-    std::copy(begin, begin+num, ret.begin());
-    
-    return ret;
 }

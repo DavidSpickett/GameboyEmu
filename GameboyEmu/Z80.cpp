@@ -29,6 +29,23 @@ std::string Z80::status_string()
     return pc_+f.to_string()+sp_+_1+_2+_3+_4;
 }
 
+void Z80::tick(uint8_t cycles)
+{
+    //In future, expand 'tick' concept to other peripherals
+    m_total_cycles += cycles;
+    
+    if (m_pending_ei)
+    {
+        //TODO: enable interrupts
+    }
+    if (m_pending_di)
+    {
+        //TODO: disable interrupts
+    }
+    
+    mem.tick(m_total_cycles);
+}
+
 uint8_t Z80::fetch_byte()
 {
     uint8_t ret = mem.read8(pc.read());
@@ -44,7 +61,11 @@ uint16_t Z80::fetch_short()
 
 std::vector<uint8_t> Z80::fetch_bytes(uint16_t num)
 {
-    std::vector<uint8_t> ret = mem.read_bytes(pc.read(), num);
-    pc.inc(num);
+    std::vector<uint8_t> ret;
+    for (; num>0; --num)
+    {
+        ret.push_back(mem.read8(pc.read()));
+        pc.inc(1);
+    }
     return ret;
 }

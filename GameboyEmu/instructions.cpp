@@ -1270,6 +1270,109 @@ uint8_t ld_hl_dec_a(Z80& proc, uint8_t b1)
     return 8;
 }
 
+uint8_t nop()
+{
+    return 4;
+}
+
+uint8_t jp_nn(Z80& proc)
+{
+    uint16_t addr = proc.fetch_short();
+    proc.pc.write(addr);
+    
+    return 12;
+}
+uint8_t di(Z80& proc)
+{
+    proc.set_pending_di();
+    
+    return 4;
+}
+
+uint8_t ei(Z80& proc)
+{
+    proc.set_pending_ei();
+    
+    return 4;
+}
+
+uint8_t ld_r1_r2(Z80& proc, uint8_t b1)
+{
+    uint8_t cycles = 4;
+    Register<uint8_t>* lhs = nullptr;
+    Register<uint8_t>* rhs = nullptr;
+    
+    switch (b1)
+    {
+        //B
+        case 0x40:
+        case 0x41:
+        case 0x42:
+        case 0x43:
+        case 0x44:
+        case 0x45:
+        
+        //C
+        case 0x48:
+        case 0x49:
+        case 0x4a:
+        case 0x4b:
+        case 0x4c:
+        case 0x4d:
+            
+        //D
+        case 0x50:
+        case 0x51:
+        case 0x52:
+        case 0x53:
+        case 0x54:
+        case 0x55:
+        
+        //E
+        case 0x58:
+        case 0x59:
+        case 0x5a:
+        case 0x5b:
+        case 0x5c:
+        case 0x5d:
+        
+        //H
+        case 0x60:
+        case 0x61:
+        case 0x62:
+        case 0x63:
+        case 0x64:
+        case 0x65:
+        
+        //L
+        case 0x68:
+        case 0x69:
+        case 0x6a:
+        case 0x6b:
+        case 0x6c:
+        case 0x6d:
+        
+        //ld (hl), reg
+        case 0x70:
+        case 0x71:
+        case 0x72:
+        case 0x73:
+        case 0x74:
+        case 0x75:
+        case 0x36:
+         
+        //ld reg, (HL)
+        case 0x46:
+        case 0x4e:
+        case 0x56:
+        case 0x5e:
+        case 0x66:
+        case 0x6e:
+    }
+    
+    return cycles;
+}
+
 uint8_t cb_prefix_instr(Z80& proc)
 {
     uint8_t temp8 = proc.fetch_byte();
@@ -1291,7 +1394,6 @@ uint8_t cb_prefix_instr(Z80& proc)
     
     return cycles;
 }
-
 
 void Step(Z80& proc)
 {
@@ -1340,7 +1442,7 @@ void Step(Z80& proc)
         case 0x38:
             cycles = jr_cc_n(proc, b1);
             break;
-            //case 0x7f: this is ld a,a so we'll just pick on of the handlers to use
+        //case 0x7f: this is ld a,a so we'll just pick one of the handlers to use
         case 0x78:
         case 0x79:
         case 0x7a:
@@ -1462,12 +1564,83 @@ void Step(Z80& proc)
         case 0xC6:
             cycles = add_a_n(proc, b1);
             break;
+        case 0x00:
+            cycles = nop();
+            break;
+        case 0xF3:
+            cycles = di(proc);
+            break;
+        case 0xFB:
+            cycles = ei(proc);
+            break;
+        case 0xc3:
+            cycles = jp_nn(proc);
+            break;
+        //case 0x7f: These are all covered by ld a, n
+        //case 0x78:  |
+        //case 0x79:  |
+        //case 0x7a:  |
+        //case 0x7b:  |
+        //case 0x7c:  |
+        //case 0x7d:  |
+        //case 0x7e:<-|
+        case 0x40:
+        case 0x41:
+        case 0x42:
+        case 0x43:
+        case 0x44:
+        case 0x45:
+        case 0x46: //Note: no 0x47/ 0x57 etc.
+        case 0x48:
+        case 0x49:
+        case 0x4a:
+        case 0x4b:
+        case 0x4c:
+        case 0x4d:
+        case 0x4e:
+        case 0x50:
+        case 0x51:
+        case 0x52:
+        case 0x53:
+        case 0x54:
+        case 0x55:
+        case 0x56:
+        case 0x58:
+        case 0x59:
+        case 0x5a:
+        case 0x5b:
+        case 0x5c:
+        case 0x5d:
+        case 0x5e:
+        case 0x60:
+        case 0x61:
+        case 0x62:
+        case 0x63:
+        case 0x64:
+        case 0x65:
+        case 0x66:
+        case 0x68:
+        case 0x69:
+        case 0x6a:
+        case 0x6b:
+        case 0x6c:
+        case 0x6d:
+        case 0x6e:
+        case 0x70:
+        case 0x71:
+        case 0x72:
+        case 0x73:
+        case 0x74:
+        case 0x75:
+        case 0x36:
+            cycles = ld_r1_r2(proc, b1);
+            break;
         default:
         {
             throw std::runtime_error(formatted_string("Unknown opcode byte: 0x%02x", b1));
         }
     }
-    (void)cycles;
-    //std::cout << formatted_string("Took %d cycles.\n", cycles);
-    //std::cout << proc.status_string();
+    
+    //For future timing use/interrupt ei/di handling
+    proc.tick(cycles);
 }
