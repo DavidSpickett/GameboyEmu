@@ -23,185 +23,6 @@ namespace
     }
 }
 
-void Step(Z80& proc)
-{
-    //Fetch first byte from PC
-    debug_print("PC: 0x%02x - ", proc.pc.read());
-    
-    uint8_t b1 = proc.fetch_byte();
-    uint8_t cycles = 0;
-    
-    switch (b1)
-    {
-        case 0x06:
-        case 0x0E:
-        case 0x16:
-        case 0x1E:
-        case 0x26:
-        case 0x2E:
-            cycles = ld_nn_n(proc, b1);
-            break;
-        case 0x01:
-        case 0x11:
-        case 0x21:
-        case 0x31:
-            cycles = ld_n_nn(proc, b1);
-            break;
-        case 0xAF:
-        case 0xA8:
-        case 0xA9:
-        case 0xAA:
-        case 0xAB:
-        case 0xAC:
-        case 0xAD:
-        case 0xAE:
-        case 0xEE:
-            cycles = xor_n(proc, b1);
-            break;
-        case 0x32:
-            cycles = ld_hl_dec_a(proc, b1);
-            break;
-        case 0xCB:
-            cycles = cb_prefix_instr(proc);
-            break;
-        case 0x20:
-        case 0x28:
-        case 0x30:
-        case 0x38:
-            cycles = jr_cc_n(proc, b1);
-            break;
-        //case 0x7f: this is ld a,a so we'll just pick on of the handlers to use
-        case 0x78:
-        case 0x79:
-        case 0x7a:
-        case 0x7b:
-        case 0x7c:
-        case 0x7d:
-        case 0x0a:
-        case 0x1a:
-        case 0x7e:
-        case 0xfa:
-        case 0x3e:
-            cycles = ld_a_n(proc, b1);
-            break;
-        case 0xe2:
-            cycles = ld_offs_c_a(proc);
-            break;
-        case 0x3c:
-        case 0x04:
-        case 0x0c:
-        case 0x14:
-        case 0x1c:
-        case 0x24:
-        case 0x2c:
-        case 0x34:
-            cycles = inc_n(proc, b1);
-            break;
-        case 0x7f:
-        case 0x47:
-        case 0x4f:
-        case 0x57:
-        case 0x5f:
-        case 0x67:
-        case 0x6f:
-        case 0x02:
-        case 0x12:
-        case 0x77:
-        case 0xea:
-            cycles = ld_n_a(proc, b1);
-            break;
-        case 0xe0:
-            cycles = ld_offs_n_a(proc);
-            break;
-        case 0xcd:
-            cycles = call_nn(proc);
-            break;
-        case 0xf5:
-        case 0xc5:
-        case 0xd5:
-        case 0xe5:
-            cycles = push_nn(proc, b1);
-            break;
-        case 0x17:
-            cycles = rla(proc);
-            break;
-        case 0xf1:
-        case 0xc1:
-        case 0xd1:
-        case 0xe1:
-            cycles = pop_nn(proc, b1);
-            break;
-        case 0x3d:
-        case 0x05:
-        case 0x0d:
-        case 0x15:
-        case 0x1d:
-        case 0x25:
-        case 0x2d:
-        case 0x35:
-            cycles = dec_n(proc, b1);
-            break;
-        case 0x22:
-            cycles = ld_hl_plus_a(proc);
-            break;
-        case 0x03:
-        case 0x13:
-        case 0x23:
-        case 0x33:
-            cycles = inc_nn(proc, b1);
-            break;
-        case 0xc9:
-            cycles = ret(proc);
-            break;
-        case 0xbf:
-        case 0xb8:
-        case 0xb9:
-        case 0xba:
-        case 0xbb:
-        case 0xbc:
-        case 0xbd:
-        case 0xbe:
-        case 0xfe:
-            cycles = cp_n(proc, b1);
-            break;
-        case 0x18:
-            cycles = jr_n(proc);
-            break;
-        case 0xf0:
-            cycles = ldh_a_n(proc);
-            break;
-        case 0x97:
-        case 0x90:
-        case 0x91:
-        case 0x92:
-        case 0x93:
-        case 0x94:
-        case 0x95:
-        case 0x96:
-        case 0xd6:
-            cycles = sub_n(proc, b1);
-            break;
-        case 0x87:
-        case 0x80:
-        case 0x81:
-        case 0x82:
-        case 0x83:
-        case 0x84:
-        case 0x85:
-        case 0x86:
-        case 0xC6:
-            cycles = add_a_n(proc, b1);
-            break;
-        default:
-        {
-            throw std::runtime_error(formatted_string("Unknown opcode byte: 0x%02x", b1));
-        }
-    }
-    (void)cycles;
-    //std::cout << formatted_string("Took %d cycles.\n", cycles);
-    //std::cout << proc.status_string();
-}
-
 namespace
 {
     void generic_add_a_n(Z80& proc, uint8_t value)
@@ -932,28 +753,6 @@ uint8_t jr_cc_n(Z80& proc, uint8_t b1)
     return cycles;
 }
 
-uint8_t cb_prefix_instr(Z80& proc)
-{
-    uint8_t temp8 = proc.fetch_byte();
-    uint8_t cycles;
-    
-    if ((temp8 >= 0x40) && (temp8 <= 0x7f))
-    {
-        cycles = bit_b_r(proc, temp8);
-    }
-    else if ((temp8 >= 0x10) && (temp8 <= 0x17))
-    {
-        cycles = rl_n(proc, temp8);
-    }
-    else
-    {
-        throw std::runtime_error(
-            formatted_string("Unknown byte after 0xCB prefix: 0x%02x", temp8));
-    }
-    
-    return cycles;
-}
-
 uint8_t rl_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
@@ -998,6 +797,53 @@ uint8_t rl_n(Z80& proc, uint8_t b1)
     
     debug_print("rl %s\n", reg->name.c_str());
     return 8;
+}
+
+uint8_t bit_b_hl(Z80& proc, uint8_t b1)
+{
+    uint16_t addr = proc.get_hl();
+    uint8_t to_test = proc.mem.read8(addr);
+    uint8_t bit;
+    
+    switch (b1)
+    {
+            //(HL) variants
+        case 0x46:
+            bit = 0;
+            break;
+        case 0x4e:
+            bit = 1;
+            break;
+        case 0x56:
+            bit = 2;
+            break;
+        case 0x5e:
+            bit = 3;
+            break;
+        case 0x66:
+            bit = 4;
+            break;
+        case 0x6e:
+            bit = 5;
+            break;
+        case 0x76:
+            bit = 6;
+            break;
+        case 0x7e:
+            bit = 7;
+            break;
+        default:
+            throw std::runtime_error(formatted_string("Unknown byte for bit r, (hl): 0x%02x", b1));
+    }
+    
+    bool bit_set = to_test & (1<<bit);
+    proc.f.set_z(!bit_set);
+    proc.f.set_n(false);
+    proc.f.set_h(true);
+    
+    debug_print("bit %d, (hl) (0x%04x, 0x%02x)\n", bit, addr, to_test);
+    
+    return 12;
 }
 
 uint8_t bit_b_r(Z80& proc, uint8_t b1)
@@ -1266,53 +1112,6 @@ uint8_t bit_b_r(Z80& proc, uint8_t b1)
     return cycles;
 }
 
-uint8_t bit_b_hl(Z80& proc, uint8_t b1)
-{
-    uint16_t addr = proc.get_hl();
-    uint8_t to_test = proc.mem.read8(addr);
-    uint8_t bit;
-    
-    switch (b1)
-    {
-        //(HL) variants
-        case 0x46:
-            bit = 0;
-            break;
-        case 0x4e:
-            bit = 1;
-            break;
-        case 0x56:
-            bit = 2;
-            break;
-        case 0x5e:
-            bit = 3;
-            break;
-        case 0x66:
-            bit = 4;
-            break;
-        case 0x6e:
-            bit = 5;
-            break;
-        case 0x76:
-            bit = 6;
-            break;
-        case 0x7e:
-            bit = 7;
-            break;
-        default:
-            throw std::runtime_error(formatted_string("Unknown byte for bit r, (hl): 0x%02x", b1));
-    }
-    
-    bool bit_set = to_test & (1<<bit);
-    proc.f.set_z(!bit_set);
-    proc.f.set_n(false);
-    proc.f.set_h(true);
-    
-    debug_print("bit %d, (hl) (0x%04x, 0x%02x)\n", bit, addr, to_test);
-    
-    return 12;
-}
-
 uint8_t xor_n(Z80& proc, uint8_t b1)
 {
     uint8_t cycles;
@@ -1471,3 +1270,204 @@ uint8_t ld_hl_dec_a(Z80& proc, uint8_t b1)
     return 8;
 }
 
+uint8_t cb_prefix_instr(Z80& proc)
+{
+    uint8_t temp8 = proc.fetch_byte();
+    uint8_t cycles;
+    
+    if ((temp8 >= 0x40) && (temp8 <= 0x7f))
+    {
+        cycles = bit_b_r(proc, temp8);
+    }
+    else if ((temp8 >= 0x10) && (temp8 <= 0x17))
+    {
+        cycles = rl_n(proc, temp8);
+    }
+    else
+    {
+        throw std::runtime_error(
+                                 formatted_string("Unknown byte after 0xCB prefix: 0x%02x", temp8));
+    }
+    
+    return cycles;
+}
+
+
+void Step(Z80& proc)
+{
+    //Fetch first byte from PC
+    debug_print("PC: 0x%02x - ", proc.pc.read());
+    
+    uint8_t b1 = proc.fetch_byte();
+    uint8_t cycles = 0;
+    
+    switch (b1)
+    {
+        case 0x06:
+        case 0x0E:
+        case 0x16:
+        case 0x1E:
+        case 0x26:
+        case 0x2E:
+            cycles = ld_nn_n(proc, b1);
+            break;
+        case 0x01:
+        case 0x11:
+        case 0x21:
+        case 0x31:
+            cycles = ld_n_nn(proc, b1);
+            break;
+        case 0xAF:
+        case 0xA8:
+        case 0xA9:
+        case 0xAA:
+        case 0xAB:
+        case 0xAC:
+        case 0xAD:
+        case 0xAE:
+        case 0xEE:
+            cycles = xor_n(proc, b1);
+            break;
+        case 0x32:
+            cycles = ld_hl_dec_a(proc, b1);
+            break;
+        case 0xCB:
+            cycles = cb_prefix_instr(proc);
+            break;
+        case 0x20:
+        case 0x28:
+        case 0x30:
+        case 0x38:
+            cycles = jr_cc_n(proc, b1);
+            break;
+            //case 0x7f: this is ld a,a so we'll just pick on of the handlers to use
+        case 0x78:
+        case 0x79:
+        case 0x7a:
+        case 0x7b:
+        case 0x7c:
+        case 0x7d:
+        case 0x0a:
+        case 0x1a:
+        case 0x7e:
+        case 0xfa:
+        case 0x3e:
+            cycles = ld_a_n(proc, b1);
+            break;
+        case 0xe2:
+            cycles = ld_offs_c_a(proc);
+            break;
+        case 0x3c:
+        case 0x04:
+        case 0x0c:
+        case 0x14:
+        case 0x1c:
+        case 0x24:
+        case 0x2c:
+        case 0x34:
+            cycles = inc_n(proc, b1);
+            break;
+        case 0x7f:
+        case 0x47:
+        case 0x4f:
+        case 0x57:
+        case 0x5f:
+        case 0x67:
+        case 0x6f:
+        case 0x02:
+        case 0x12:
+        case 0x77:
+        case 0xea:
+            cycles = ld_n_a(proc, b1);
+            break;
+        case 0xe0:
+            cycles = ld_offs_n_a(proc);
+            break;
+        case 0xcd:
+            cycles = call_nn(proc);
+            break;
+        case 0xf5:
+        case 0xc5:
+        case 0xd5:
+        case 0xe5:
+            cycles = push_nn(proc, b1);
+            break;
+        case 0x17:
+            cycles = rla(proc);
+            break;
+        case 0xf1:
+        case 0xc1:
+        case 0xd1:
+        case 0xe1:
+            cycles = pop_nn(proc, b1);
+            break;
+        case 0x3d:
+        case 0x05:
+        case 0x0d:
+        case 0x15:
+        case 0x1d:
+        case 0x25:
+        case 0x2d:
+        case 0x35:
+            cycles = dec_n(proc, b1);
+            break;
+        case 0x22:
+            cycles = ld_hl_plus_a(proc);
+            break;
+        case 0x03:
+        case 0x13:
+        case 0x23:
+        case 0x33:
+            cycles = inc_nn(proc, b1);
+            break;
+        case 0xc9:
+            cycles = ret(proc);
+            break;
+        case 0xbf:
+        case 0xb8:
+        case 0xb9:
+        case 0xba:
+        case 0xbb:
+        case 0xbc:
+        case 0xbd:
+        case 0xbe:
+        case 0xfe:
+            cycles = cp_n(proc, b1);
+            break;
+        case 0x18:
+            cycles = jr_n(proc);
+            break;
+        case 0xf0:
+            cycles = ldh_a_n(proc);
+            break;
+        case 0x97:
+        case 0x90:
+        case 0x91:
+        case 0x92:
+        case 0x93:
+        case 0x94:
+        case 0x95:
+        case 0x96:
+        case 0xd6:
+            cycles = sub_n(proc, b1);
+            break;
+        case 0x87:
+        case 0x80:
+        case 0x81:
+        case 0x82:
+        case 0x83:
+        case 0x84:
+        case 0x85:
+        case 0x86:
+        case 0xC6:
+            cycles = add_a_n(proc, b1);
+            break;
+        default:
+        {
+            throw std::runtime_error(formatted_string("Unknown opcode byte: 0x%02x", b1));
+        }
+    }
+    (void)cycles;
+    //std::cout << formatted_string("Took %d cycles.\n", cycles);
+    //std::cout << proc.status_string();
+}
