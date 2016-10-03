@@ -56,7 +56,7 @@ uint8_t Z80::fetch_byte()
 uint16_t Z80::fetch_short()
 {
     std::vector<uint8_t> bs = fetch_bytes(2);
-    return (bs[1] << 8) | bs[0];
+    return (uint16_t(bs[1]) << 8) | uint16_t(bs[0]);
 }
 
 std::vector<uint8_t> Z80::fetch_bytes(uint16_t num)

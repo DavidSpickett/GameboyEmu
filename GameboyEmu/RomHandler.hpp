@@ -19,7 +19,8 @@ class ROMHandler: public MemoryManager
 public:
     ROMHandler(std::string file_path):
         m_file_path(file_path),
-        file_str(std::ifstream(file_path.c_str(), std::ifstream::binary))
+        file_str(std::ifstream(file_path.c_str(), std::ifstream::binary)),
+        m_rom_bank_no(-1)
     {
         printf("%s\n", get_info().c_str());
         if (is_cgb_only())
@@ -57,7 +58,7 @@ private:
     uint8_t get_rom_version();
     uint8_t get_checksum();
     
-    
+    int m_rom_bank_no;
     std::string m_file_path;
     std::ifstream file_str;
 };

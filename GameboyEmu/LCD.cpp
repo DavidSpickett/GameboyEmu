@@ -232,7 +232,8 @@ void LCD::tick(size_t curr_cycles)
     */
     const size_t per_scan_line = 114;
 
-    if ((curr_cycles - m_last_scan_change_cycles) > per_scan_line)
+    if (m_control_reg.get_lcd_operation() &&
+        ((curr_cycles - m_last_scan_change_cycles) > per_scan_line))
     {
         //154 scan lines, 144 + 10 vblank period
         m_last_scan_change_cycles = curr_cycles;
@@ -316,7 +317,7 @@ void LCD::write8(uint16_t addr, uint8_t value)
             break;
         case LCDCONTROL:
             m_control_reg.write(value);
-            if (m_control_reg.get_lcd_operation())
+            if (m_control_reg.get_lcd_operation() && (m_display.m_window == NULL))
             {
                 show_display();
             }

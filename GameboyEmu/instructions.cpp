@@ -10,7 +10,7 @@
 #include <iostream>
 #include "utils.hpp"
 
-#define DEBUG_INSTR 0
+#define DEBUG_INSTR 1
 
 namespace
 {
@@ -185,7 +185,7 @@ uint8_t jr_n(Z80& proc)
 
 namespace
 {
-    void generic_cmp_n(Z80& proc, uint8_t value)
+    void generic_cp_n(Z80& proc, uint8_t value)
     {
         uint8_t a = proc.a.read();
         uint8_t res = value - a;
@@ -227,22 +227,22 @@ uint8_t cp_n(Z80& proc, uint8_t b1)
         //Use (hl) as addr
         case 0xbe:
         {
-            generic_cmp_n(proc, proc.mem.read8(proc.get_hl()));
-            debug_print("%s\n", "cmp (hl)");
+            generic_cp_n(proc, proc.mem.read8(proc.get_hl()));
+            debug_print("%s\n", "cp (hl)");
             return 8;
         }
         //Compare with immediate byte
         case 0xfe:
         {
             uint8_t value = proc.fetch_byte();
-            generic_cmp_n(proc, value);
-            debug_print("cmp 0x%02x\n", value);
+            generic_cp_n(proc, value);
+            debug_print("cp 0x%02x\n", value);
             return 8;
         }
     }
     
-    generic_cmp_n(proc, reg->read());
-    debug_print("cmp %s\n", reg->name.c_str());
+    generic_cp_n(proc, reg->read());
+    debug_print("cp %s\n", reg->name.c_str());
     
     return 4;
 }
@@ -1272,6 +1272,7 @@ uint8_t ld_hl_dec_a(Z80& proc, uint8_t b1)
 
 uint8_t nop()
 {
+    printf("%s\n", "nop");
     return 4;
 }
 
@@ -1280,12 +1281,14 @@ uint8_t jp_nn(Z80& proc)
     uint16_t addr = proc.fetch_short();
     proc.pc.write(addr);
     
+    printf("jp 0x%04x\n", addr);
     return 12;
 }
 uint8_t di(Z80& proc)
 {
     proc.set_pending_di();
     
+    printf("%s\n", "di");
     return 4;
 }
 
@@ -1293,6 +1296,7 @@ uint8_t ei(Z80& proc)
 {
     proc.set_pending_ei();
     
+    printf("%s\n", "ei");
     return 4;
 }
 
@@ -1302,55 +1306,163 @@ uint8_t ld_r1_r2(Z80& proc, uint8_t b1)
     Register<uint8_t>* lhs = nullptr;
     Register<uint8_t>* rhs = nullptr;
     
-    /*switch (b1)
+    switch (b1)
     {
         //B
         case 0x40:
+            lhs = &proc.b;
+            rhs = &proc.b;
+            break;
         case 0x41:
+            lhs = &proc.b;
+            rhs = &proc.c;
+            break;
         case 0x42:
+            lhs = &proc.b;
+            rhs = &proc.d;
+            break;
         case 0x43:
+            lhs = &proc.b;
+            rhs = &proc.e;
+            break;
         case 0x44:
+            lhs = &proc.b;
+            rhs = &proc.h;
+            break;
         case 0x45:
+            lhs = &proc.b;
+            rhs = &proc.l;
+            break;
         
         //C
         case 0x48:
+            lhs = &proc.c;
+            rhs = &proc.b;
+            break;
         case 0x49:
+            lhs = &proc.c;
+            rhs = &proc.c;
+            break;
         case 0x4a:
+            lhs = &proc.c;
+            rhs = &proc.d;
+            break;
         case 0x4b:
+            lhs = &proc.c;
+            rhs = &proc.e;
+            break;
         case 0x4c:
+            lhs = &proc.c;
+            rhs = &proc.h;
+            break;
         case 0x4d:
+            lhs = &proc.c;
+            rhs = &proc.l;
+            break;
             
         //D
         case 0x50:
+            lhs = &proc.d;
+            rhs = &proc.b;
+            break;
         case 0x51:
+            lhs = &proc.d;
+            rhs = &proc.c;
+            break;
         case 0x52:
+            lhs = &proc.d;
+            rhs = &proc.d;
+            break;
         case 0x53:
+            lhs = &proc.d;
+            rhs = &proc.e;
+            break;
         case 0x54:
+            lhs = &proc.d;
+            rhs = &proc.h;
+            break;
         case 0x55:
+            lhs = &proc.d;
+            rhs = &proc.l;
+            break;
         
         //E
         case 0x58:
+            lhs = &proc.e;
+            rhs = &proc.b;
+            break;
         case 0x59:
+            lhs = &proc.e;
+            rhs = &proc.c;
+            break;
         case 0x5a:
+            lhs = &proc.e;
+            rhs = &proc.d;
+            break;
         case 0x5b:
+            lhs = &proc.e;
+            rhs = &proc.e;
+            break;
         case 0x5c:
+            lhs = &proc.e;
+            rhs = &proc.h;
+            break;
         case 0x5d:
+            lhs = &proc.e;
+            rhs = &proc.l;
+            break;
         
         //H
         case 0x60:
+            lhs = &proc.h;
+            rhs = &proc.b;
+            break;
         case 0x61:
+            lhs = &proc.h;
+            rhs = &proc.c;
+            break;
         case 0x62:
+            lhs = &proc.h;
+            rhs = &proc.d;
+            break;
         case 0x63:
+            lhs = &proc.h;
+            rhs = &proc.e;
+            break;
         case 0x64:
+            lhs = &proc.h;
+            rhs = &proc.h;
+            break;
         case 0x65:
+            lhs = &proc.h;
+            rhs = &proc.l;
+            break;
         
         //L
         case 0x68:
+            lhs = &proc.l;
+            rhs = &proc.b;
+            break;
         case 0x69:
+            lhs = &proc.l;
+            rhs = &proc.c;
+            break;
         case 0x6a:
+            lhs = &proc.l;
+            rhs = &proc.d;
+            break;
         case 0x6b:
+            lhs = &proc.l;
+            rhs = &proc.e;
+            break;
         case 0x6c:
+            lhs = &proc.l;
+            rhs = &proc.h;
+            break;
         case 0x6d:
+            lhs = &proc.l;
+            rhs = &proc.l;
+            break;
         
         //ld (hl), reg
         case 0x70:
@@ -1359,7 +1471,37 @@ uint8_t ld_r1_r2(Z80& proc, uint8_t b1)
         case 0x73:
         case 0x74:
         case 0x75:
-        case 0x36:
+        {
+            uint16_t addr = proc.get_hl();
+            Register<uint8_t>* reg = nullptr;
+            
+            switch (b1)
+            {
+                case 0x70:
+                    reg = &proc.b;
+                    break;
+                case 0x71:
+                    reg = &proc.c;
+                    break;
+                case 0x72:
+                    reg = &proc.d;
+                    break;
+                case 0x73:
+                    reg = &proc.e;
+                    break;
+                case 0x74:
+                    reg = &proc.h;
+                    break;
+                case 0x75:
+                    reg = &proc.l;
+                    break;
+            }
+            
+            proc.mem.write8(addr, reg->read());
+            
+            printf("ld (hl), %s\n", reg->name.c_str());
+            return 8;
+        }
          
         //ld reg, (HL)
         case 0x46:
@@ -1368,10 +1510,340 @@ uint8_t ld_r1_r2(Z80& proc, uint8_t b1)
         case 0x5e:
         case 0x66:
         case 0x6e:
-    }*/
-    throw std::runtime_error("Finish me!!!");
+        {
+            uint8_t value = proc.mem.read8(proc.get_hl());
+            Register<uint8_t>* reg = nullptr;
+            
+            switch (b1)
+            {
+                case 0x46:
+                    reg = &proc.b;
+                    break;
+                case 0x4e:
+                    reg = &proc.c;
+                    break;
+                case 0x56:
+                    reg = &proc.d;
+                    break;
+                case 0x5e:
+                    reg = &proc.e;
+                    break;
+                case 0x66:
+                    reg = &proc.h;
+                    break;
+                case 0x6e:
+                    reg = &proc.l;
+                    break;
+            }
+            
+            reg->write(value);
+            
+            printf("ld %s, (hl)\n", reg->name.c_str());
+            return 8;
+        }
+        //ld (hl), n
+        case 0x36:
+        {
+            uint16_t addr = proc.get_hl();
+            uint8_t value = proc.fetch_byte();
+            proc.mem.write8(addr, value);
+            
+            printf("ld (hl), 0x%02x\n", value);
+            return 12;
+        }
+        default:
+            throw std::runtime_error(formatted_string("Unknown ld r1, r2 opcode 0x%02x", b1));
+    }
+    
+    lhs->write(rhs->read());
+    printf("ld %s, %s\n", lhs->name.c_str(), rhs->name.c_str());
     
     return cycles;
+}
+
+uint8_t ld_a_hl_plus(Z80& proc)
+{
+    uint16_t addr = proc.get_hl();
+    proc.a.write(proc.mem.read8(addr));
+    proc.set_hl(addr+1);
+    
+    printf("%s", "ld a, (hl+)\n");
+    return 8;
+}
+
+uint8_t rst_n(Z80& proc, uint8_t b1)
+{
+    //Push present address on to stack
+    proc.sp.dec(2);
+    proc.mem.write16(proc.sp.read(), proc.pc.read());
+    
+    //Jump to addr
+    uint16_t offset = 0;
+    
+    switch (b1)
+    {
+        case 0xc7:
+            offset = 0x00;
+            break;
+        case 0xcf:
+            offset = 0x08;
+            break;
+        case 0xd7:
+            offset = 0x10;
+            break;
+        case 0xdf:
+            offset = 0x18;
+            break;
+        case 0xe7:
+            offset = 0x20;
+            break;
+        case 0xef:
+            offset = 0x28;
+            break;
+        case 0xf7:
+            offset = 0x30;
+            break;
+        case 0xff:
+            offset = 0x38;
+            break;
+    }
+    
+    proc.pc.write(offset);
+    
+    printf("rst 0x%04x\n", offset);
+    return 32;
+}
+
+namespace
+{
+    void generic_and_n(Z80& proc, uint8_t value)
+    {
+        uint8_t res = proc.a.read() & value;
+        proc.a.write(res);
+        
+        proc.f.set_z(res==0);
+        proc.f.set_n(false);
+        proc.f.set_h(true);
+        proc.f.set_c(false);
+    }
+}
+
+uint8_t and_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0xa7:
+            reg = &proc.a;
+            break;
+        case 0xa0:
+            reg = &proc.b;
+            break;
+        case 0xa1:
+            reg = &proc.c;
+            break;
+        case 0xa2:
+            reg = &proc.d;
+            break;
+        case 0xa3:
+            reg = &proc.e;
+            break;
+        case 0xa4:
+            reg = &proc.h;
+            break;
+        case 0xa5:
+            reg = &proc.l;
+            break;
+        //hl as addr
+        case 0xa6:
+        {
+            uint8_t value = proc.mem.read8(proc.get_hl());
+            generic_and_n(proc, value);
+            
+            printf("%s\n", "and (hl)");
+            return 8;
+        }
+        case 0xe6:
+        {
+            uint8_t value = proc.fetch_byte();
+            generic_and_n(proc, value);
+            
+            printf("and 0x%02x\n", value);
+            return 8;
+        }
+    }
+    
+    generic_and_n(proc, reg->read());
+    
+    printf("and %s\n", reg->name.c_str());
+    return 4;
+}
+
+uint8_t dec_nn(Z80& proc, uint8_t b1)
+{
+    std::string reg;
+    
+    switch (b1)
+    {
+        case 0x0b:
+            proc.set_bc(proc.get_bc()-1);
+            reg = "bc";
+            break;
+        case 0x1b:
+            proc.set_de(proc.get_de()-1);
+            reg = "de";
+            break;
+        case 0x2b:
+            proc.set_hl(proc.get_hl()-1);
+            reg = "hl";
+            break;
+        case 0x3b:
+            proc.sp.inc(1);
+            reg = "sp";
+            break;
+    }
+    
+    printf("dec %s\n", reg.c_str());
+    return 8;
+}
+
+namespace {
+    void generic_or_n(Z80& proc, uint8_t value)
+    {
+        uint8_t res = proc.a.read() | value;
+        proc.a.write(res);
+        
+        proc.f.set_z(res==0);
+        proc.f.set_c(false);
+        proc.f.set_h(false);
+        proc.f.set_n(false);
+    }
+}
+
+uint8_t or_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0xb7:
+            reg = &proc.a;
+            break;
+        case 0xb0:
+            reg = &proc.b;
+            break;
+        case 0xb1:
+            reg = &proc.c;
+            break;
+        case 0xb2:
+            reg = &proc.d;
+            break;
+        case 0xb3:
+            reg = &proc.e;
+            break;
+        case 0xb4:
+            reg = &proc.h;
+            break;
+        case 0xb5:
+            reg = &proc.l;
+            break;
+        //Use hl as addr
+        case 0xb6:
+        {
+            uint8_t value = proc.mem.read8(proc.get_hl());
+            generic_or_n(proc, value);
+            
+            printf("%s\n", "or (hl)");
+            return 8;
+        }
+        //Use next byte
+        case 0xf6:
+        {
+            uint8_t value = proc.fetch_byte();
+            generic_or_n(proc, value);
+            
+            printf("or 0x%02x\n", value);
+            return 8;
+        }
+    }
+    
+    generic_or_n(proc, reg->read());
+    
+    printf("or %s\n", reg->name.c_str());
+    return 4;
+}
+
+uint8_t cpl(Z80& proc)
+{
+    uint8_t new_val = ~proc.a.read();
+    proc.a.write(new_val);
+    
+    proc.f.set_n(true);
+    proc.f.set_h(true);
+    
+    printf("%s\n", "cpl");
+    return 4;
+}
+
+namespace {
+    uint8_t swap(uint8_t value)
+    {
+        return ((value & 0xf) << 4) | (value >> 4);
+    }
+}
+
+uint8_t swap_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    proc.f.set_c(false);
+    proc.f.set_h(false);
+    proc.f.set_c(false);
+    
+    switch (b1)
+    {
+        case 0x37:
+            reg = &proc.a;
+            break;
+        case 0x30:
+            reg = &proc.b;
+            break;
+        case 0x31:
+            reg = &proc.c;
+            break;
+        case 0x32:
+            reg = &proc.d;
+            break;
+        case 0x33:
+            reg = &proc.e;
+            break;
+        case 0x34:
+            reg = &proc.h;
+            break;
+        case 0x35:
+            reg = &proc.l;
+            break;
+        //Use hl as addr
+        case 0x36:
+        {
+            uint16_t addr = proc.get_hl();
+            uint8_t value = proc.mem.read8(addr);
+            value = swap(value);
+            proc.mem.write8(addr, value);
+            proc.f.set_z(value==0);
+            
+            printf("%s\n", "swap (hl)");
+            return 16;
+        }
+    }
+    
+    uint8_t value = swap(reg->read());
+    reg->write(value);
+    proc.f.set_z(value==0);
+    
+    printf("swap %s\n", reg->name.c_str());
+    return 8;
 }
 
 uint8_t cb_prefix_instr(Z80& proc)
@@ -1386,6 +1858,10 @@ uint8_t cb_prefix_instr(Z80& proc)
     else if ((temp8 >= 0x10) && (temp8 <= 0x17))
     {
         cycles = rl_n(proc, temp8);
+    }
+    else if ((temp8 >= 0x30) && (temp8 <= 0x37))
+    {
+        cycles = swap_n(proc, temp8);
     }
     else
     {
@@ -1635,6 +2111,50 @@ void Step(Z80& proc)
         case 0x75:
         case 0x36:
             cycles = ld_r1_r2(proc, b1);
+            break;
+        case 0x2a:
+            cycles = ld_a_hl_plus(proc);
+            break;
+        case 0x0b:
+        case 0x1b:
+        case 0x2b:
+        case 0x3b:
+            cycles = dec_nn(proc, b1);
+            break;
+        case 0xb7:
+        case 0xb0:
+        case 0xb1:
+        case 0xb2:
+        case 0xb3:
+        case 0xb4:
+        case 0xb5:
+        case 0xb6:
+        case 0xf6:
+            cycles = or_n(proc, b1);
+            break;
+        case 0x2f:
+            cycles = cpl(proc);
+            break;
+        case 0xa7:
+        case 0xa0:
+        case 0xa1:
+        case 0xa2:
+        case 0xa3:
+        case 0xa4:
+        case 0xa5:
+        case 0xa6:
+        case 0xe6:
+            cycles = and_n(proc, b1);
+            break;
+        case 0xc7:
+        case 0xcf:
+        case 0xd7:
+        case 0xdf:
+        case 0xe7:
+        case 0xef:
+        case 0xf7:
+        case 0xff:
+            cycles = rst_n(proc, b1);
             break;
         default:
         {

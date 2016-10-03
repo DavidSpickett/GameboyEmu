@@ -346,6 +346,19 @@ std::string ROMHandler::get_info()
 
 uint8_t ROMHandler::read8(uint16_t addr)
 {
+    if ((addr >= SWITCHABLE_ROM_START) && (addr < SWITCHABLE_ROM_END))
+    {
+        if (m_rom_bank_no != -1)
+        {
+            size_t offset = 16*1024*m_rom_bank_no;
+            return get_byte(addr-SWITCHABLE_ROM_START+offset);
+        }
+        else
+        {
+            throw std::runtime_error("Attempt to read from switchable ROM before it was set up!");
+        }
+    }
+    
     uint8_t value  = get_byte(addr);
     //printf("Read addr: 0x%04x from ROM got 0x%02x\n", addr, value);
     return value;
@@ -353,7 +366,15 @@ uint8_t ROMHandler::read8(uint16_t addr)
 
 void ROMHandler::write8(uint16_t addr, uint8_t value)
 {
-    throw std::runtime_error(formatted_string("Tried to write to addr 0x%04x in ROM.", addr));
+    if ((addr >= 0x2000) && (addr < 0x4000))
+    {
+        //This is a ROM bank switch for 0x4000-7FFF
+        m_rom_bank_no = value;
+    }
+    else
+    {
+        throw std::runtime_error(formatted_string("Unknown write to ROM addr 0x%04x value 0x%02x", addr, value));
+    }
 }
 
 uint8_t ROMHandler::get_byte(uint16_t addr)

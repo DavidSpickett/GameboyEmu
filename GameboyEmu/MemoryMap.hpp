@@ -86,6 +86,8 @@ public:
     
     void tick(size_t curr_cycles);
     
+    InterruptManager m_interrupt_handler;
+    
 private:
     bool m_bootstrap_in_mem;
     MemoryManager& get_mm(uint16_t addr);

@@ -69,9 +69,9 @@ public:
     void init();
     void draw(std::vector<Pixel>& pixels, uint8_t win_pos_x, uint8_t win_pos_y);
     void set_viewport_pos(uint16_t x, uint16_t y) { m_x_origin=x; m_y_origin=y; }
-
-private:
     SDL_Window* m_window;
+    
+private:
     SDL_Renderer* m_renderer;
     std::vector<std::vector<uint8_t>> m_pixels;
     std::vector<colour> m_colours;

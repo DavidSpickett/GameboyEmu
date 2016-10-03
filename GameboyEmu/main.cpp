@@ -14,10 +14,24 @@
 #include "RomHandler.hpp"
 #include <SDL2/SDL.h>
 
+void skip_bootstrap(Z80& proc)
+{
+    //Start of cartridge
+    proc.pc.write(0x100);
+    //Setup stack
+    proc.sp.write(0xfffe);
+    //Turn of bootstrap program
+    proc.mem.write8(0xff50, 0x1);
+}
+
 int main(int argc, const char * argv[]) {
-    MemoryMap map = MemoryMap("Tetris (World).gb");
+    MemoryMap map("Tetris (World).gb");
     Z80 proc(map);
-   
+    //Icky.
+    map.m_interrupt_handler.m_proc = &proc;
+    
+    skip_bootstrap(proc);
+
     while(1)
     {
         SDL_Event event;
@@ -25,12 +39,12 @@ int main(int argc, const char * argv[]) {
         
         Step(proc);
         
-        if (proc.pc.read() == 0x100)
+        /*if (proc.pc.read() == 0x100)
         {
             return 0;
             uint8_t foo = 1;
             (void)foo;
-        }
+        }*/
     }
     
     return 0;

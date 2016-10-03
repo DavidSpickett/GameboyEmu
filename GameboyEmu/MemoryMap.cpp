@@ -39,7 +39,9 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
             return m_rom_handler;
         }
     }
-    else if ((addr >= ROM_START) && (addr < ROM_END)) //Also cartridge
+    else if (
+        ((addr >= ROM_START) && (addr < ROM_END)) ||
+        ((addr >= SWITCHABLE_ROM_START) && (addr < SWITCHABLE_ROM_END)))
     {
         return m_rom_handler;
     }
@@ -64,6 +66,10 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
     else if ((addr >= UNUSED_START) && (addr < UNUSED_END))
     {
         return m_null_handler;
+    }
+    else if ((addr == INTERRUPT_FLAGS) || (addr == INTERRUPT_SWITCH))
+    {
+        return m_interrupt_handler;
     }
     else
     {
@@ -105,5 +111,6 @@ void MemoryMap::write16(uint16_t addr, uint16_t value)
 
 void MemoryMap::tick(size_t curr_cycles)
 {
+    m_interrupt_handler.tick(curr_cycles);
     m_lcd_handler.tick(curr_cycles);
 }
