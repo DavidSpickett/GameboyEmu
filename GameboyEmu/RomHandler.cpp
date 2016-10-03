@@ -345,7 +345,7 @@ std::string ROMHandler::get_info()
 uint8_t ROMHandler::read8(uint16_t addr)
 {
     uint8_t value  = get_byte(addr);
-    printf("Read addr: 0x%04x from ROM got 0x%04x\n", addr, value);
+    //printf("Read addr: 0x%04x from ROM got 0x%02x\n", addr, value);
     return value;
 }
 
@@ -365,7 +365,7 @@ uint16_t ROMHandler::read16(uint16_t addr)
     throw std::runtime_error("Implement me!");
 }
 
-void ROMHandler::write16(uint16_t addr, uint8_t value)
+void ROMHandler::write16(uint16_t addr, uint16_t value)
 {
     throw std::runtime_error("Implement me!");
 }

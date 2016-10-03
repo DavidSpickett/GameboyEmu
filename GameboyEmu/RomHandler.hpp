@@ -18,18 +18,16 @@ class ROMHandler: public MemoryManager
 {
 public:
     ROMHandler(std::string file_path):
-        MemoryManager(to_vector(address_range(0x0100, 0x3fff))),
         m_file_path(file_path),
         file_str(std::ifstream(file_path.c_str(), std::ifstream::binary))
     {
     }
     
-    //Not sure if inline is actually the right soloution here
     void write8(uint16_t addr, uint8_t value);
     uint8_t read8(uint16_t addr);
     
     uint16_t read16(uint16_t addr);
-    void write16(uint16_t addr, uint8_t value);
+    void write16(uint16_t addr, uint16_t value);
     
     bool is_cgb_only();
     std::string get_info();

@@ -1302,7 +1302,7 @@ uint8_t ld_r1_r2(Z80& proc, uint8_t b1)
     Register<uint8_t>* lhs = nullptr;
     Register<uint8_t>* rhs = nullptr;
     
-    switch (b1)
+    /*switch (b1)
     {
         //B
         case 0x40:
@@ -1368,7 +1368,8 @@ uint8_t ld_r1_r2(Z80& proc, uint8_t b1)
         case 0x5e:
         case 0x66:
         case 0x6e:
-    }
+    }*/
+    throw std::runtime_error("Finish me!!!");
     
     return cycles;
 }

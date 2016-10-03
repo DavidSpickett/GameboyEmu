@@ -105,7 +105,6 @@ class LCD: public MemoryManager
 {
     public:
         LCD():
-            MemoryManager(to_vector(address_range(0x8000, 0x9fff), address_range(0xff40, 0xff47))),
             m_display(), m_curr_scanline(0), m_scroll_x(0), m_scroll_y(0), m_win_pos_x(0), m_win_pos_y(0), m_last_scan_change_cycles(0)
         {
             m_data = std::vector<uint8_t>(0x2000, 0);
@@ -120,7 +119,7 @@ class LCD: public MemoryManager
         uint8_t read8(uint16_t addr);
     
         uint16_t read16(uint16_t addr);
-        void write16(uint16_t addr, uint8_t value);
+        void write16(uint16_t addr, uint16_t value);
     
         void show_display();
         void draw();

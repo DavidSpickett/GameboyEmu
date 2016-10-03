@@ -90,10 +90,10 @@ private:
 class Z80
 {
 public:
-    Z80():
+    Z80(MemoryMap& mem):
         pc(0, "pc"),
         sp(0xFFFE, "sp"),
-        mem(MemoryMap()),
+        mem(mem),
         a("a"),
         b("b"),
         c("c"),
@@ -120,7 +120,7 @@ public:
     Register <uint8_t> h;
     Register <uint8_t> l;
     
-    MemoryMap mem;
+    MemoryMap& mem;
     
     uint8_t fetch_byte();
     uint16_t fetch_short();
@@ -152,7 +152,7 @@ private:
     void set_pair(Register<uint8_t>& high, Register<uint8_t>& low, uint16_t value)
     {
         high.write(value >> 8);
-        low.write(value & 0xff);
+        low.write(uint8_t(value));
     }
     
     bool m_pending_ei;

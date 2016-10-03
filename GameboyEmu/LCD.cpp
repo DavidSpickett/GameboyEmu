@@ -9,10 +9,10 @@
 #include "LCD.hpp"
 
 //Video memory is 256x256 but the viewport is smaller and moves around
-const size_t LCD_WIDTH  = 160;
-const size_t LCD_HEIGHT = 144;
-//const size_t LCD_WIDTH  = 256;
-//const size_t LCD_HEIGHT = 256;
+//const size_t LCD_WIDTH  = 160;
+//const size_t LCD_HEIGHT = 144;
+const size_t LCD_WIDTH  = 256;
+const size_t LCD_HEIGHT = 256;
 
 std::string Tile::to_string(std::vector<uint8_t>& pallette) const
 {
@@ -188,7 +188,7 @@ void LCD::draw()
     {
         for (size_t index=0; index != 1024; ++index)
         {
-            uint8_t ptr_val = m_data[bg_map_start+index-m_address_ranges[0].start];
+            uint8_t ptr_val = m_data[bg_map_start+index-LCD_MEM_START];
             
             //In 16 height mode pointing to an even sprite no.
             //just points to the previous odd sprite no.
@@ -197,7 +197,8 @@ void LCD::draw()
                 ptr_val -= ptr_val % 2;
             }
             
-            uint16_t char_addr = char_ram_start + (ptr_val*bytes_per_sprite) - m_address_ranges[0].start;
+            //TODO: should - addr depending on bg being used
+            uint16_t char_addr = char_ram_start + (ptr_val*bytes_per_sprite) - LCD_MEM_START;
             
             //Note that the y scroll is minus because the y co-ordinite is inverted
             Tile t(((index % 32)*8)+m_scroll_x,
@@ -228,10 +229,8 @@ void LCD::tick(size_t curr_cycles)
     That makes it 0.1087mS per scan line.
     Which is 113.941 instruction cycles, aka 114 cycles per scan line.
     */
-//    const size_t per_scan_line = 114;
+    const size_t per_scan_line = 114;
 
-    const size_t per_scan_line = 1; //Runs slooooow with the real value
-    
     if ((curr_cycles - m_last_scan_change_cycles) > per_scan_line)
     {
         //154 scan lines, 144 + 10 vblank period
@@ -244,6 +243,7 @@ void LCD::tick(size_t curr_cycles)
         else
         {
             m_curr_scanline = 0;
+            draw();
         }
         
         //TODO: tell window to draw that line
@@ -268,7 +268,7 @@ const uint16_t WINPOSY    = 0xff4b;
 
 uint8_t LCD::read8(uint16_t addr)
 {
-    printf("8 bit read from LCD addr: 0x%04x\n", addr);
+    //printf("8 bit read from LCD addr: 0x%04x\n", addr);
     
     switch (addr)
     {
@@ -297,13 +297,13 @@ uint8_t LCD::read8(uint16_t addr)
             return val;
         }
         default:
-            return m_data[addr-m_address_ranges[0].start];
+            return m_data[addr-LCD_MEM_START];
     }
 }
 
 void LCD::write8(uint16_t addr, uint8_t value)
 {
-    printf("8 bit write to LCD addr: 0x%04x value: 0x%02x\n", addr, value);
+    //printf("8 bit write to LCD addr: 0x%04x value: 0x%02x\n", addr, value);
     
     switch (addr)
     {
@@ -341,16 +341,16 @@ void LCD::write8(uint16_t addr, uint8_t value)
             break;
         }
         default:
-            m_data[addr-m_address_ranges[0].start] = value;
+            m_data[addr-LCD_MEM_START] = value;
             break;
     }
 }
 
 uint16_t LCD::read16(uint16_t addr)
 {
-    if (m_address_ranges[0].contains_addr(addr))
+    if ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END))
     {
-        uint16_t offset = addr-m_address_ranges[0].start;
+        uint16_t offset = addr-LCD_MEM_START;
         uint16_t ret = (uint16_t(m_data[offset+1]) << 8) | uint16_t(m_data[offset]);
         return ret;
     }
@@ -360,14 +360,14 @@ uint16_t LCD::read16(uint16_t addr)
     }
 }
 
-void LCD::write16(uint16_t addr, uint8_t value)
+void LCD::write16(uint16_t addr, uint16_t value)
 {
-    if (m_address_ranges[0].contains_addr(addr))
+    if ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END))
     {
-        uint16_t offset = addr-m_address_ranges[0].start;
+        uint16_t offset = addr-LCD_MEM_START;
         m_data[offset] = value & 0xff;
         m_data[offset+1] = (value >> 8) & 0xff;
-        printf("16 bit write to LCD addr 0x%04x of value 0x%04x\n", addr, value);
+        //printf("16 bit write to LCD addr 0x%04x of value 0x%04x\n", addr, value);
     }
     else
     {

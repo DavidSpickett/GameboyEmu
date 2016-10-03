@@ -15,24 +15,19 @@
 #include <SDL2/SDL.h>
 
 int main(int argc, const char * argv[]) {
-    Z80 proc;
-    
-    proc.mem.AddFile("GameBoyBios.gb", 0);
-    
-    HardwareIORegs io_regs;
-    proc.mem.AddMemoryManager(io_regs);
-    
-    LCD lcd;
-    proc.mem.AddMemoryManager(lcd);
-    
     ROMHandler rhandler("Tetris (World).gb");
     printf("%s\n", rhandler.get_info().c_str());
     if (rhandler.is_cgb_only())
     {
         throw std::runtime_error("ROM is CGB only.");
     }
-    proc.mem.AddMemoryManager(rhandler);
+
+    LCD lcd;
+    HardwareIORegs io_regs;
     
+    MemoryMap map = MemoryMap(rhandler, lcd, io_regs);
+    Z80 proc(map);
+   
     while(1)
     {
         SDL_Event event;
@@ -40,13 +35,13 @@ int main(int argc, const char * argv[]) {
         
         Step(proc);
         
-        /*if (proc.pc.read() == 0x100)
+        if (proc.pc.read() == 0x100)
         {
             lcd.draw();
             return 0;
             uint8_t foo = 1;
             (void)foo;
-        }*/
+        }
     }
     
     return 0;

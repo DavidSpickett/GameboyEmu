@@ -15,34 +15,21 @@
 #include <string>
 #include "utils.hpp"
 
-struct address_range {
-    address_range(uint16_t start, uint16_t end):
-        start(start), end(end)
-    {}
-    
-    uint16_t start;
-    uint16_t end;
-    
-    uint16_t size() const
-    {
-        return end-start;
-    }
-    
-    bool contains_addr(uint16_t addr) const
-    {
-        //Inclusive, so I don't have to deal with the end of memory
-        return ((addr >= start) && (addr <= end));
-    }
-};
+const uint16_t LCD_MEM_START  = 0x8000;
+const uint16_t LCD_MEM_END    = 0xa000;
+const uint16_t LCD_REGS_START = 0xff40;
+const uint16_t LCD_REGS_END   = 0xff48;
 
-std::vector<address_range> to_vector(address_range rng);
-std::vector<address_range> to_vector(address_range rng, address_range rng2);
+const uint16_t ROM_START = 0x0100; //Before bootstrap turns off that is
+const uint16_t ROM_END   = 0x4000;
+
+const uint16_t HARDWARE_REGS_START = 0xff00;
+const uint16_t HARDWARE_REGS_END   = 0xff27;
 
 class MemoryManager
 {
 public:
-    MemoryManager(std::vector<address_range> rngs):
-        m_address_ranges(rngs)
+    MemoryManager()
     {
     }
     
@@ -50,30 +37,56 @@ public:
     virtual void write8(uint16_t addr, uint8_t value) = 0;
     
     virtual uint16_t read16(uint16_t addr) = 0;
-    virtual void write16(uint16_t addr, uint8_t value) = 0;
+    virtual void write16(uint16_t addr, uint16_t value) = 0;
     
     virtual void tick(size_t curr_cycles) = 0;
     bool contains(uint16_t addr) const;
-    
-    std::vector<address_range> m_address_ranges;
 };
 
-struct address_range_entry
+class DefaultMemoryManager: public MemoryManager
 {
-    address_range_entry(address_range rng, MemoryManager& manager):
-        rng(rng), manager(manager)
-    {}
+public:
+    DefaultMemoryManager()
+    {
+        m_mem.resize(0x10000);
+    }
     
-    address_range rng;
-    MemoryManager& manager;
+    uint8_t read8(uint16_t addr)
+    {
+        return m_mem[addr];
+    }
+    
+    void write8(uint16_t addr, uint8_t value)
+    {
+        m_mem[addr] = value;
+    }
+    
+    uint16_t read16(uint16_t addr)
+    {
+        return m_mem[addr] | (m_mem[addr+1] << 8);
+    }
+    
+    void write16(uint16_t addr, uint16_t value)
+    {
+        m_mem[addr] = uint8_t(value);
+        m_mem[addr+1] = value >> 8;
+    }
+    
+    void tick(size_t curr_cycles) {}
+    
+    void AddFile(std::string path, uint16_t addr);
+    
+private:
+    std::vector<uint8_t> m_mem;
 };
 
 class MemoryMap
 {
 public:
-    MemoryMap()
+    MemoryMap(MemoryManager& rom_handler, MemoryManager& lcd_handler, MemoryManager& hardware_regs_handler):
+    m_bootstrap_in_mem(true), m_rom_handler(rom_handler), m_lcd_handler(lcd_handler), m_hardware_regs_handler(hardware_regs_handler)
     {
-        m_mem.resize(0xffff);
+        m_default_handler.AddFile("GameBoyBios.gb", 0x0000);
     }
     
     uint8_t read8(uint16_t addr);
@@ -82,17 +95,15 @@ public:
     uint16_t read16(uint16_t addr);
     void write16(uint16_t addr, uint16_t value);
     
-    void AddFile(std::string path, uint16_t addr);
-    void AddBlock(std::vector<uint8_t>&, uint16_t addr);
-    
-    //Note: only affects 8 bit accesses for now.
-    void AddMemoryManager(MemoryManager& manager);
-    
     void tick(size_t curr_cycles) const;
     
 private:
-    std::vector<uint8_t> m_mem;
-    std::vector<std::reference_wrapper<MemoryManager> > m_memory_managers;
+    bool m_bootstrap_in_mem;
+    MemoryManager& get_mm(uint16_t addr);
+    MemoryManager& m_rom_handler;
+    MemoryManager& m_lcd_handler;
+    MemoryManager& m_hardware_regs_handler;
+    DefaultMemoryManager m_default_handler;
 };
 
 

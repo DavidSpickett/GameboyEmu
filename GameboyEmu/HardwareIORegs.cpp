@@ -22,6 +22,6 @@ uint16_t HardwareIORegs::read16(uint16_t addr)
     return 0;
 }
 
-void HardwareIORegs::write16(uint16_t addr, uint8_t value)
+void HardwareIORegs::write16(uint16_t addr, uint16_t value)
 {
 }
