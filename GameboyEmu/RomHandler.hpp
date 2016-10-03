@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string>
 #include <fstream>
-#include "MemoryMap.hpp"
+#include "MemoryManager.hpp"
 
 class ROMHandler: public MemoryManager
 {
@@ -21,6 +21,11 @@ public:
         m_file_path(file_path),
         file_str(std::ifstream(file_path.c_str(), std::ifstream::binary))
     {
+        printf("%s\n", get_info().c_str());
+        if (is_cgb_only())
+        {
+            throw std::runtime_error("ROM is CGB only.");
+        }
     }
     
     void write8(uint16_t addr, uint8_t value);

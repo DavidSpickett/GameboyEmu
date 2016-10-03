@@ -61,6 +61,10 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
     {
         return m_default_handler;
     }
+    else if ((addr >= UNUSED_START) && (addr < UNUSED_END))
+    {
+        return m_null_handler;
+    }
     else
     {
         throw std::runtime_error(formatted_string("Don't have a handler for addr 0x%04x!", addr));
@@ -99,7 +103,7 @@ void MemoryMap::write16(uint16_t addr, uint16_t value)
     m.write16(addr, value);
 }
 
-void MemoryMap::tick(size_t curr_cycles) const
+void MemoryMap::tick(size_t curr_cycles)
 {
     m_lcd_handler.tick(curr_cycles);
 }

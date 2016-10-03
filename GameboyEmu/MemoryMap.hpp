@@ -14,43 +14,10 @@
 #include <vector>
 #include <string>
 #include "utils.hpp"
-
-const uint16_t LCD_MEM_START  = 0x8000;
-const uint16_t LCD_MEM_END    = 0xa000;
-const uint16_t LCD_REGS_START = 0xff40;
-const uint16_t LCD_REGS_END   = 0xff48;
-
-const uint16_t ROM_START = 0x0100; //Before bootstrap turns off that is
-const uint16_t ROM_END   = 0x4000;
-
-const uint16_t HARDWARE_REGS_START = 0xff00;
-const uint16_t HARDWARE_REGS_END   = 0xff27;
-
-const uint16_t GB_RAM_START = 0xc000;
-const uint16_t GB_RAM_END   = 0xe000;
-
-const uint16_t GB_HIGH_RAM_START = 0xFF80;
-const uint16_t GB_HIGH_RAM_END   = 0xFFFF;
-
-const uint16_t ECHO_RAM_START = 0xe000;
-const uint16_t ECHO_RAM_END   = 0xffe0;
-
-class MemoryManager
-{
-public:
-    MemoryManager()
-    {
-    }
-    
-    virtual uint8_t read8(uint16_t addr) = 0;
-    virtual void write8(uint16_t addr, uint8_t value) = 0;
-    
-    virtual uint16_t read16(uint16_t addr) = 0;
-    virtual void write16(uint16_t addr, uint16_t value) = 0;
-    
-    virtual void tick(size_t curr_cycles) = 0;
-    bool contains(uint16_t addr) const;
-};
+#include "MemoryManager.hpp"
+#include "RomHandler.hpp"
+#include "LCD.hpp"
+#include "HardwareIORegs.hpp"
 
 class DefaultMemoryManager: public MemoryManager
 {
@@ -105,8 +72,8 @@ private:
 class MemoryMap
 {
 public:
-    MemoryMap(MemoryManager& rom_handler, MemoryManager& lcd_handler, MemoryManager& hardware_regs_handler):
-    m_bootstrap_in_mem(true), m_rom_handler(rom_handler), m_lcd_handler(lcd_handler), m_hardware_regs_handler(hardware_regs_handler)
+    MemoryMap(std::string cartridge_name):
+    m_bootstrap_in_mem(true), m_rom_handler(cartridge_name)
     {
         m_default_handler.AddFile("GameBoyBios.gb", 0x0000);
     }
@@ -117,15 +84,16 @@ public:
     uint16_t read16(uint16_t addr);
     void write16(uint16_t addr, uint16_t value);
     
-    void tick(size_t curr_cycles) const;
+    void tick(size_t curr_cycles);
     
 private:
     bool m_bootstrap_in_mem;
     MemoryManager& get_mm(uint16_t addr);
-    MemoryManager& m_rom_handler;
-    MemoryManager& m_lcd_handler;
-    MemoryManager& m_hardware_regs_handler;
+    ROMHandler m_rom_handler;
+    LCD m_lcd_handler;
+    HardwareIORegs m_hardware_regs_handler;
     DefaultMemoryManager m_default_handler;
+    NullMemoryManager m_null_handler;
 };
 
 

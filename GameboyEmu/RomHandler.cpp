@@ -7,6 +7,8 @@
 //
 
 #include "RomHandler.hpp"
+#include <vector>
+#include "utils.hpp"
 
 std::string ROMHandler::get_string(const uint16_t start, size_t len)
 {

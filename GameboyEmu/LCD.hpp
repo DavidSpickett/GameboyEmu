@@ -10,8 +10,10 @@
 #define LCD_hpp
 
 #include <stdio.h>
-#include "MemoryMap.hpp"
+#include <vector>
+#include <string>
 #include <SDL2/SDL.h>
+#include "MemoryManager.hpp"
 
 class Pixel
 {

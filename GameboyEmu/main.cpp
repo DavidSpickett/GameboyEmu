@@ -15,17 +15,7 @@
 #include <SDL2/SDL.h>
 
 int main(int argc, const char * argv[]) {
-    ROMHandler rhandler("Tetris (World).gb");
-    printf("%s\n", rhandler.get_info().c_str());
-    if (rhandler.is_cgb_only())
-    {
-        throw std::runtime_error("ROM is CGB only.");
-    }
-
-    LCD lcd;
-    HardwareIORegs io_regs;
-    
-    MemoryMap map = MemoryMap(rhandler, lcd, io_regs);
+    MemoryMap map = MemoryMap("Tetris (World).gb");
     Z80 proc(map);
    
     while(1)
@@ -37,7 +27,6 @@ int main(int argc, const char * argv[]) {
         
         if (proc.pc.read() == 0x100)
         {
-            lcd.draw();
             return 0;
             uint8_t foo = 1;
             (void)foo;

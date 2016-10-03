@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2F0029091DA2D5AF00A06C65 /* MemoryManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F0029071DA2D5AF00A06C65 /* MemoryManager.cpp */; };
 		2F72BC391D9AFCF6009CC1CC /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F72BC381D9AFCF6009CC1CC /* main.cpp */; };
 		2FF17E591D9B32D800D2E207 /* instructions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF17E511D9B32D800D2E207 /* instructions.cpp */; };
 		2FF17E5A1D9B32D800D2E207 /* MemoryMap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF17E531D9B32D800D2E207 /* MemoryMap.cpp */; };
@@ -31,6 +32,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2F0029071DA2D5AF00A06C65 /* MemoryManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MemoryManager.cpp; sourceTree = "<group>"; };
+		2F0029081DA2D5AF00A06C65 /* MemoryManager.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MemoryManager.hpp; sourceTree = "<group>"; };
 		2F72BC351D9AFCF6009CC1CC /* GameboyEmu */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GameboyEmu; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F72BC381D9AFCF6009CC1CC /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		2FF17E511D9B32D800D2E207 /* instructions.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = instructions.cpp; sourceTree = "<group>"; };
@@ -86,6 +89,8 @@
 				2FF17E521D9B32D800D2E207 /* instructions.hpp */,
 				2FF17E531D9B32D800D2E207 /* MemoryMap.cpp */,
 				2FF17E541D9B32D800D2E207 /* MemoryMap.hpp */,
+				2F0029071DA2D5AF00A06C65 /* MemoryManager.cpp */,
+				2F0029081DA2D5AF00A06C65 /* MemoryManager.hpp */,
 				2FF17E5D1D9C428F00D2E207 /* LCD.cpp */,
 				2FF17E5E1D9C428F00D2E207 /* LCD.hpp */,
 				2FF17E601D9C54C400D2E207 /* RomHandler.cpp */,
@@ -169,6 +174,7 @@
 				2FF17E5C1D9B32D800D2E207 /* Z80.cpp in Sources */,
 				2FF17E591D9B32D800D2E207 /* instructions.cpp in Sources */,
 				2FF17E681D9EF7E300D2E207 /* HardwareIORegs.cpp in Sources */,
+				2F0029091DA2D5AF00A06C65 /* MemoryManager.cpp in Sources */,
 				2FF17E5A1D9B32D800D2E207 /* MemoryMap.cpp in Sources */,
 				2FF17E621D9C54C400D2E207 /* RomHandler.cpp in Sources */,
 				2FF17E5F1D9C428F00D2E207 /* LCD.cpp in Sources */,

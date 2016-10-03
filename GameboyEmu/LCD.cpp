@@ -7,6 +7,7 @@
 //
 
 #include "LCD.hpp"
+#include "utils.hpp"
 
 //Video memory is 256x256 but the viewport is smaller and moves around
 //const size_t LCD_WIDTH  = 160;

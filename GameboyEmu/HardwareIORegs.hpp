@@ -10,7 +10,7 @@
 #define HardwareIORegs_hpp
 
 #include <stdio.h>
-#include "MemoryMap.hpp"
+#include "MemoryManager.hpp"
 
 class HardwareIORegs: public MemoryManager
 {
