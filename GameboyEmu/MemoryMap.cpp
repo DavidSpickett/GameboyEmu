@@ -53,9 +53,17 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
     {
         return m_lcd_handler;
     }
-    else
+    else if (
+        ((addr >= GB_RAM_START) && (addr < GB_RAM_END)) ||
+        ((addr >= ECHO_RAM_START) && (addr < ECHO_RAM_END)) ||
+        ((addr >= GB_HIGH_RAM_START) && (addr < GB_HIGH_RAM_END))
+        )
     {
         return m_default_handler;
+    }
+    else
+    {
+        throw std::runtime_error(formatted_string("Don't have a handler for addr 0x%04x!", addr));
     }
 }
 

@@ -26,6 +26,15 @@ const uint16_t ROM_END   = 0x4000;
 const uint16_t HARDWARE_REGS_START = 0xff00;
 const uint16_t HARDWARE_REGS_END   = 0xff27;
 
+const uint16_t GB_RAM_START = 0xc000;
+const uint16_t GB_RAM_END   = 0xe000;
+
+const uint16_t GB_HIGH_RAM_START = 0xFF80;
+const uint16_t GB_HIGH_RAM_END   = 0xFFFF;
+
+const uint16_t ECHO_RAM_START = 0xe000;
+const uint16_t ECHO_RAM_END   = 0xffe0;
+
 class MemoryManager
 {
 public:
@@ -53,21 +62,25 @@ public:
     
     uint8_t read8(uint16_t addr)
     {
+        addr = normalise_addr(addr);
         return m_mem[addr];
     }
     
     void write8(uint16_t addr, uint8_t value)
     {
+        addr = normalise_addr(addr);
         m_mem[addr] = value;
     }
     
     uint16_t read16(uint16_t addr)
     {
+        addr = normalise_addr(addr);
         return m_mem[addr] | (m_mem[addr+1] << 8);
     }
     
     void write16(uint16_t addr, uint16_t value)
     {
+        addr = normalise_addr(addr);
         m_mem[addr] = uint8_t(value);
         m_mem[addr+1] = value >> 8;
     }
@@ -78,6 +91,15 @@ public:
     
 private:
     std::vector<uint8_t> m_mem;
+    
+    uint16_t normalise_addr(uint16_t addr)
+    {
+        if ((addr >= ECHO_RAM_START) && (addr < ECHO_RAM_END))
+        {
+            addr -= 0x2000;
+        }
+        return addr;
+    }
 };
 
 class MemoryMap
