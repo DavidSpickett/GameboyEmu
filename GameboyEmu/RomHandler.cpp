@@ -358,6 +358,11 @@ uint8_t ROMHandler::read8(uint16_t addr)
             throw std::runtime_error("Attempt to read from switchable ROM before it was set up!");
         }
     }
+    else if ((addr >= CART_RAM_START) && (addr < CART_RAM_END))
+    {
+        printf("Tried to read from cart RAM at addr 0x%04x!", addr);
+        return 0;
+    }
     
     uint8_t value  = get_byte(addr);
     //printf("Read addr: 0x%04x from ROM got 0x%02x\n", addr, value);
@@ -370,6 +375,10 @@ void ROMHandler::write8(uint16_t addr, uint8_t value)
     {
         //This is a ROM bank switch for 0x4000-7FFF
         m_rom_bank_no = value;
+    }
+    else if ((addr >= CART_RAM_START) && (addr < CART_RAM_END))
+    {
+        printf("Tried to write to cart RAM at addr 0x%04x, value 0x%02x", addr, value);
     }
     else
     {

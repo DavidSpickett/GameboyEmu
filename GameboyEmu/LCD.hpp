@@ -103,11 +103,28 @@ private:
     uint8_t m_value;
 };
 
+class LCDStatReg
+{
+public:
+    LCDStatReg():
+    m_value(0)
+    {
+    }
+    
+    void write(uint8_t value) { m_value=value; }
+    uint8_t read() { return m_value; }
+    
+private:
+    uint8_t m_value;
+};
+
+class Z80;
+
 class LCD: public MemoryManager
 {
     public:
         LCD():
-            m_display(), m_curr_scanline(0), m_scroll_x(0), m_scroll_y(0), m_win_pos_x(0), m_win_pos_y(0), m_last_scan_change_cycles(0)
+            m_display(), m_curr_scanline(0), m_scroll_x(0), m_scroll_y(0), m_win_pos_x(0), m_win_pos_y(0), m_last_scan_change_cycles(0), m_proc(nullptr)
         {
             m_data = std::vector<uint8_t>(0x2000, 0);
             
@@ -127,6 +144,8 @@ class LCD: public MemoryManager
         void draw();
         void tick(size_t curr_cycles);
     
+        Z80* m_proc; /////HACK HACK HACK
+    
     private:
         LCDWindow m_display;
         std::vector<uint8_t> m_data;
@@ -135,6 +154,7 @@ class LCD: public MemoryManager
         uint8_t m_scroll_x;
         uint8_t m_scroll_y;
         LCDControlReg m_control_reg;
+        LCDStatReg m_lcd_stat_reg;
         uint8_t m_win_pos_x;
         uint8_t m_win_pos_y;
         size_t m_last_scan_change_cycles;

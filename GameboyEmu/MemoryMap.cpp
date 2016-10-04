@@ -41,7 +41,8 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
     }
     else if (
         ((addr >= ROM_START) && (addr < ROM_END)) ||
-        ((addr >= SWITCHABLE_ROM_START) && (addr < SWITCHABLE_ROM_END)))
+        ((addr >= SWITCHABLE_ROM_START) && (addr < SWITCHABLE_ROM_END)) ||
+        ((addr >= CART_RAM_START) && (addr < CART_RAM_END)))
     {
         return m_rom_handler;
     }

@@ -8,6 +8,7 @@
 
 #include "LCD.hpp"
 #include "utils.hpp"
+#include "Z80.hpp"
 
 //Video memory is 256x256 but the viewport is smaller and moves around
 //const size_t LCD_WIDTH  = 160;
@@ -241,6 +242,18 @@ void LCD::tick(size_t curr_cycles)
         if (m_curr_scanline != 153)
         {
             m_curr_scanline++;
+            
+            if (m_curr_scanline == 0x90)
+            {
+                if (m_proc != nullptr)
+                {
+                    if (m_proc->mem.read8(0xffff) & 1)
+                    {
+                        m_proc->pc.write(0x0040);
+                    }
+                }
+
+            }
         }
         else
         {
@@ -250,9 +263,6 @@ void LCD::tick(size_t curr_cycles)
         
         //TODO: tell window to draw that line
     }
-    
-    //Uncomment to speed through the bootstrap
-    //m_curr_scanline = 0x90;
 }
 
 void LCD::show_display()
@@ -261,6 +271,7 @@ void LCD::show_display()
 }
 
 const uint16_t LCDCONTROL = 0xff40;
+const uint16_t LCDSTAT    = 0xff41;
 const uint16_t SCROLLY    = 0xff42;
 const uint16_t SCROLLX    = 0xff43;
 const uint16_t CURLINE    = 0xff44;
@@ -280,6 +291,8 @@ uint8_t LCD::read8(uint16_t addr)
             return m_win_pos_y;
         case LCDCONTROL:
             return m_control_reg.read();
+        case LCDSTAT:
+            return m_lcd_stat_reg.read();
         case SCROLLX:
             return m_scroll_x;
         case SCROLLY:
@@ -321,6 +334,9 @@ void LCD::write8(uint16_t addr, uint8_t value)
             {
                 show_display();
             }
+            break;
+        case LCDSTAT:
+            m_lcd_stat_reg.write(value);
             break;
         case SCROLLX:
             m_scroll_x = value;

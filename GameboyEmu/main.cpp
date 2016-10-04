@@ -29,6 +29,7 @@ int main(int argc, const char * argv[]) {
     Z80 proc(map);
     //Icky.
     map.m_interrupt_handler.m_proc = &proc;
+    map.m_lcd_handler.m_proc = &proc;
     
     skip_bootstrap(proc);
 
@@ -39,12 +40,12 @@ int main(int argc, const char * argv[]) {
         
         Step(proc);
         
-        /*if (proc.pc.read() == 0x100)
+        if (proc.pc.read() == 0x69b4)
         {
-            return 0;
+            //return 0;
             uint8_t foo = 1;
             (void)foo;
-        }*/
+        }
     }
     
     return 0;

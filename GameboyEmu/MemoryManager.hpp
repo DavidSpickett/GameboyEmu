@@ -23,6 +23,9 @@ const uint16_t LCD_REGS_END   = 0xff48;
 const uint16_t ROM_START = 0x0100; //Before bootstrap turns off that is
 const uint16_t ROM_END   = 0x4000;
 
+const uint16_t CART_RAM_START = 0xa000;
+const uint16_t CART_RAM_END   = 0xc000;
+
 const uint16_t HARDWARE_REGS_START = 0xff00;
 const uint16_t HARDWARE_REGS_END   = 0xff27;
 

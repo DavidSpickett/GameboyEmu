@@ -87,12 +87,12 @@ public:
     void tick(size_t curr_cycles);
     
     InterruptManager m_interrupt_handler;
+    LCD m_lcd_handler;
     
 private:
     bool m_bootstrap_in_mem;
     MemoryManager& get_mm(uint16_t addr);
     ROMHandler m_rom_handler;
-    LCD m_lcd_handler;
     HardwareIORegs m_hardware_regs_handler;
     DefaultMemoryManager m_default_handler;
     NullMemoryManager m_null_handler;
