@@ -22,10 +22,12 @@ void skip_bootstrap(Z80& proc)
     proc.sp.write(0xfffe);
     //Turn of bootstrap program
     proc.mem.write8(0xff50, 0x1);
+    //Turn on LCD
+    proc.mem.write8(0xff40, 0x91);
 }
 
 int main(int argc, const char * argv[]) {
-    MemoryMap map("Tetris (World).gb");
+    MemoryMap map("opus5.gb");
     Z80 proc(map);
     //Icky.
     map.m_interrupt_handler.m_proc = &proc;
@@ -40,7 +42,7 @@ int main(int argc, const char * argv[]) {
         
         Step(proc);
         
-        if (proc.pc.read() == 0x69b4)
+        if (proc.pc.read() == 0xeadc)
         {
             //return 0;
             uint8_t foo = 1;

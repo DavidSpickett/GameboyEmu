@@ -1221,7 +1221,7 @@ uint8_t ld_n_nn(Z80& proc, uint8_t b1)
 {
     uint16_t imm = proc.fetch_short();
     
-    std::string fmt = "ld %s, 0x%02x\n";
+    std::string fmt = "ld %s, 0x%04x\n";
     std::string r = "?";
     
     switch (b1)
@@ -1780,6 +1780,77 @@ uint8_t cpl(Z80& proc)
 }
 
 namespace {
+    void generic_adc_a(Z80& proc, uint8_t value)
+    {
+        uint8_t orig_a = proc.a.read();
+        uint8_t carry = proc.f.get_c();
+        uint8_t new_value = orig_a + value + carry;
+        proc.a.write(new_value);
+        
+        proc.f.set_z(new_value==0);
+        proc.f.set_n(false);
+        
+        bool half_carry = ((value & 0xf) + (orig_a & 0xf) + carry) > 0xf;
+        proc.f.set_h(half_carry);
+        
+        bool did_carry = (uint16_t(value) + uint16_t(orig_a) + uint16_t(carry)) > 0xff;
+        proc.f.set_c(did_carry);
+    }
+}
+
+uint8_t adc_a_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0x8f:
+            reg = &proc.a;
+            break;
+        case 0x88:
+            reg = &proc.b;
+            break;
+        case 0x89:
+            reg = &proc.c;
+            break;
+        case 0x8a:
+            reg = &proc.d;
+            break;
+        case 0x8b:
+            reg = &proc.e;
+            break;
+        case 0x8c:
+            reg = &proc.h;
+            break;
+        case 0x8d:
+            reg = &proc.l;
+            break;
+        //Hl as addr
+        case 0x8e:
+        {
+            uint16_t addr = proc.get_hl();
+            generic_adc_a(proc, proc.mem.read8(addr));
+            
+            debug_print("%s", "adc a, (hl)\n");
+            return 8;
+        }
+        case 0xce:
+        {
+            uint8_t value = proc.fetch_byte();
+            generic_adc_a(proc, value);
+            
+            debug_print("adc a, 0x%02x\n", value);
+            return 8;
+        }
+    }
+    
+    generic_adc_a(proc, reg->read());
+    
+    debug_print("adc a, %s\n", reg->name.c_str());
+    return 4;
+}
+
+namespace {
     uint8_t swap(uint8_t value)
     {
         return ((value & 0xf) << 4) | (value >> 4);
@@ -2151,6 +2222,186 @@ uint8_t rlca(Z80& proc)
     return 4;
 }
 
+uint8_t add_sp_n(Z80& proc)
+{
+    int8_t offs = proc.fetch_byte();
+    
+    if (offs < 0)
+    {
+        proc.sp.dec(offs*-1);
+    }
+    else
+    {
+        proc.sp.inc(offs);
+    }
+    
+    proc.f.set_n(false);
+    proc.f.set_z(false);
+    
+    //H and C?
+    
+    debug_print("add sp, %d\n", offs);
+    return 16;
+}
+
+namespace {
+    uint8_t generic_rlc(Z80& proc, uint8_t value)
+    {
+        uint8_t new_value = value << 1;
+        
+        proc.f.set_z(new_value==0);
+        proc.f.set_n(false);
+        proc.f.set_h(false);
+        proc.f.set_c(value & (1<<7));
+        
+        return new_value;
+    }
+}
+
+uint8_t rlc_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0x07:
+            reg = &proc.a;
+            break;
+        case 0x00:
+            reg = &proc.b;
+            break;
+        case 0x01:
+            reg = &proc.c;
+            break;
+        case 0x02:
+            reg = &proc.d;
+            break;
+        case 0x03:
+            reg = &proc.e;
+            break;
+        case 0x04:
+            reg = &proc.h;
+            break;
+        case 0x05:
+            reg = &proc.l;
+            break;
+        //hl as addr
+        case 0x06:
+        {
+            uint16_t addr = proc.get_hl();
+            uint8_t new_value = generic_rlc(proc, proc.mem.read8(addr));
+            proc.mem.write8(addr, new_value);
+            
+            debug_print("%s\n", "rlc (hl)");
+            return 16;
+        }
+    }
+    
+    uint8_t new_value = generic_rlc(proc, reg->read());
+    reg->write(new_value);
+    
+    debug_print("rlc %s\n", reg->name.c_str());
+    return 8;
+}
+
+uint8_t reti(Z80& proc)
+{
+    proc.pc.write(proc.sp.read());
+    proc.sp.inc(2);
+    proc.set_pending_ei();
+    
+    debug_print("%s\n", "reti");
+    return 16;
+}
+
+namespace
+{
+    void generic_sbc_n(Z80& proc, uint8_t value)
+    {
+        uint8_t orig_val = proc.a.read();
+        uint8_t new_value = orig_val - value - uint8_t(proc.f.get_c());
+        
+        proc.f.set_z(new_value==0);
+        proc.f.set_n(true);
+        proc.f.set_h((orig_val & 0xF) < (value & 0xF));
+        //I think...acts as an underflow flag?
+        proc.f.set_c(orig_val<value);
+        
+        proc.a.write(new_value);
+    }
+}
+
+uint8_t sbc_a_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0x9f:
+            reg = &proc.a;
+            break;
+        case 0x98:
+            reg = &proc.b;
+            break;
+        case 0x99:
+            reg = &proc.c;
+            break;
+        case 0x9a:
+            reg = &proc.d;
+            break;
+        case 0x9b:
+            reg = &proc.e;
+            break;
+        case 0x9c:
+            reg = &proc.h;
+            break;
+        case 0x9d:
+            reg = &proc.l;
+            break;
+        //hl as addr
+        case 0x9e:
+        {
+            uint16_t addr = proc.get_hl();
+            uint8_t val = proc.mem.read8(addr);
+            generic_sbc_n(proc, val);
+            
+            debug_print("%s\n", "sbc a, (hl)");
+            return 8;
+        }
+    }
+    
+    generic_sbc_n(proc, reg->read());
+    
+    debug_print("sbc a, %s\n", reg->name.c_str());
+    return 4;
+}
+
+uint8_t ld_a_c(Z80& proc)
+{
+    uint16_t addr = 0xff00 + uint16_t(proc.c.read());
+    proc.a.write(proc.mem.read8(addr));
+    
+    debug_print("%s\n", "ld a, (c)");
+    return 8;
+}
+
+uint8_t scf(Z80& proc)
+{
+    proc.f.set_c(true);
+    
+    debug_print("%s\n", "scf");
+    return 4;
+}
+
+uint8_t ld_nn_sp(Z80& proc)
+{
+    uint16_t addr = proc.fetch_short();
+    proc.mem.write16(addr, proc.sp.read());
+    
+    debug_print("ld 0x%04x, sp\n", addr);
+    return 20;
+}
+
 uint8_t cb_prefix_instr(Z80& proc)
 {
     uint8_t temp8 = proc.fetch_byte();
@@ -2176,6 +2427,10 @@ uint8_t cb_prefix_instr(Z80& proc)
     {
         cycles = sla_n(proc, temp8);
     }
+    else if ((temp8 >= 0x00) && (temp8 <= 0x07))
+    {
+        cycles = rlc_n(proc, temp8);
+    }
     else
     {
         throw std::runtime_error(
@@ -2188,7 +2443,7 @@ uint8_t cb_prefix_instr(Z80& proc)
 void Step(Z80& proc)
 {
     //Fetch first byte from PC
-    debug_print("PC: 0x%02x - ", proc.pc.read());
+    debug_print("PC: 0x%04x - ", proc.pc.read());
     
     uint8_t b1 = proc.fetch_byte();
     uint8_t cycles = 0;
@@ -2498,6 +2753,42 @@ void Step(Z80& proc)
             break;
         case 0x07:
             cycles = rlca(proc);
+            break;
+        case 0x8f:
+        case 0x88:
+        case 0x89:
+        case 0x8a:
+        case 0x8b:
+        case 0x8c:
+        case 0x8d:
+        case 0x8e:
+        case 0xce:
+            cycles = adc_a_n(proc, b1);
+            break;
+        case 0xe8:
+            cycles = add_sp_n(proc);
+            break;
+        case 0xd9:
+            cycles = reti(proc);
+            break;
+        case 0x9f:
+        case 0x98:
+        case 0x99:
+        case 0x9a:
+        case 0x9b:
+        case 0x9c:
+        case 0x9d:
+        case 0x9e:
+            cycles = sbc_a_n(proc, b1);
+            break;
+        case 0xf2:
+            cycles = ld_a_c(proc);
+            break;
+        case 0x37:
+            cycles = scf(proc);
+            break;
+        case 0x08:
+            cycles = ld_nn_sp(proc);
             break;
         default:
         {

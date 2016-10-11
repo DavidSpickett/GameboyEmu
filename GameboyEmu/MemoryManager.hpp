@@ -18,7 +18,7 @@ class Z80;
 const uint16_t LCD_MEM_START  = 0x8000;
 const uint16_t LCD_MEM_END    = 0xa000;
 const uint16_t LCD_REGS_START = 0xff40;
-const uint16_t LCD_REGS_END   = 0xff48;
+const uint16_t LCD_REGS_END   = 0xff4c;
 
 const uint16_t ROM_START = 0x0100; //Before bootstrap turns off that is
 const uint16_t ROM_END   = 0x4000;
@@ -29,6 +29,8 @@ const uint16_t CART_RAM_END   = 0xc000;
 const uint16_t HARDWARE_REGS_START = 0xff00;
 const uint16_t HARDWARE_REGS_END   = 0xff27;
 
+const uint16_t JOYPAD_REG = 0xff00;
+
 const uint16_t GB_RAM_START = 0xc000;
 const uint16_t GB_RAM_END   = 0xe000;
 
@@ -36,10 +38,10 @@ const uint16_t GB_HIGH_RAM_START = 0xFF80;
 const uint16_t GB_HIGH_RAM_END   = 0xFFFF;
 
 const uint16_t ECHO_RAM_START = 0xe000;
-const uint16_t ECHO_RAM_END   = 0xffe0;
+const uint16_t ECHO_RAM_END   = 0xfe00;
 
-const uint16_t UNUSED_START = 0xFEA0;
-const uint16_t UNUSED_END   = 0xFEFF;
+const uint16_t UNUSED_START = 0xFE00;
+const uint16_t UNUSED_END   = 0xFEa0;
 
 const uint16_t INTERRUPT_FLAGS  = 0xff0f;
 const uint16_t INTERRUPT_SWITCH = 0xffff;

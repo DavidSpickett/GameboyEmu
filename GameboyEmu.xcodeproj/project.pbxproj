@@ -17,6 +17,7 @@
 		2FF17E621D9C54C400D2E207 /* RomHandler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF17E601D9C54C400D2E207 /* RomHandler.cpp */; };
 		2FF17E651D9EE41C00D2E207 /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2FF17E641D9EE41C00D2E207 /* SDL2.framework */; };
 		2FF17E681D9EF7E300D2E207 /* HardwareIORegs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF17E661D9EF7E300D2E207 /* HardwareIORegs.cpp */; };
+		2FF69BAA1DA82AD800474B10 /* InputManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FF69BA81DA82AD800474B10 /* InputManager.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -51,6 +52,8 @@
 		2FF17E641D9EE41C00D2E207 /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../../../../Library/Frameworks/SDL2.framework; sourceTree = "<group>"; };
 		2FF17E661D9EF7E300D2E207 /* HardwareIORegs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HardwareIORegs.cpp; sourceTree = "<group>"; };
 		2FF17E671D9EF7E300D2E207 /* HardwareIORegs.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HardwareIORegs.hpp; sourceTree = "<group>"; };
+		2FF69BA81DA82AD800474B10 /* InputManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InputManager.cpp; sourceTree = "<group>"; };
+		2FF69BA91DA82AD800474B10 /* InputManager.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InputManager.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,6 +105,8 @@
 				2FF17E571D9B32D800D2E207 /* Z80.cpp */,
 				2FF17E581D9B32D800D2E207 /* Z80.hpp */,
 				2F72BC381D9AFCF6009CC1CC /* main.cpp */,
+				2FF69BA81DA82AD800474B10 /* InputManager.cpp */,
+				2FF69BA91DA82AD800474B10 /* InputManager.hpp */,
 			);
 			path = GameboyEmu;
 			sourceTree = "<group>";
@@ -175,6 +180,7 @@
 				2FF17E591D9B32D800D2E207 /* instructions.cpp in Sources */,
 				2FF17E681D9EF7E300D2E207 /* HardwareIORegs.cpp in Sources */,
 				2F0029091DA2D5AF00A06C65 /* MemoryManager.cpp in Sources */,
+				2FF69BAA1DA82AD800474B10 /* InputManager.cpp in Sources */,
 				2FF17E5A1D9B32D800D2E207 /* MemoryMap.cpp in Sources */,
 				2FF17E621D9C54C400D2E207 /* RomHandler.cpp in Sources */,
 				2FF17E5F1D9C428F00D2E207 /* LCD.cpp in Sources */,

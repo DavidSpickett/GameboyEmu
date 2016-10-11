@@ -212,7 +212,7 @@ void LCD::draw()
             //Renderer clears to white so don't bother with those tiles
             if (t.has_some_colour())
             {
-                std::vector<Pixel> ps = t.to_pixels(m_pallette);
+                std::vector<Pixel> ps = t.to_pixels(m_bgrnd_pallette);
                 //pixels.reserve(pixels.size() + distance(ps.begin(), ps.end()));
                 pixels.insert(pixels.end(), ps.begin(), ps.end());
             }
@@ -249,6 +249,10 @@ void LCD::tick(size_t curr_cycles)
                 {
                     if (m_proc->mem.read8(0xffff) & 1)
                     {
+                        //Save PC to stack
+                        m_proc->sp.dec(2);
+                        m_proc->mem.write16(m_proc->sp.read(), m_proc->pc.read());
+                        //Then jump there.
                         m_proc->pc.write(0x0040);
                     }
                 }
@@ -276,8 +280,31 @@ const uint16_t SCROLLY    = 0xff42;
 const uint16_t SCROLLX    = 0xff43;
 const uint16_t CURLINE    = 0xff44;
 const uint16_t BGRDPAL    = 0xff47;
+const uint16_t OBJPAL0    = 0xff48;
+const uint16_t OBJPAL1    = 0xff49;
 const uint16_t WINPOSX    = 0xff4a;
 const uint16_t WINPOSY    = 0xff4b;
+
+namespace {
+    uint8_t pallete_as_byte(std::vector<uint8_t>& pallete)
+    {
+        uint8_t val = 0;
+        for (int i=0; i<4; ++i)
+        {
+            val |= pallete[0] << (i*8);
+        }
+        return val;
+    }
+    
+    void write_pallete(std::vector<uint8_t>& pallete, uint8_t value)
+    {
+        for (int i=0; i<4; ++i)
+        {
+            pallete[i] = value & 0x3;
+            value = value >> 2;
+        }
+    }
+}
 
 uint8_t LCD::read8(uint16_t addr)
 {
@@ -302,15 +329,11 @@ uint8_t LCD::read8(uint16_t addr)
             //return 0x90; //Bodge, pretend we're in vblank area
             return m_curr_scanline;
         case BGRDPAL:
-        {
-            //Not sure that anything will actually read this reg though...
-            uint8_t val = 0;
-            for (int i=0; i<4; ++i)
-            {
-                val |= m_pallette[0] << (i*8);
-            }
-            return val;
-        }
+            return pallete_as_byte(m_bgrnd_pallette);
+        case OBJPAL0:
+            return pallete_as_byte(m_obj_pallette_0);
+        case OBJPAL1:
+            return pallete_as_byte(m_obj_pallette_1);
         default:
             return m_data[addr-LCD_MEM_START];
     }
@@ -349,15 +372,14 @@ void LCD::write8(uint16_t addr, uint8_t value)
             m_curr_scanline = 0;
             break;
         case BGRDPAL:
-        {
-            //Pallette
-            for (int i=0; i<4; ++i)
-            {
-                m_pallette[i] = value & 0x3;
-                value = value >> 2;
-            }
+            write_pallete(m_bgrnd_pallette, value);
             break;
-        }
+        case OBJPAL0:
+            write_pallete(m_obj_pallette_0, value);
+            break;
+        case OBJPAL1:
+            write_pallete(m_obj_pallette_1, value);
+            break;
         default:
             m_data[addr-LCD_MEM_START] = value;
             break;

@@ -348,20 +348,24 @@ uint8_t ROMHandler::read8(uint16_t addr)
 {
     if ((addr >= SWITCHABLE_ROM_START) && (addr < SWITCHABLE_ROM_END))
     {
-        if (m_rom_bank_no != -1)
+        int rom_bank = m_rom_bank_no;
+        if (m_rom_ram_mode == ROM_MODE)
         {
-            size_t offset = 16*1024*m_rom_bank_no;
-            return get_byte(addr-SWITCHABLE_ROM_START+offset);
+            //RAM bank number used as the upper bits of ROM bank number (which is 5 bits)
+            rom_bank += (m_ram_bank_no << 5);
         }
-        else
-        {
-            throw std::runtime_error("Attempt to read from switchable ROM before it was set up!");
-        }
+        
+        size_t offset = 16*1024*rom_bank;
+        return get_byte(addr-SWITCHABLE_ROM_START+offset);
     }
     else if ((addr >= CART_RAM_START) && (addr < CART_RAM_END))
     {
-        printf("Tried to read from cart RAM at addr 0x%04x!", addr);
-        return 0;
+        if ((!m_ram_enable) || (m_rom_ram_mode == ROM_MODE))
+        {
+            throw std::runtime_error(formatted_string("Attempted to read from RAM address 0x%04x when RAM was disabled.", addr));
+        }
+        
+        return m_ram_bank[addr-CART_RAM_START];
     }
     
     uint8_t value  = get_byte(addr);
@@ -371,14 +375,45 @@ uint8_t ROMHandler::read8(uint16_t addr)
 
 void ROMHandler::write8(uint16_t addr, uint8_t value)
 {
-    if ((addr >= 0x2000) && (addr < 0x4000))
+    if ((addr >= 0x0000) && (addr < 0x2000))
+    {
+        //MBC1 Ram enable
+        if ((value & 0xf) == 0xa)
+        {
+            m_ram_enable = true;
+        }
+        else
+        {
+            m_ram_enable = false;
+        }
+    }
+    else if ((addr >= 0x2000) && (addr < 0x4000))
     {
         //This is a ROM bank switch for 0x4000-7FFF
-        m_rom_bank_no = value;
+        m_rom_bank_no = value & 0x1f;;
     }
     else if ((addr >= CART_RAM_START) && (addr < CART_RAM_END))
     {
-        printf("Tried to write to cart RAM at addr 0x%04x, value 0x%02x", addr, value);
+        if ((!m_ram_enable) || (m_rom_ram_mode == ROM_MODE))
+        {
+            throw std::runtime_error(formatted_string("Attempted to write to RAM address 0x%04x, value 0x%02x when RAM was disabled.", addr, value));
+        }
+        
+        m_ram_bank[addr-CART_RAM_START] = value;
+    }
+    else if ((addr >= 0x6000) && (addr < 0x8000))
+    {
+        //Change rom/ram mode for mbc1
+        if ((value != 0) && (value != 1))
+        {
+            throw std::runtime_error("Invalid RAM ROM mode value.");
+        }
+        m_rom_ram_mode = value;
+    }
+    else if ((addr >= 0x4000) && (addr < 0x6000))
+    {
+        //Change RAM bank no
+        m_ram_bank_no = value & 0x3;
     }
     else
     {

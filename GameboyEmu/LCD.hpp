@@ -130,7 +130,9 @@ class LCD: public MemoryManager
             
             for (size_t i=0; i<4; ++i)
             {
-                m_pallette.push_back(i);
+                m_bgrnd_pallette.push_back(i);
+                m_obj_pallette_0.push_back(i);
+                m_obj_pallette_1.push_back(i);
             }
         }
     
@@ -149,7 +151,9 @@ class LCD: public MemoryManager
     private:
         LCDWindow m_display;
         std::vector<uint8_t> m_data;
-        std::vector<uint8_t> m_pallette;
+        std::vector<uint8_t> m_bgrnd_pallette;
+        std::vector<uint8_t> m_obj_pallette_0;
+        std::vector<uint8_t> m_obj_pallette_1;
         uint8_t m_curr_scanline;
         uint8_t m_scroll_x;
         uint8_t m_scroll_y;

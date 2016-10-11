@@ -52,7 +52,8 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
     {
         return m_lcd_handler;
     }
-    else if ((addr >= HARDWARE_REGS_START) && (addr < HARDWARE_REGS_END))
+    else if (((addr >= HARDWARE_REGS_START) && (addr < HARDWARE_REGS_END)) &&
+             (addr != JOYPAD_REG))
     {
         return m_lcd_handler;
     }
@@ -72,6 +73,10 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
     {
         return m_interrupt_handler;
     }
+    else if (addr == JOYPAD_REG)
+    {
+        return m_input_handler;
+    }
     else
     {
         throw std::runtime_error(formatted_string("Don't have a handler for addr 0x%04x!", addr));
@@ -90,6 +95,7 @@ void MemoryMap::write8(uint16_t addr, uint8_t value)
     if ((addr == 0xff50) && (value == 1))
     {
         m_bootstrap_in_mem = false;
+        return;
     }
     
     MemoryManager& m = get_mm(addr);
@@ -113,5 +119,6 @@ void MemoryMap::write16(uint16_t addr, uint16_t value)
 void MemoryMap::tick(size_t curr_cycles)
 {
     m_interrupt_handler.tick(curr_cycles);
+    m_input_handler.tick(curr_cycles);
     m_lcd_handler.tick(curr_cycles);
 }

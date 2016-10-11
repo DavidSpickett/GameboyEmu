@@ -18,6 +18,7 @@
 #include "RomHandler.hpp"
 #include "LCD.hpp"
 #include "HardwareIORegs.hpp"
+#include "InputManager.hpp"
 
 class DefaultMemoryManager: public MemoryManager
 {
@@ -96,6 +97,7 @@ private:
     HardwareIORegs m_hardware_regs_handler;
     DefaultMemoryManager m_default_handler;
     NullMemoryManager m_null_handler;
+    InputManager m_input_handler;
 };
 
 
