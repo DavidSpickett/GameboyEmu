@@ -2402,6 +2402,65 @@ uint8_t ld_nn_sp(Z80& proc)
     return 20;
 }
 
+namespace {
+    uint8_t generic_srl_n(Z80& proc, uint8_t value)
+    {
+        uint8_t new_value = value >> 1;
+        
+        proc.f.set_z(new_value==0);
+        proc.f.set_n(false);
+        proc.f.set_h(false);
+        proc.f.set_c(value & 0x1);
+        
+        return new_value;
+    }
+}
+
+uint8_t srl_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = nullptr;
+    
+    switch (b1)
+    {
+        case 0x3f:
+            reg = &proc.a;
+            break;
+        case 0x38:
+            reg = &proc.b;
+            break;
+        case 0x39:
+            reg = &proc.c;
+            break;
+        case 0x3a:
+            reg = &proc.d;
+            break;
+        case 0x3b:
+            reg = &proc.e;
+            break;
+        case 0x3c:
+            reg = &proc.h;
+            break;
+        case 0x3d:
+            reg = &proc.l;
+            break;
+        //HL as addr
+        case 0x3e:
+        {
+            uint16_t addr = proc.get_hl();
+            uint8_t new_value = generic_srl_n(proc, proc.mem.read8(addr));
+            proc.mem.write8(addr, new_value);
+            
+            debug_print("%s\n", "srl (hl)");
+            return 16;
+        }
+    }
+    
+    reg->write(generic_srl_n(proc, reg->read()));
+    
+    debug_print("srl %s\n", reg->name.c_str());
+    return 8;
+}
+
 uint8_t cb_prefix_instr(Z80& proc)
 {
     uint8_t temp8 = proc.fetch_byte();
@@ -2430,6 +2489,10 @@ uint8_t cb_prefix_instr(Z80& proc)
     else if ((temp8 >= 0x00) && (temp8 <= 0x07))
     {
         cycles = rlc_n(proc, temp8);
+    }
+    else if ((temp8 >= 0x38) && (temp8 <= 0x3f))
+    {
+        cycles = srl_n(proc, temp8);
     }
     else
     {

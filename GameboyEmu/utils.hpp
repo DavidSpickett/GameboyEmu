@@ -29,7 +29,7 @@ std::string formatted_string(const char* format, Args... args)
  
     std::string str(buf);
     delete[] buf;
-    return std::move(str);
+    return str;
 }
  
 #endif /* utils_hpp */

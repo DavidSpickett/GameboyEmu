@@ -77,6 +77,11 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
     {
         return m_input_handler;
     }
+    else if ((addr >= UNUSED_IO_REGS_START) && (addr < UNUSED_IO_REGS_END))
+    {
+        //I assume these are Colour/Super GB regs
+        return m_null_handler;
+    }
     else
     {
         throw std::runtime_error(formatted_string("Don't have a handler for addr 0x%04x!", addr));

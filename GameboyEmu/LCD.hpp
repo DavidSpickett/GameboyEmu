@@ -124,7 +124,7 @@ class LCD: public MemoryManager
 {
     public:
         LCD():
-            m_display(), m_curr_scanline(0), m_scroll_x(0), m_scroll_y(0), m_win_pos_x(0), m_win_pos_y(0), m_last_scan_change_cycles(0), m_proc(nullptr)
+            m_display(), m_curr_scanline(0), m_scroll_x(0), m_scroll_y(0), m_win_pos_x(0), m_win_pos_y(0), m_last_scan_change_cycles(0), m_proc(nullptr), m_cmp_line(0)
         {
             m_data = std::vector<uint8_t>(0x2000, 0);
             
@@ -155,6 +155,7 @@ class LCD: public MemoryManager
         std::vector<uint8_t> m_obj_pallette_0;
         std::vector<uint8_t> m_obj_pallette_1;
         uint8_t m_curr_scanline;
+        uint8_t m_cmp_line;
         uint8_t m_scroll_x;
         uint8_t m_scroll_y;
         LCDControlReg m_control_reg;

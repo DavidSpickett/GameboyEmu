@@ -27,9 +27,9 @@ void skip_bootstrap(Z80& proc)
 }
 
 int main(int argc, const char * argv[]) {
-    MemoryMap map("opus5.gb");
+    MemoryMap map("Tetris (World).gb");
     Z80 proc(map);
-    //Icky.
+    //Icky
     map.m_interrupt_handler.m_proc = &proc;
     map.m_lcd_handler.m_proc = &proc;
     

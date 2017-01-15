@@ -282,16 +282,16 @@ const uint16_t CURLINE    = 0xff44;
 const uint16_t BGRDPAL    = 0xff47;
 const uint16_t OBJPAL0    = 0xff48;
 const uint16_t OBJPAL1    = 0xff49;
-const uint16_t WINPOSX    = 0xff4a;
-const uint16_t WINPOSY    = 0xff4b;
+const uint16_t WINPOSY    = 0xff4a; //Yes, Y is first.
+const uint16_t WINPOSX    = 0xff4b;
 
 namespace {
-    uint8_t pallete_as_byte(std::vector<uint8_t>& pallete)
+    uint8_t pallete_as_byte(const std::vector<uint8_t>& pallete)
     {
-        uint8_t val = 0;
+        uint8_t val;
         for (int i=0; i<4; ++i)
         {
-            val |= pallete[0] << (i*8);
+            val |= pallete[i] << (i*2);
         }
         return val;
     }
@@ -394,6 +394,15 @@ uint16_t LCD::read16(uint16_t addr)
         uint16_t ret = (uint16_t(m_data[offset+1]) << 8) | uint16_t(m_data[offset]);
         return ret;
     }
+    else if (addr == WINPOSY)
+    {
+        return (m_win_pos_x < 8) | m_win_pos_y;
+    }
+    else if (addr == 0xff46)
+    {
+        //Handle read 1 byte behind BGRDPAL which Tetris does
+        return pallete_as_byte(m_bgrnd_pallette);
+    }
     else
     {
         throw std::runtime_error(formatted_string("16 bit read of LCD addr 0x%04x", addr));
@@ -408,6 +417,33 @@ void LCD::write16(uint16_t addr, uint16_t value)
         m_data[offset] = value & 0xff;
         m_data[offset+1] = (value >> 8) & 0xff;
         //printf("16 bit write to LCD addr 0x%04x of value 0x%04x\n", addr, value);
+    }
+    else if (addr == WINPOSY)
+    {
+        m_win_pos_y = addr;
+        m_win_pos_y = addr >> 8;
+    }
+    else if (addr == OBJPAL0)
+    {
+        write_pallete(m_obj_pallette_0, value);
+        write_pallete(m_obj_pallette_1, value >> 8);
+    }
+    else if (addr == 0xff46)
+    {
+        //I assume Tetris does 16 bit pallette setting for everything including BRGDPAL1
+        //even though there's only one of them. So ignore the lower 8 bits.
+        write_pallete(m_bgrnd_pallette, value >> 8);
+    }
+    else if (addr == CURLINE)
+    {
+        //Write CURLINE and CMPLINE
+        m_curr_scanline = value;
+        m_cmp_line = value >> 8;
+    }
+    else if (addr == SCROLLY)
+    {
+        m_scroll_y = value;
+        m_scroll_x = value >> 8;
     }
     else
     {
