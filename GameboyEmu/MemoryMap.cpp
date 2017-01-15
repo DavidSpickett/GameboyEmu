@@ -48,20 +48,25 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
     }
     else if (
       ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END)) ||
-      ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END)))
+      ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END)) ||
+      ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
+    )
     {
         return m_lcd_handler;
     }
     else if (((addr >= HARDWARE_REGS_START) && (addr < HARDWARE_REGS_END)) &&
              (addr != JOYPAD_REG))
     {
-        return m_lcd_handler;
+        return m_hardware_regs_handler;
     }
     else if (
         ((addr >= GB_RAM_START) && (addr < GB_RAM_END)) ||
-        ((addr >= ECHO_RAM_START) && (addr < ECHO_RAM_END)) ||
-        ((addr >= GB_HIGH_RAM_START) && (addr < GB_HIGH_RAM_END))
+        ((addr >= ECHO_RAM_START) && (addr < ECHO_RAM_END))
         )
+    {
+        return m_default_handler;
+    }
+    else if ((addr >= GB_HIGH_RAM_START) && (addr < GB_HIGH_RAM_END))
     {
         return m_default_handler;
     }

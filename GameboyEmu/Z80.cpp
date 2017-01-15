@@ -34,15 +34,6 @@ void Z80::tick(uint8_t cycles)
     //In future, expand 'tick' concept to other peripherals
     m_total_cycles += cycles;
     
-    if (m_pending_ei)
-    {
-        //TODO: enable interrupts
-    }
-    if (m_pending_di)
-    {
-        //TODO: disable interrupts
-    }
-    
     mem.tick(m_total_cycles);
 }
 

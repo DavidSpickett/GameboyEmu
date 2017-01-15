@@ -255,6 +255,7 @@ uint8_t ret(Z80& proc)
     proc.pc.write(new_addr);
     
     debug_print("%s", "ret\n");
+    proc.add_ret(new_addr);
     return 8;
 }
 
@@ -458,9 +459,11 @@ uint8_t call_nn(Z80& proc)
     proc.sp.dec(2);
     proc.mem.write16(proc.sp.read(), proc.pc.read());
     
+    uint16_t old_pc = proc.pc.read();
     proc.pc.write(j_addr);
     
     debug_print("call 0x%02x\n", j_addr);
+    proc.add_call(old_pc, j_addr, proc.sp.read());
     return 12;
 }
 
@@ -1279,16 +1282,14 @@ uint8_t jp_nn(Z80& proc)
 }
 uint8_t di(Z80& proc)
 {
-    proc.set_pending_di();
-    
+    proc.interrupt_enable = false;
     debug_print("%s\n", "di");
     return 4;
 }
 
 uint8_t ei(Z80& proc)
 {
-    proc.set_pending_ei();
-    
+    proc.interrupt_enable = true;
     debug_print("%s\n", "ei");
     return 4;
 }
@@ -2101,13 +2102,18 @@ uint8_t ret_cc(Z80& proc, uint8_t b1)
             break;
     }
     
+    uint16_t new_addr = proc.mem.read16(proc.sp.read());
     if (jump)
     {
-        proc.mem.read16(proc.sp.read());
+        proc.pc.write(new_addr);
         proc.sp.inc(2);
     }
     
     debug_print("ret %s\n", ret_type.c_str());
+    if (jump)
+    {
+        proc.add_ret(new_addr);
+    }
     return 8;
 }
 
@@ -2194,6 +2200,7 @@ uint8_t call_cc_nn(Z80& proc, uint8_t b1)
             break;
     }
     
+    uint16_t old_pc = proc.pc.read();
     if (jump)
     {
         proc.sp.dec(2);
@@ -2202,6 +2209,10 @@ uint8_t call_cc_nn(Z80& proc, uint8_t b1)
     }
     
     debug_print("call %s, 0x%04x\n", ctype.c_str(), addr);
+    if (jump)
+    {
+        proc.add_call(old_pc, addr, proc.sp.read());
+    }
     return 12;
 }
 
@@ -2308,7 +2319,7 @@ uint8_t reti(Z80& proc)
 {
     proc.pc.write(proc.sp.read());
     proc.sp.inc(2);
-    proc.set_pending_ei();
+    proc.interrupt_enable = true;
     
     debug_print("%s\n", "reti");
     return 16;
@@ -2459,6 +2470,15 @@ uint8_t srl_n(Z80& proc, uint8_t b1)
     
     debug_print("srl %s\n", reg->name.c_str());
     return 8;
+}
+
+uint8_t stop(Z80& proc)
+{
+    //TODO: actually impliment this with interrupts.
+    //Should go to sleep until a button is pressed.
+    
+    proc.fetch_byte(); //2 byte opcode for some reason
+    return 4;
 }
 
 uint8_t cb_prefix_instr(Z80& proc)
@@ -2852,6 +2872,9 @@ void Step(Z80& proc)
             break;
         case 0x08:
             cycles = ld_nn_sp(proc);
+            break;
+        case 0x10:
+            cycles = stop(proc);
             break;
         default:
         {

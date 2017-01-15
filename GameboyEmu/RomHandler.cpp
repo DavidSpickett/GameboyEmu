@@ -429,10 +429,18 @@ uint8_t ROMHandler::get_byte(uint16_t addr)
 
 uint16_t ROMHandler::read16(uint16_t addr)
 {
-    throw std::runtime_error("Implement me!");
+    return get_byte(addr) | (get_byte(addr) << 8);
 }
 
 void ROMHandler::write16(uint16_t addr, uint16_t value)
 {
+ /*   if (
+        (addr == 0x1000) || //Mysterious ROM store that Tetris does, writes SP to ROM?
+        (addr == 0x0008) ||
+        (addr == 0x1008)
+       )
+    {
+        return;
+    }*/
     throw std::runtime_error("Implement me!");
 }

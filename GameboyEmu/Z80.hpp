@@ -63,6 +63,43 @@ protected:
     int_type m_value;
 };
 
+class SPRegister: public Register<uint16_t>
+{
+public:
+    using Register::Register;
+    
+    void write(uint16_t val)
+    {
+        m_value = val;
+        
+        if (logging)
+        {
+            printf("Reg: %s new value: 0x%x\n", name.c_str(), val);
+        }
+    }
+    
+    void inc(uint16_t val)
+    {
+        m_value+=val;
+        
+        if (logging)
+        {
+            printf("Reg: %s inc by %d to: 0x%x\n", name.c_str(), val, m_value);
+        }
+    }
+    
+    void dec(uint16_t val)
+    {
+        m_value-=val;
+        
+        if (logging)
+        {
+            printf("Reg: %s dec by %d to: 0x%x\n", name.c_str(), val, m_value);
+        }
+    }
+
+};
+
 class FlagRegister: public Register<uint8_t>
 {
 public:
@@ -102,14 +139,14 @@ public:
         f("f"),
         h("h"),
         l("l"),
-        m_pending_ei(false),
-        m_pending_di(false),
-        m_total_cycles(0)
+        m_total_cycles(0),
+        interrupt_enable(false)
     {
+        sp.logging = true;
     }
     
     Register <uint16_t> pc;
-    Register <uint16_t> sp;
+    SPRegister sp;
     FlagRegister f;
     
     Register <uint8_t> a;
@@ -138,12 +175,39 @@ public:
     
     std::string status_string();
     
-    void set_pending_ei() { m_pending_ei = true; }
-    void set_pending_di() { m_pending_di = true; }
-    
     void tick(uint8_t cycles);
     
+    void add_call(uint16_t from, uint16_t to, uint16_t sp)
+    {
+        m_callstack_frames.push_back(
+            formatted_string("calling 0x%04x from 0x%04x sp is 0x%04x", to, from, sp));
+        print_callstack();
+    }
+    
+    void add_ret(uint16_t to)
+    {
+        m_callstack_frames.push_back(formatted_string("return to 0x%04x", to));
+        print_callstack();
+        m_callstack_frames.pop_back(); //Remove call/ret pair
+        m_callstack_frames.pop_back();
+    }
+    
+    bool interrupt_enable;
+    
 private:
+    std::vector<std::string> m_callstack_frames;
+    
+    void print_callstack()
+    {
+        printf("\n------Callstack------\n");
+        std::vector<std::string>::iterator it=m_callstack_frames.begin();
+        for (; it != m_callstack_frames.end(); ++it)
+        {
+            printf("%s\n", it->c_str());
+        }
+        printf("-----------------\n\n");
+    }
+    
     uint16_t get_pair(Register<uint8_t> high, Register<uint8_t> low)
     {
         return (high.read() << 8) | low.read();
@@ -155,8 +219,6 @@ private:
         low.write(uint8_t(value));
     }
     
-    bool m_pending_ei;
-    bool m_pending_di;
     size_t m_total_cycles;
 };
 

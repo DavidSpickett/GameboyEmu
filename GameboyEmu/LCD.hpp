@@ -36,8 +36,8 @@ public:
     {
     }
     
-    std::vector<Pixel> to_pixels(std::vector<uint8_t>& pallette) const;
-    std::string to_string(std::vector<uint8_t>& pallette) const;
+    std::vector<Pixel> to_pixels(const std::vector<uint8_t>& pallette) const;
+    std::string to_string(const std::vector<uint8_t>& pallette) const;
     bool has_some_colour() const;
     
     uint16_t x;
@@ -79,11 +79,22 @@ private:
     uint16_t m_y_origin;
 };
 
+const uint16_t LCDCONTROL = 0xff40;
+const uint16_t LCDSTAT    = 0xff41;
+const uint16_t SCROLLY    = 0xff42;
+const uint16_t SCROLLX    = 0xff43;
+const uint16_t CURLINE    = 0xff44;
+const uint16_t BGRDPAL    = 0xff47;
+const uint16_t OBJPAL0    = 0xff48;
+const uint16_t OBJPAL1    = 0xff49;
+const uint16_t WINPOSY    = 0xff4a; //Yes, Y is first.
+const uint16_t WINPOSX    = 0xff4b;
+
 class LCDControlReg
 {
 public:
-    LCDControlReg():
-        m_value(0)
+    LCDControlReg(uint8_t value):
+        m_value(value)
     {
     }
     
@@ -119,21 +130,17 @@ private:
 };
 
 class Z80;
+typedef std::vector<uint8_t> LCDPallette;
 
 class LCD: public MemoryManager
 {
     public:
         LCD():
-            m_display(), m_curr_scanline(0), m_scroll_x(0), m_scroll_y(0), m_win_pos_x(0), m_win_pos_y(0), m_last_scan_change_cycles(0), m_proc(nullptr), m_cmp_line(0)
+            m_display(),  m_proc(nullptr)
         {
-            m_data = std::vector<uint8_t>(0x2000, 0);
-            
-            for (size_t i=0; i<4; ++i)
-            {
-                m_bgrnd_pallette.push_back(i);
-                m_obj_pallette_0.push_back(i);
-                m_obj_pallette_1.push_back(i);
-            }
+            m_data.resize(LCD_MEM_END-LCD_MEM_START, 0);
+            m_oam_data.resize(LCD_OAM_END-LCD_OAM_START, 0);
+            m_registers.resize(LCD_REGS_END-LCD_REGS_START, 0);
         }
     
         void write8(uint16_t addr, uint8_t value);
@@ -151,18 +158,80 @@ class LCD: public MemoryManager
     private:
         LCDWindow m_display;
         std::vector<uint8_t> m_data;
-        std::vector<uint8_t> m_bgrnd_pallette;
-        std::vector<uint8_t> m_obj_pallette_0;
-        std::vector<uint8_t> m_obj_pallette_1;
-        uint8_t m_curr_scanline;
-        uint8_t m_cmp_line;
-        uint8_t m_scroll_x;
-        uint8_t m_scroll_y;
-        LCDControlReg m_control_reg;
-        LCDStatReg m_lcd_stat_reg;
-        uint8_t m_win_pos_x;
-        uint8_t m_win_pos_y;
-        size_t m_last_scan_change_cycles;
+        std::vector<uint8_t> m_oam_data;
+        std::vector<uint8_t> m_registers;
+        uint8_t m_last_scan_change_cycles;
+
+        uint16_t get_regs_addr(uint16_t addr) { return addr-LCD_REGS_START; }
+    
+        LCDControlReg get_control_reg()
+        {
+            return LCDControlReg(m_registers[get_regs_addr(LCDCONTROL)]);
+        }
+        uint8_t get_scroll_x()
+        {
+            return m_registers[get_regs_addr(SCROLLX)];
+        }
+        uint8_t get_scroll_y()
+        {
+            return m_registers[get_regs_addr(SCROLLY)];
+        }
+        uint8_t get_winpos_x()
+        {
+            return m_registers[get_regs_addr(WINPOSX)];
+        }
+        uint8_t get_winpos_y()
+        {
+            return m_registers[get_regs_addr(WINPOSY)];
+        }
+        uint8_t get_curr_scanline()
+        {
+            return m_registers[get_regs_addr(CURLINE)];
+        }
+        void set_curr_scanline(uint8_t value)
+        {
+            m_registers[get_regs_addr(CURLINE)] = value;
+        }
+        uint8_t inc_curr_scanline()
+        {
+            uint16_t addr = get_regs_addr(CURLINE);
+            uint8_t val = m_registers[addr];
+            val++;
+            m_registers[addr] = val;
+            return val;
+        }
+    
+    
+        const LCDPallette get_pallete(uint16_t addr);
+        const LCDPallette get_bgrnd_pallette() { return get_pallete(BGRDPAL); }
+        const LCDPallette get_obj_pal0() { return get_pallete(OBJPAL0); }
+        const LCDPallette get_obj_pal1() { return get_pallete(OBJPAL1); }
+    
+        void do_after_reg_write(uint16_t addr);
+        void do_after_reg_write16(uint16_t addr);
+    
+        uint8_t get_reg8(uint16_t addr) { return m_registers[get_regs_addr(addr)]; }
+        void set_reg8(uint16_t addr, uint8_t value)
+        {
+            m_registers[get_regs_addr(addr)] = value;
+            do_after_reg_write(addr);
+        }
+    
+        //Might want to move these into a register block class
+        // and do them in terms of write 8, so that later we can get callbacks
+        // when a register changes.
+        uint16_t get_reg16(uint16_t addr)
+        {
+            addr = get_regs_addr(addr);
+            return m_registers[addr] | (m_registers[addr+1] << 8);
+        }
+        void set_reg16(uint16_t addr, uint16_t value)
+        {
+            addr = get_regs_addr(addr);
+            m_registers[addr] = value;
+            m_registers[addr+1] = value >> 8;
+            do_after_reg_write16(addr);
+        }
 };
 
 #endif /* LCD_hpp */

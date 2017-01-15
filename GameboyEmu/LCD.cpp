@@ -16,7 +16,7 @@
 const size_t LCD_WIDTH  = 256;
 const size_t LCD_HEIGHT = 256;
 
-std::string Tile::to_string(std::vector<uint8_t>& pallette) const
+std::string Tile::to_string(const std::vector<uint8_t>& pallette) const
 {
     std::vector<Pixel> pixels = to_pixels(pallette);
     std::string ret;
@@ -47,7 +47,7 @@ bool Tile::has_some_colour() const
     return std::find_if(data_b, data_e, non_zero) != data_e;
 }
 
-std::vector<Pixel> Tile::to_pixels(std::vector<uint8_t>& pallette) const
+std::vector<Pixel> Tile::to_pixels(const std::vector<uint8_t>& pallette) const
 {
     std::vector<Pixel> pixels;
     pixels.reserve(8*h);
@@ -163,30 +163,52 @@ LCDWindow::~LCDWindow()
     }
 }
 
+const LCDPallette LCD::get_pallete(uint16_t addr)
+{
+    LCDPallette ret;
+    addr = get_regs_addr(addr);
+    
+    //Lowest bits first
+    uint8_t regval = m_registers[addr];
+    for (int i=0; i<4; ++i)
+    {
+        ret.push_back(regval & 0x3);
+        regval >>= 2;
+    }
+    
+    return ret;
+}
+
 void LCD::draw()
 {
-    if (!m_control_reg.get_lcd_operation())
+    LCDControlReg control_reg = get_control_reg();
+    uint8_t scrollx = get_scroll_x();
+    uint8_t scrolly = get_scroll_y();
+    uint8_t winposx = get_winpos_x();
+    uint8_t winposy = get_winpos_y();
+    
+    if (!control_reg.get_lcd_operation())
     {
         return;
     }
     
     //Assume bg map 1 for the time being
-    uint16_t bg_map_start = m_control_reg.get_bgrnd_tile_table_addr();
-    uint16_t char_ram_start = m_control_reg.get_tile_patt_table_addr();
+    uint16_t bg_map_start = control_reg.get_bgrnd_tile_table_addr();
+    uint16_t char_ram_start = control_reg.get_tile_patt_table_addr();
     
     //1024 bytes where each byte represents an index into the character RAM
     //So there are 32x32 indexes, each pointing to an 8x8 character
     //256*256 == (32*32)*(8*8)
     
     //The sprite height can be doubled, halving the number of sprites
-    uint8_t sprite_size = m_control_reg.get_sprite_size();
+    uint8_t sprite_size = control_reg.get_sprite_size();
     uint8_t bytes_per_sprite = sprite_size * 2;
     
     //Generate background pixels
     std::vector<Pixel> pixels;
     pixels.reserve(1024*8*sprite_size);
     
-    if (m_control_reg.background_display())
+    if (control_reg.background_display())
     {
         for (size_t index=0; index != 1024; ++index)
         {
@@ -203,8 +225,8 @@ void LCD::draw()
             uint16_t char_addr = char_ram_start + (ptr_val*bytes_per_sprite) - LCD_MEM_START;
             
             //Note that the y scroll is minus because the y co-ordinite is inverted
-            Tile t(((index % 32)*8)+m_scroll_x,
-                   ((index/32)*sprite_size)-m_scroll_y,
+            Tile t(((index % 32)*8)+scrollx,
+                   ((index/32)*sprite_size)-scrolly,
                    sprite_size,
                    m_data.begin()+char_addr,
                    m_data.begin()+char_addr+bytes_per_sprite);
@@ -212,48 +234,58 @@ void LCD::draw()
             //Renderer clears to white so don't bother with those tiles
             if (t.has_some_colour())
             {
-                std::vector<Pixel> ps = t.to_pixels(m_bgrnd_pallette);
+                std::vector<Pixel> ps = t.to_pixels(get_bgrnd_pallette());
                 //pixels.reserve(pixels.size() + distance(ps.begin(), ps.end()));
                 pixels.insert(pixels.end(), ps.begin(), ps.end());
             }
         }
     }
     
-    m_display.draw(pixels, m_win_pos_x, m_win_pos_y);
+    m_display.draw(pixels, winposx, winposy);
 }
 
 void LCD::tick(size_t curr_cycles)
 {
     /*
-    To explain the math ofr future reference:
+    To explain the math for future reference:
     0.954uS per instruction cycle
     15.66m + 1.09m seconds to draw the whole frame (1.09m for vblank)
     That makes it 0.1087mS per scan line.
     Which is 113.941 instruction cycles, aka 114 cycles per scan line.
     */
     const size_t per_scan_line = 114;
+    LCDControlReg control_reg = get_control_reg();
+    uint8_t curr_scanline = get_curr_scanline();
 
-    if (m_control_reg.get_lcd_operation() &&
+    if (control_reg.get_lcd_operation() &&
         ((curr_cycles - m_last_scan_change_cycles) > per_scan_line))
     {
         //154 scan lines, 144 + 10 vblank period
         m_last_scan_change_cycles = curr_cycles;
         
-        if (m_curr_scanline != 153)
+        if (curr_scanline != 153)
         {
-            m_curr_scanline++;
+            curr_scanline = inc_curr_scanline();
             
-            if (m_curr_scanline == 0x90)
+            if (curr_scanline == 0x90)
             {
                 if (m_proc != nullptr)
                 {
-                    if (m_proc->mem.read8(0xffff) & 1)
+                    //TODO: do all this in the proc itself?
+                    if ((m_proc->mem.read8(0xffff) & 1) && m_proc->interrupt_enable)
                     {
                         //Save PC to stack
                         m_proc->sp.dec(2);
                         m_proc->mem.write16(m_proc->sp.read(), m_proc->pc.read());
                         //Then jump there.
                         m_proc->pc.write(0x0040);
+                        
+                        //Set occurred flag (bit 0)
+                        m_proc->mem.write8(0xff0f, m_proc->mem.read8(0xff0f) | 1);
+                        printf("-----V-Blank interrupt-----\n");
+                        
+                        //Disable ints until the program enables them again
+                        m_proc->interrupt_enable = false;
                     }
                 }
 
@@ -261,7 +293,7 @@ void LCD::tick(size_t curr_cycles)
         }
         else
         {
-            m_curr_scanline = 0;
+            set_curr_scanline(0);
             draw();
         }
         
@@ -274,68 +306,25 @@ void LCD::show_display()
     m_display.init();
 }
 
-const uint16_t LCDCONTROL = 0xff40;
-const uint16_t LCDSTAT    = 0xff41;
-const uint16_t SCROLLY    = 0xff42;
-const uint16_t SCROLLX    = 0xff43;
-const uint16_t CURLINE    = 0xff44;
-const uint16_t BGRDPAL    = 0xff47;
-const uint16_t OBJPAL0    = 0xff48;
-const uint16_t OBJPAL1    = 0xff49;
-const uint16_t WINPOSY    = 0xff4a; //Yes, Y is first.
-const uint16_t WINPOSX    = 0xff4b;
-
-namespace {
-    uint8_t pallete_as_byte(const std::vector<uint8_t>& pallete)
-    {
-        uint8_t val;
-        for (int i=0; i<4; ++i)
-        {
-            val |= pallete[i] << (i*2);
-        }
-        return val;
-    }
-    
-    void write_pallete(std::vector<uint8_t>& pallete, uint8_t value)
-    {
-        for (int i=0; i<4; ++i)
-        {
-            pallete[i] = value & 0x3;
-            value = value >> 2;
-        }
-    }
-}
-
 uint8_t LCD::read8(uint16_t addr)
 {
     //printf("8 bit read from LCD addr: 0x%04x\n", addr);
     
-    switch (addr)
+    if ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END))
     {
-        case WINPOSX:
-            return m_win_pos_x;
-        case WINPOSY:
-            return m_win_pos_y;
-        case LCDCONTROL:
-            return m_control_reg.read();
-        case LCDSTAT:
-            return m_lcd_stat_reg.read();
-        case SCROLLX:
-            return m_scroll_x;
-        case SCROLLY:
-            return m_scroll_y;
-        case CURLINE:
-            //draw();
-            //return 0x90; //Bodge, pretend we're in vblank area
-            return m_curr_scanline;
-        case BGRDPAL:
-            return pallete_as_byte(m_bgrnd_pallette);
-        case OBJPAL0:
-            return pallete_as_byte(m_obj_pallette_0);
-        case OBJPAL1:
-            return pallete_as_byte(m_obj_pallette_1);
-        default:
-            return m_data[addr-LCD_MEM_START];
+        return m_data[addr-LCD_MEM_START];
+    }
+    else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
+    {
+        return get_reg8(addr);
+    }
+    else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
+    {
+        return m_oam_data[addr-LCD_OAM_START];
+    }
+    else
+    {
+        throw std::runtime_error(formatted_string("8 bit read of LCD addr 0x%04x", addr));
     }
 }
 
@@ -343,46 +332,21 @@ void LCD::write8(uint16_t addr, uint8_t value)
 {
     //printf("8 bit write to LCD addr: 0x%04x value: 0x%02x\n", addr, value);
     
-    switch (addr)
+    if ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END))
     {
-        case WINPOSX:
-            m_win_pos_x = value;
-            break;
-        case WINPOSY:
-            m_win_pos_y = value;
-            break;
-        case LCDCONTROL:
-            m_control_reg.write(value);
-            if (m_control_reg.get_lcd_operation() && (m_display.m_window == NULL))
-            {
-                show_display();
-            }
-            break;
-        case LCDSTAT:
-            m_lcd_stat_reg.write(value);
-            break;
-        case SCROLLX:
-            m_scroll_x = value;
-            break;
-        case SCROLLY:
-            m_scroll_y = value;
-            break;
-        case CURLINE:
-            //Writing resets the register
-            m_curr_scanline = 0;
-            break;
-        case BGRDPAL:
-            write_pallete(m_bgrnd_pallette, value);
-            break;
-        case OBJPAL0:
-            write_pallete(m_obj_pallette_0, value);
-            break;
-        case OBJPAL1:
-            write_pallete(m_obj_pallette_1, value);
-            break;
-        default:
-            m_data[addr-LCD_MEM_START] = value;
-            break;
+        m_data[addr-LCD_MEM_START] = value;
+    }
+    else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
+    {
+        set_reg8(addr, value);
+    }
+    else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
+    {
+        m_oam_data[addr-LCD_OAM_START] = value;
+    }
+    else
+    {
+        throw std::runtime_error(formatted_string("8 bit write to LCD addr 0x%04x of value 0x%02x", addr, value));
     }
 }
 
@@ -394,14 +358,15 @@ uint16_t LCD::read16(uint16_t addr)
         uint16_t ret = (uint16_t(m_data[offset+1]) << 8) | uint16_t(m_data[offset]);
         return ret;
     }
-    else if (addr == WINPOSY)
+    else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
     {
-        return (m_win_pos_x < 8) | m_win_pos_y;
+        uint16_t offset = addr-LCD_OAM_START;
+        uint16_t ret = (uint16_t(m_oam_data[offset+1]) << 8) | uint16_t(m_oam_data[offset]);
+        return ret;
     }
-    else if (addr == 0xff46)
+    else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
-        //Handle read 1 byte behind BGRDPAL which Tetris does
-        return pallete_as_byte(m_bgrnd_pallette);
+        return get_reg16(addr);
     }
     else
     {
@@ -418,35 +383,46 @@ void LCD::write16(uint16_t addr, uint16_t value)
         m_data[offset+1] = (value >> 8) & 0xff;
         //printf("16 bit write to LCD addr 0x%04x of value 0x%04x\n", addr, value);
     }
-    else if (addr == WINPOSY)
+    else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
     {
-        m_win_pos_y = addr;
-        m_win_pos_y = addr >> 8;
+        uint16_t offset = addr-LCD_OAM_START;
+        m_oam_data[offset] = value & 0xff;
+        m_oam_data[offset+1] = (value >> 8) & 0xff;
     }
-    else if (addr == OBJPAL0)
+    else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
-        write_pallete(m_obj_pallette_0, value);
-        write_pallete(m_obj_pallette_1, value >> 8);
-    }
-    else if (addr == 0xff46)
-    {
-        //I assume Tetris does 16 bit pallette setting for everything including BRGDPAL1
-        //even though there's only one of them. So ignore the lower 8 bits.
-        write_pallete(m_bgrnd_pallette, value >> 8);
-    }
-    else if (addr == CURLINE)
-    {
-        //Write CURLINE and CMPLINE
-        m_curr_scanline = value;
-        m_cmp_line = value >> 8;
-    }
-    else if (addr == SCROLLY)
-    {
-        m_scroll_y = value;
-        m_scroll_x = value >> 8;
+        set_reg16(addr, value);
     }
     else
     {
         throw std::runtime_error(formatted_string("16 bit write to LCD addr 0x%04x of value 0x%04x", addr, value));
     }
+}
+
+void LCD::do_after_reg_write(uint16_t addr)
+{
+    //React to settings being changed.
+    
+    switch (addr)
+    {
+        case LCDCONTROL:
+        {
+            LCDControlReg ctrl(get_control_reg());
+            if (ctrl.get_lcd_operation() && (m_display.m_window == NULL))
+            {
+                show_display();
+            }
+            break;
+        }
+        case CURLINE:
+            //Writing anything sets the register to 0
+            set_curr_scanline(0);
+            break;
+    }
+}
+
+void LCD::do_after_reg_write16(uint16_t addr)
+{
+    do_after_reg_write(addr);
+    do_after_reg_write(addr+1);
 }

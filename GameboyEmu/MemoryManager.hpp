@@ -17,8 +17,12 @@ class Z80;
 
 const uint16_t LCD_MEM_START  = 0x8000;
 const uint16_t LCD_MEM_END    = 0xa000;
+
 const uint16_t LCD_REGS_START = 0xff40;
 const uint16_t LCD_REGS_END   = 0xff4c;
+
+const uint16_t LCD_OAM_START = 0xfe00;
+const uint16_t LCD_OAM_END   = 0xfea0;
 
 const uint16_t ROM_START = 0x0100; //Before bootstrap turns off that is
 const uint16_t ROM_END   = 0x4000;

@@ -42,7 +42,7 @@ int main(int argc, const char * argv[]) {
         
         Step(proc);
         
-        if (proc.pc.read() == 0xeadc)
+        if (proc.pc.read() == 0x0040)
         {
             //return 0;
             uint8_t foo = 1;
