@@ -63,43 +63,6 @@ protected:
     int_type m_value;
 };
 
-class SPRegister: public Register<uint16_t>
-{
-public:
-    using Register::Register;
-    
-    void write(uint16_t val)
-    {
-        m_value = val;
-        
-        if (logging)
-        {
-            printf("Reg: %s new value: 0x%x\n", name.c_str(), val);
-        }
-    }
-    
-    void inc(uint16_t val)
-    {
-        m_value+=val;
-        
-        if (logging)
-        {
-            printf("Reg: %s inc by %d to: 0x%x\n", name.c_str(), val, m_value);
-        }
-    }
-    
-    void dec(uint16_t val)
-    {
-        m_value-=val;
-        
-        if (logging)
-        {
-            printf("Reg: %s dec by %d to: 0x%x\n", name.c_str(), val, m_value);
-        }
-    }
-
-};
-
 class FlagRegister: public Register<uint8_t>
 {
 public:
@@ -142,11 +105,10 @@ public:
         m_total_cycles(0),
         interrupt_enable(false)
     {
-        sp.logging = true;
     }
     
     Register <uint16_t> pc;
-    SPRegister sp;
+    Register <uint16_t> sp;
     FlagRegister f;
     
     Register <uint8_t> a;
@@ -203,6 +165,8 @@ private:
     
     void print_callstack()
     {
+        return;
+        
         printf("\n------Callstack------\n");
         std::vector<std::string>::iterator it=m_callstack_frames.begin();
         for (; it != m_callstack_frames.end(); ++it)

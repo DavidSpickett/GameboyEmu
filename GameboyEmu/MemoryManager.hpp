@@ -31,7 +31,7 @@ const uint16_t CART_RAM_START = 0xa000;
 const uint16_t CART_RAM_END   = 0xc000;
 
 const uint16_t HARDWARE_REGS_START = 0xff00;
-const uint16_t HARDWARE_REGS_END   = 0xff27;
+const uint16_t HARDWARE_REGS_END   = 0xff10;
 
 const uint16_t JOYPAD_REG = 0xff00;
 
@@ -55,6 +55,9 @@ const uint16_t SWITCHABLE_ROM_END   = 0x8000;
 
 const uint16_t UNUSED_IO_REGS_START = 0xff47;
 const uint16_t UNUSED_IO_REGS_END   = 0xffff;
+
+const uint16_t SOUND_BEGIN = 0xff10;
+const uint16_t SOUND_END   = 0xff40;
 
 class MemoryManager
 {

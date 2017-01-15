@@ -10,7 +10,7 @@
 #include <iostream>
 #include "utils.hpp"
 
-#define DEBUG_INSTR 1
+#define DEBUG_INSTR 0
 
 namespace
 {
@@ -2474,12 +2474,22 @@ uint8_t srl_n(Z80& proc, uint8_t b1)
     return 8;
 }
 
+uint8_t ld_a_hl_minus(Z80& proc)
+{
+    uint16_t addr = proc.get_hl();
+    uint8_t value = proc.mem.read8(addr);
+    proc.a.write(value);
+    proc.set_hl(addr-1);
+    
+    debug_print("ld a (hl-)\n");
+    return 8;
+}
+
 uint8_t stop(Z80& proc)
 {
-    //TODO: actually impliment this with interrupts.
-    //Should go to sleep until a button is pressed.
-    
     proc.fetch_byte(); //2 byte opcode for some reason
+    
+    throw std::runtime_error("Impliment me!");
     return 4;
 }
 
@@ -2877,6 +2887,9 @@ void Step(Z80& proc)
             break;
         case 0x10:
             cycles = stop(proc);
+            break;
+        case 0x3a:
+            cycles = ld_a_hl_minus(proc);
             break;
         default:
         {

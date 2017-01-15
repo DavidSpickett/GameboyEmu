@@ -28,12 +28,13 @@ void skip_bootstrap(Z80& proc)
 
 int main(int argc, const char * argv[]) {
     MemoryMap map("Tetris (World).gb");
+    //MemoryMap map("ttt.gb");
     Z80 proc(map);
     //Icky
     map.m_interrupt_handler.m_proc = &proc;
     map.m_lcd_handler.m_proc = &proc;
     
-    //skip_bootstrap(proc);
+    skip_bootstrap(proc);
 
     while(1)
     {
@@ -42,7 +43,7 @@ int main(int argc, const char * argv[]) {
         
         Step(proc);
         
-        if (proc.pc.read() == 0x0040)
+        if (proc.pc.read() == 0x29fe)
         {
             //return 0;
             uint8_t foo = 1;

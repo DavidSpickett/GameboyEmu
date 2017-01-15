@@ -26,13 +26,13 @@ uint8_t InputManager::read8(uint16_t addr)
     
     if (m_mode == MODE_DIR)
     {
-        if (state[SDL_SCANCODE_UP])
-        {
-            m_joypad &= ~(1<<2);
-        }
         if (state[SDL_SCANCODE_DOWN])
         {
             m_joypad &= ~(1<<3);
+        }
+        if (state[SDL_SCANCODE_UP])
+        {
+            m_joypad &= ~(1<<2);
         }
         if (state[SDL_SCANCODE_LEFT])
         {
@@ -45,6 +45,14 @@ uint8_t InputManager::read8(uint16_t addr)
     }
     else
     {
+        if (state[SDL_SCANCODE_RETURN]) //Start
+        {
+            m_joypad &= ~(1<<3);
+        }
+        if (state[SDL_SCANCODE_RSHIFT]) //Select
+        {
+            m_joypad &= ~(1<<2);
+        }
         if (state[SDL_SCANCODE_Z]) //B
         {
             m_joypad &= ~(1<<1);
@@ -53,16 +61,9 @@ uint8_t InputManager::read8(uint16_t addr)
         {
             m_joypad &= ~1;
         }
-        if (state[SDL_SCANCODE_RETURN]) //Start
-        {
-            m_joypad &= ~(1<<3);
-        }
-        if (state[SDL_SCANCODE_BACKSPACE]) //Select
-        {
-            m_joypad &= ~(1<<2);
-        }
     }
     
+    //printf("Joypad: 0x%02x\n", m_joypad);
     return m_joypad;
 }
 

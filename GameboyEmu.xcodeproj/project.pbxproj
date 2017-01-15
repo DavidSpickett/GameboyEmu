@@ -37,6 +37,7 @@
 		2F0029081DA2D5AF00A06C65 /* MemoryManager.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MemoryManager.hpp; sourceTree = "<group>"; };
 		2F72BC351D9AFCF6009CC1CC /* GameboyEmu */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GameboyEmu; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F72BC381D9AFCF6009CC1CC /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		2FDFB5511E2C353D00C0885A /* SoundHandler.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SoundHandler.hpp; sourceTree = "<group>"; };
 		2FF17E511D9B32D800D2E207 /* instructions.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = instructions.cpp; sourceTree = "<group>"; };
 		2FF17E521D9B32D800D2E207 /* instructions.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = instructions.hpp; sourceTree = "<group>"; };
 		2FF17E531D9B32D800D2E207 /* MemoryMap.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MemoryMap.cpp; sourceTree = "<group>"; };
@@ -105,6 +106,7 @@
 				2FF17E571D9B32D800D2E207 /* Z80.cpp */,
 				2FF17E581D9B32D800D2E207 /* Z80.hpp */,
 				2F72BC381D9AFCF6009CC1CC /* main.cpp */,
+				2FDFB5511E2C353D00C0885A /* SoundHandler.hpp */,
 				2FF69BA81DA82AD800474B10 /* InputManager.cpp */,
 				2FF69BA91DA82AD800474B10 /* InputManager.hpp */,
 			);

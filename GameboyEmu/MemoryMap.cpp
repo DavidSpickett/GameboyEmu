@@ -87,6 +87,10 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
         //I assume these are Colour/Super GB regs
         return m_null_handler;
     }
+    else if ((addr >= SOUND_BEGIN) && (addr < SOUND_END))
+    {
+        return m_sound_handler;
+    }
     else
     {
         throw std::runtime_error(formatted_string("Don't have a handler for addr 0x%04x!", addr));

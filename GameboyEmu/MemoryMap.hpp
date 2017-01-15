@@ -19,6 +19,7 @@
 #include "LCD.hpp"
 #include "HardwareIORegs.hpp"
 #include "InputManager.hpp"
+#include "SoundHandler.hpp"
 
 class DefaultMemoryManager: public MemoryManager
 {
@@ -98,6 +99,7 @@ private:
     DefaultMemoryManager m_default_handler;
     NullMemoryManager m_null_handler;
     InputManager m_input_handler;
+    SoundHandler m_sound_handler;
 };
 
 
