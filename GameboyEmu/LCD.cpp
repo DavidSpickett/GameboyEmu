@@ -11,10 +11,10 @@
 #include "Z80.hpp"
 
 //Video memory is 256x256 but the viewport is smaller and moves around
-//const size_t LCD_WIDTH  = 160;
-//const size_t LCD_HEIGHT = 144;
-const size_t LCD_WIDTH  = 256;
-const size_t LCD_HEIGHT = 256;
+const size_t LCD_WIDTH  = 160;
+const size_t LCD_HEIGHT = 144;
+//const size_t LCD_WIDTH  = 256;
+//const size_t LCD_HEIGHT = 256;
 
 std::string Tile::to_string(const std::vector<uint8_t>& pallette) const
 {

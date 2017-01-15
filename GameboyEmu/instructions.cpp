@@ -255,7 +255,7 @@ uint8_t ret(Z80& proc)
     proc.pc.write(new_addr);
     
     debug_print("%s", "ret\n");
-    proc.add_ret(new_addr);
+    proc.add_ret(new_addr, false);
     return 8;
 }
 
@@ -2112,7 +2112,7 @@ uint8_t ret_cc(Z80& proc, uint8_t b1)
     debug_print("ret %s\n", ret_type.c_str());
     if (jump)
     {
-        proc.add_ret(new_addr);
+        proc.add_ret(new_addr, false);
     }
     return 8;
 }
@@ -2317,11 +2317,13 @@ uint8_t rlc_n(Z80& proc, uint8_t b1)
 
 uint8_t reti(Z80& proc)
 {
-    proc.pc.write(proc.sp.read());
+    uint16_t addr = proc.mem.read16(proc.sp.read());
+    proc.pc.write(addr);
     proc.sp.inc(2);
     proc.interrupt_enable = true;
     
     debug_print("%s\n", "reti");
+    proc.add_ret(addr, true);
     return 16;
 }
 

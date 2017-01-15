@@ -33,7 +33,7 @@ int main(int argc, const char * argv[]) {
     map.m_interrupt_handler.m_proc = &proc;
     map.m_lcd_handler.m_proc = &proc;
     
-    skip_bootstrap(proc);
+    //skip_bootstrap(proc);
 
     while(1)
     {

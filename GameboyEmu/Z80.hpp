@@ -184,12 +184,16 @@ public:
         print_callstack();
     }
     
-    void add_ret(uint16_t to)
+    void add_ret(uint16_t to, bool is_reti)
     {
         m_callstack_frames.push_back(formatted_string("return to 0x%04x", to));
         print_callstack();
         m_callstack_frames.pop_back(); //Remove call/ret pair
-        m_callstack_frames.pop_back();
+        
+        if (!is_reti && m_callstack_frames.size())
+        {
+            m_callstack_frames.pop_back();
+        }
     }
     
     bool interrupt_enable;
