@@ -46,7 +46,8 @@ public:
                 m_ram_bank = std::vector<uint8_t>(8*1024, 0);
                 break;
             default:
-                throw std::runtime_error("Unsupported RAM size!!!");
+                printf("Unsupported RAM size!!!");
+                break;
         }
     }
     

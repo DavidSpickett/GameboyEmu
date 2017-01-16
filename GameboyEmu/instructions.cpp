@@ -2415,6 +2415,13 @@ uint8_t ld_nn_sp(Z80& proc)
     return 20;
 }
 
+uint8_t ld_sp_hl(Z80& proc)
+{
+    proc.sp.write(proc.get_hl());
+    debug_print("%s", "ld sp hl\n");
+    return 8;
+}
+
 namespace {
     uint8_t generic_srl_n(Z80& proc, uint8_t value)
     {
@@ -2474,6 +2481,31 @@ uint8_t srl_n(Z80& proc, uint8_t b1)
     return 8;
 }
 
+uint8_t ldhl_sp_n(Z80& proc)
+{
+    uint8_t offs = proc.fetch_byte();
+    uint16_t addr = proc.sp.read() + offs;
+    proc.set_hl(proc.mem.read16(addr));
+    
+    debug_print("ldhl sp, 0x%02x\n", offs);
+    return 12;
+}
+
+uint8_t rcca(Z80& proc)
+{
+    uint8_t a = proc.a.read();
+    proc.f.set_n(false);
+    proc.f.set_h(false);
+    proc.f.set_c(a & 0x1);
+    
+    a = a >> 1;
+    proc.f.set_z(a==0);
+    proc.a.write(a);
+    
+    debug_print("rcca\n");
+    return 4;
+}
+
 uint8_t ld_a_hl_minus(Z80& proc)
 {
     uint16_t addr = proc.get_hl();
@@ -2490,6 +2522,73 @@ uint8_t stop(Z80& proc)
     proc.fetch_byte(); //2 byte opcode for some reason
     
     throw std::runtime_error("Impliment me!");
+    return 4;
+}
+
+namespace
+{
+    uint8_t generic_rr_n(Z80& proc, uint8_t value)
+    {
+        proc.f.set_c(value & 0x1);
+        value >>= 1;
+        
+        proc.f.set_z(value==0);
+        proc.f.set_n(false);
+        proc.f.set_h(false);
+        
+        return value;
+    }
+}
+
+uint8_t rr_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = NULL;
+    
+    switch (b1)
+    {
+        case 0x1f:
+            reg = &proc.a;
+            break;
+        case 0x18:
+            reg = &proc.b;
+            break;
+        case 0x19:
+            reg = &proc.c;
+            break;
+        case 0x1a:
+            reg = &proc.d;
+            break;
+        case 0x1b:
+            reg = &proc.e;
+            break;
+        case 0x1c:
+            reg = &proc.h;
+            break;
+        case 0x1d:
+            reg = &proc.l;
+            break;
+        case 0x1e:
+        {
+            //HL as addr
+            uint16_t addr = proc.get_hl();
+            uint8_t new_value = generic_rr_n(proc, proc.mem.read8(addr));
+            proc.mem.write8(addr, new_value);
+            
+            debug_print("rr (hl)\n");
+            return 16;
+        }
+    }
+    
+    reg->write(generic_rr_n(proc, reg->read()));
+    debug_print("rr %s\n", reg->name.c_str());
+    return 8;
+}
+
+uint8_t halt(Z80& proc)
+{
+    proc.halted = true;
+    
+    debug_print("halt\n");
     return 4;
 }
 
@@ -2525,6 +2624,10 @@ uint8_t cb_prefix_instr(Z80& proc)
     else if ((temp8 >= 0x38) && (temp8 <= 0x3f))
     {
         cycles = srl_n(proc, temp8);
+    }
+    else if ((temp8 >= 0x18) && (temp8 <= 0x1f))
+    {
+        cycles = rr_n(proc, temp8);
     }
     else
     {
@@ -2890,6 +2993,19 @@ void Step(Z80& proc)
             break;
         case 0x3a:
             cycles = ld_a_hl_minus(proc);
+            break;
+        case 0x0f:
+        case 0x1f: //rra appears to be the same thing
+            cycles = rcca(proc);
+            break;
+        case 0xf8:
+            cycles = ldhl_sp_n(proc);
+            break;
+        case 0xf9:
+            cycles = ld_sp_hl(proc);
+            break;
+        case 0x76:
+            cycles = halt(proc);
             break;
         default:
         {

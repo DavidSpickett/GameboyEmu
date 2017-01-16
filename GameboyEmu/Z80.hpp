@@ -103,7 +103,8 @@ public:
         h("h"),
         l("l"),
         m_total_cycles(0),
-        interrupt_enable(false)
+        interrupt_enable(false),
+        halted(false)
     {
     }
     
@@ -159,6 +160,7 @@ public:
     }
     
     bool interrupt_enable;
+    bool halted;
     
 private:
     std::vector<std::string> m_callstack_frames;

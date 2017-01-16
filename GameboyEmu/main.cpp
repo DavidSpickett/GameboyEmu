@@ -27,8 +27,8 @@ void skip_bootstrap(Z80& proc)
 }
 
 int main(int argc, const char * argv[]) {
-    MemoryMap map("Tetris (World).gb");
-    //MemoryMap map("ttt.gb");
+    //MemoryMap map("Tetris (World).gb");
+    MemoryMap map("Dr. Mario (World).gb");
     Z80 proc(map);
     //Icky
     map.m_interrupt_handler.m_proc = &proc;
@@ -41,7 +41,10 @@ int main(int argc, const char * argv[]) {
         SDL_Event event;
         SDL_PollEvent(&event);
         
-        Step(proc);
+        if (!proc.halted)
+        {
+            Step(proc);
+        }
         
         if (proc.pc.read() == 0x29fe)
         {

@@ -15,6 +15,35 @@
 #include <SDL2/SDL.h>
 #include "MemoryManager.hpp"
 
+class Sprite
+{
+public:
+    Sprite(std::vector<uint8_t>::const_iterator start):
+        m_data(start)
+    {
+    }
+    
+    uint8_t get_y() { return *m_data; }
+    uint8_t get_x() { return *(m_data+1); }
+    uint8_t get_pattern_number() { return *(m_data+2); }
+    
+    bool get_priority() { return get_flag(7); }
+    bool get_y_flip() { return get_flag(6); }
+    bool get_x_flip() { return get_flag(5); }
+    bool get_pallette_number() { return get_flag(4); }
+    
+    std::string to_str()
+    {
+        return formatted_string("Sprite at X:%d Y:%x priority:%d xflip:%d yflip:%d pallettenum:%d",
+                get_x(), get_y(), get_priority(), get_x_flip(),
+                get_y_flip(), get_pallette_number());
+    }
+    
+private:
+    uint8_t get_flag(uint8_t pos) { return (*(m_data+3)) & (1<<pos); }
+    std::vector<uint8_t>::const_iterator m_data;
+};
+
 class Pixel
 {
 public:

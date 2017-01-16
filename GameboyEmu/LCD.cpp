@@ -181,6 +181,8 @@ const LCDPallette LCD::get_pallete(uint16_t addr)
 
 void LCD::draw()
 {
+    throw std::runtime_error("Rewrite me! With scanline support!");
+    
     LCDControlReg control_reg = get_control_reg();
     uint8_t scrollx = get_scroll_x();
     uint8_t scrolly = get_scroll_y();
@@ -195,6 +197,8 @@ void LCD::draw()
     //Assume bg map 1 for the time being
     uint16_t bg_map_start = control_reg.get_bgrnd_tile_table_addr();
     uint16_t char_ram_start = control_reg.get_tile_patt_table_addr();
+    
+    bool signed_tile_index = char_ram_start == 0x8800;
     
     //1024 bytes where each byte represents an index into the character RAM
     //So there are 32x32 indexes, each pointing to an 8x8 character
@@ -214,6 +218,17 @@ void LCD::draw()
         {
             uint8_t ptr_val = m_data[bg_map_start+index-LCD_MEM_START];
             
+            if (signed_tile_index)
+            {
+                //Second table is unsigned indexes, convert to 0-255
+                int16_t signed_ptr = ptr_val;
+                if (signed_ptr < 0)
+                {
+                    signed_ptr += 128;
+                }
+                ptr_val = signed_ptr;
+            }
+            
             //In 16 height mode pointing to an even sprite no.
             //just points to the previous odd sprite no.
             if (sprite_size == 16)
@@ -221,7 +236,6 @@ void LCD::draw()
                 ptr_val -= ptr_val % 2;
             }
             
-            //TODO: should - addr depending on bg being used
             uint16_t char_addr = char_ram_start + (ptr_val*bytes_per_sprite) - LCD_MEM_START;
             
             //Note that the y scroll is minus because the y co-ordinite is inverted
@@ -240,6 +254,28 @@ void LCD::draw()
             }
         }
     }
+    
+    //Sprites
+    /*std::vector<uint8_t>::const_iterator it = m_oam_data.begin();
+    for ( ; it != m_oam_data.end(); ++it)
+    {
+        Sprite sprite(it);
+        //printf("%s\n", sprite.to_str().c_str());
+        
+        Tile t(sprite.get_x(),
+             sprite.get_y(),
+             sprite_size,
+             m_data.begin()+sprite.get_pattern_number(),
+             m_data.begin()+sprite.get_pattern_number()+sprite_size);
+        
+        if (t.has_some_colour())
+        {
+            const LCDPallette pallette = sprite.get_pallette_number() ? get_obj_pal1() : get_obj_pal0();
+            std::vector<Pixel> ps = t.to_pixels(pallette);
+            //pixels.reserve(pixels.size() + distance(ps.begin(), ps.end()));
+            pixels.insert(pixels.end(), ps.begin(), ps.end());
+        }
+    }*/
     
     m_display.draw(pixels, winposx, winposy);
 }
@@ -286,9 +322,10 @@ void LCD::tick(size_t curr_cycles)
                         
                         //Disable ints until the program enables them again
                         m_proc->interrupt_enable = false;
+                        //Unhalt if need be
+                        m_proc->halted = false;
                     }
                 }
-
             }
         }
         else
