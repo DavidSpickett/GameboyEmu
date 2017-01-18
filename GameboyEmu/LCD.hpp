@@ -15,6 +15,8 @@
 #include <SDL2/SDL.h>
 #include "MemoryManager.hpp"
 
+typedef std::vector<uint8_t> LCDPallette;
+
 class Sprite
 {
 public:
@@ -44,36 +46,16 @@ private:
     std::vector<uint8_t>::const_iterator m_data;
 };
 
-class Pixel
+struct Pixel
 {
-public:
-    Pixel(uint16_t x, uint16_t y, uint8_t c):
+    Pixel(int x, int y, uint8_t c):
     x(x), y(y), c(c)
     {
     }
     
-    uint16_t x;
-    uint16_t y;
+    int x;
+    int y;
     uint8_t c;
-};
-
-class Tile
-{
-public:
-    Tile(uint16_t x, uint16_t y, uint16_t h, std::vector<uint8_t>::const_iterator data_b, std::vector<uint8_t>::const_iterator data_e):
-    x(x), y(y), h(h), data_b(data_b), data_e(data_e)
-    {
-    }
-    
-    std::vector<Pixel> to_pixels(const std::vector<uint8_t>& pallette) const;
-    std::string to_string(const std::vector<uint8_t>& pallette) const;
-    bool has_some_colour() const;
-    
-    uint16_t x;
-    uint16_t y;
-    uint16_t h; //For potential double height mode
-    std::vector<uint8_t>::const_iterator data_b;
-    std::vector<uint8_t>::const_iterator data_e;
 };
 
 struct colour
@@ -96,70 +78,54 @@ public:
     ~LCDWindow();
     
     void init();
-    void draw(std::vector<Pixel>& pixels, uint8_t win_pos_x, uint8_t win_pos_y);
-    void set_viewport_pos(uint16_t x, uint16_t y) { m_x_origin=x; m_y_origin=y; }
+    void draw(const std::vector<Pixel>& pixels);
     SDL_Window* m_window;
     
 private:
     SDL_Renderer* m_renderer;
-    std::vector<std::vector<uint8_t>> m_pixels;
     std::vector<colour> m_colours;
-    uint16_t m_x_origin;
-    uint16_t m_y_origin;
 };
 
-const uint16_t LCDCONTROL = 0xff40;
-const uint16_t LCDSTAT    = 0xff41;
-const uint16_t SCROLLY    = 0xff42;
-const uint16_t SCROLLX    = 0xff43;
-const uint16_t CURLINE    = 0xff44;
-const uint16_t BGRDPAL    = 0xff47;
-const uint16_t OBJPAL0    = 0xff48;
-const uint16_t OBJPAL1    = 0xff49;
-const uint16_t WINPOSY    = 0xff4a; //Yes, Y is first.
-const uint16_t WINPOSX    = 0xff4b;
+const uint16_t LCDCONTROL = 0xff40-LCD_REGS_START;
+const uint16_t LCDSTAT    = 0xff41-LCD_REGS_START;
+const uint16_t SCROLLY    = 0xff42-LCD_REGS_START;
+const uint16_t SCROLLX    = 0xff43-LCD_REGS_START;
+const uint16_t CURLINE    = 0xff44-LCD_REGS_START;
+const uint16_t BGRDPAL    = 0xff47-LCD_REGS_START;
+const uint16_t OBJPAL0    = 0xff48-LCD_REGS_START;
+const uint16_t OBJPAL1    = 0xff49-LCD_REGS_START;
+const uint16_t WINPOSY    = 0xff4a-LCD_REGS_START; //Yes, Y is first.
+const uint16_t WINPOSX    = 0xff4b-LCD_REGS_START;
 
 class LCDControlReg
 {
 public:
-    LCDControlReg(uint8_t value):
+    LCDControlReg(uint8_t* value):
         m_value(value)
     {
     }
     
-    void write(uint8_t value) { m_value=value; }
-    uint8_t read() { return m_value; }
+    LCDControlReg():
+        m_value(NULL)
+    {}
     
-    bool get_lcd_operation() { return m_value & (1<<7); }
-    uint16_t get_window_tile_table_addr() { return m_value & (1<<6) ? 0x9C00 : 0x9800; }
-    bool get_window_display() { return m_value & (1<<5); }
-    uint16_t get_tile_patt_table_addr() { return m_value & (1<<4) ? 0x8000 : 0x8800; }
-    uint16_t get_bgrnd_tile_table_addr() { return m_value & (1<<3) ? 0x9c00 : 0x9800; }
-    uint8_t get_sprite_size() { return m_value & (1<<2) ? 16 : 8; }
-    uint8_t get_colour_0_transp() { return m_value & (1<<1) ? 1 : 0; }
-    bool background_display() { return m_value & 1; }
+    void write(uint8_t value) { *m_value=value; }
+    uint8_t read()            { return *m_value; }
     
-private:
-    uint8_t m_value;
-};
-
-class LCDStatReg
-{
-public:
-    LCDStatReg():
-    m_value(0)
-    {
-    }
-    
-    void write(uint8_t value) { m_value=value; }
-    uint8_t read() { return m_value; }
+    bool get_lcd_operation()              { return *m_value & (1<<7); }
+    uint16_t get_window_tile_table_addr() { return *m_value & (1<<6) ? 0x9C00 : 0x9800; }
+    bool get_window_display()             { return *m_value & (1<<5); }
+    uint16_t get_bgrnd_tile_data_addr()   { return *m_value & (1<<4) ? 0x8000 : 0x8800; }
+    uint16_t get_bgrnd_tile_table_addr()  { return *m_value & (1<<3) ? 0x9c00 : 0x9800; }
+    uint8_t get_sprite_size()             { return *m_value & (1<<2) ? 16 : 8; }
+    uint8_t get_colour_0_transp()         { return *m_value & (1<<1) ? 1 : 0; }
+    bool background_display()             { return *m_value & 1; }
     
 private:
-    uint8_t m_value;
+    uint8_t* m_value;
 };
 
 class Z80;
-typedef std::vector<uint8_t> LCDPallette;
 
 class LCD: public MemoryManager
 {
@@ -170,6 +136,8 @@ class LCD: public MemoryManager
             m_data.resize(LCD_MEM_END-LCD_MEM_START, 0);
             m_oam_data.resize(LCD_OAM_END-LCD_OAM_START, 0);
             m_registers.resize(LCD_REGS_END-LCD_REGS_START, 0);
+            
+            m_control_reg = LCDControlReg(&m_registers[LCDCONTROL]);
         }
     
         void write8(uint16_t addr, uint8_t value);
@@ -185,51 +153,47 @@ class LCD: public MemoryManager
         Z80* m_proc; /////HACK HACK HACK
     
     private:
+        LCDControlReg m_control_reg;
         LCDWindow m_display;
         std::vector<uint8_t> m_data;
         std::vector<uint8_t> m_oam_data;
         std::vector<uint8_t> m_registers;
         uint8_t m_last_scan_change_cycles;
 
-        uint16_t get_regs_addr(uint16_t addr) { return addr-LCD_REGS_START; }
-    
-        LCDControlReg get_control_reg()
-        {
-            return LCDControlReg(m_registers[get_regs_addr(LCDCONTROL)]);
-        }
         uint8_t get_scroll_x()
         {
-            return m_registers[get_regs_addr(SCROLLX)];
-        }
-        uint8_t get_scroll_y()
-        {
-            return m_registers[get_regs_addr(SCROLLY)];
-        }
-        uint8_t get_winpos_x()
-        {
-            return m_registers[get_regs_addr(WINPOSX)];
-        }
-        uint8_t get_winpos_y()
-        {
-            return m_registers[get_regs_addr(WINPOSY)];
-        }
-        uint8_t get_curr_scanline()
-        {
-            return m_registers[get_regs_addr(CURLINE)];
-        }
-        void set_curr_scanline(uint8_t value)
-        {
-            m_registers[get_regs_addr(CURLINE)] = value;
-        }
-        uint8_t inc_curr_scanline()
-        {
-            uint16_t addr = get_regs_addr(CURLINE);
-            uint8_t val = m_registers[addr];
-            val++;
-            m_registers[addr] = val;
-            return val;
+            return m_registers[SCROLLX];
         }
     
+        uint8_t get_scroll_y()
+        {
+            return m_registers[SCROLLY];
+        }
+    
+        uint8_t get_winpos_x()
+        {
+            return m_registers[WINPOSX];
+        }
+    
+        uint8_t get_winpos_y()
+        {
+            return m_registers[WINPOSY];
+        }
+    
+        uint8_t get_curr_scanline()
+        {
+            return m_registers[CURLINE];
+        }
+    
+        void set_curr_scanline(uint8_t value)
+        {
+            m_registers[CURLINE] = value;
+        }
+    
+        uint8_t inc_curr_scanline()
+        {
+            return ++m_registers[CURLINE];
+        }
     
         const LCDPallette get_pallete(uint16_t addr);
         const LCDPallette get_bgrnd_pallette() { return get_pallete(BGRDPAL); }
@@ -239,10 +203,13 @@ class LCD: public MemoryManager
         void do_after_reg_write(uint16_t addr);
         void do_after_reg_write16(uint16_t addr);
     
+        uint16_t get_regs_addr(uint16_t addr) { return addr - LCD_REGS_START; }
+    
         uint8_t get_reg8(uint16_t addr) { return m_registers[get_regs_addr(addr)]; }
         void set_reg8(uint16_t addr, uint8_t value)
         {
-            m_registers[get_regs_addr(addr)] = value;
+            addr = get_regs_addr(addr);
+            m_registers[addr] = value;
             do_after_reg_write(addr);
         }
     
