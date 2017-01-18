@@ -8,6 +8,7 @@
 
 #include "InputManager.hpp"
 #include <SDL2/SDL.h>
+#include "Z80.hpp"
 
 namespace {
     const uint8_t MODE_DIR = 0;
@@ -29,6 +30,7 @@ uint8_t InputManager::read8(uint16_t addr)
         if (state[SDL_SCANCODE_DOWN])
         {
             m_joypad &= ~(1<<3);
+            m_proc->stopped = false;
         }
         if (state[SDL_SCANCODE_UP])
         {

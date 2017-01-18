@@ -56,7 +56,7 @@ public:
     
     void tick(size_t curr_cycles) {}
     
-    void AddFile(std::string path, uint16_t addr);
+    void AddFile(std::string path);
     
 private:
     std::vector<uint8_t> m_mem;
@@ -77,7 +77,7 @@ public:
     MemoryMap(std::string cartridge_name):
     m_bootstrap_in_mem(true), m_rom_handler(cartridge_name)
     {
-        m_default_handler.AddFile("GameBoyBios.gb", 0x0000);
+        m_default_handler.AddFile("GameBoyBios.gb");
     }
     
     uint8_t read8(uint16_t addr);
@@ -88,12 +88,18 @@ public:
     
     void tick(size_t curr_cycles);
     
-    InterruptManager m_interrupt_handler;
-    LCD m_lcd_handler;
+    void set_proc_pointers(Z80* proc)
+    {
+        m_input_handler.m_proc = proc;
+        m_interrupt_handler.m_proc = proc;
+        m_lcd_handler.m_proc = proc;
+    }
     
 private:
     bool m_bootstrap_in_mem;
     MemoryManager& get_mm(uint16_t addr);
+    InterruptManager m_interrupt_handler;
+    LCD m_lcd_handler;
     ROMHandler m_rom_handler;
     HardwareIORegs m_hardware_regs_handler;
     DefaultMemoryManager m_default_handler;

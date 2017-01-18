@@ -12,10 +12,13 @@
 #include <stdio.h>
 #include "MemoryManager.hpp"
 
+class Z80;
+
 class InputManager: public MemoryManager
 {
 public:
-    InputManager()
+    InputManager():
+        m_proc(NULL)
     {
         m_joypad = 0xff;
     }
@@ -27,6 +30,7 @@ public:
     void write16(uint16_t addr, uint16_t value) {throw std::runtime_error("?");}
     
     void tick(size_t curr_cycles);
+    Z80* m_proc;
     
 private:
     uint8_t m_joypad;

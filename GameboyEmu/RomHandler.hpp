@@ -23,12 +23,17 @@ class ROMHandler: public MemoryManager
 public:
     ROMHandler(std::string file_path):
         m_file_path(file_path),
-        file_str(std::ifstream(file_path.c_str(), std::ifstream::binary)),
         m_rom_bank_no(1), //Starts at 1 because bank 0 is permemnantley mapped
         m_ram_bank_no(0),
         m_ram_enable(false),
         m_rom_ram_mode(RAM_MODE) //Zelda seems to expect RAM mode to start with
     {
+        file_str = std::ifstream(file_path.c_str(), std::ifstream::binary);
+        if (!file_str.is_open())
+        {
+            throw std::runtime_error(formatted_string("File %s does not exist.", file_path.c_str()));
+        }
+        
         printf("%s\n", get_info().c_str());
         if (is_cgb_only())
         {

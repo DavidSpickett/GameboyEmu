@@ -27,21 +27,20 @@ void skip_bootstrap(Z80& proc)
 }
 
 int main(int argc, const char * argv[]) {
-    MemoryMap map("Tetris (World).gb");
-    //MemoryMap map("Dr. Mario (World).gb");
+    //MemoryMap map("Tetris (World).gb");
+    MemoryMap map("opus5.gb");
     Z80 proc(map);
     //Icky
-    map.m_interrupt_handler.m_proc = &proc;
-    map.m_lcd_handler.m_proc = &proc;
+    map.set_proc_pointers(&proc);
     
-    //skip_bootstrap(proc);
+    skip_bootstrap(proc);
 
     while(1)
     {
         SDL_Event event;
         SDL_PollEvent(&event);
         
-        if (!proc.halted)
+        if (!proc.halted && !proc.stopped)
         {
             Step(proc);
         }

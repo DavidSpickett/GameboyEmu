@@ -25,8 +25,8 @@ public:
     {
     }
     
-    uint8_t get_y() { return *m_data; }
-    uint8_t get_x() { return *(m_data+1); }
+    int get_y() { return *m_data; }
+    int get_x() { return *(m_data+1); }
     uint8_t get_pattern_number() { return *(m_data+2); }
     
     bool get_priority() { return get_flag(7); }

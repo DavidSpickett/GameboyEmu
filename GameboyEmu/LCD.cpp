@@ -65,7 +65,13 @@ void LCDWindow::draw(const std::vector<Pixel>& pixels)
     }
 
     //Draw
-    SDL_RenderPresent(m_renderer);
+    static int delay = 0;
+    if (delay == 200)
+    {
+        SDL_RenderPresent(m_renderer);
+        delay = 0;
+    }
+    delay++;
 }
 
 LCDWindow::~LCDWindow()
@@ -194,6 +200,37 @@ void LCD::draw()
             //can incremement x by 8 each time. It gets the pixels before and ahead of x.
         }
     }
+    /*
+    //Sprites
+    const uint64_t SPRITE_INFO_BYTES = 4;
+    const uint16_t oam_size = LCD_OAM_END-LCD_OAM_START;
+    
+    const int SPRITE_HEIGHT = 8;
+    const int SPRITE_WIDTH  = 8;
+    
+    for (uint16_t oam_addr=0; oam_addr < oam_size; oam_addr+=SPRITE_INFO_BYTES)
+    {
+        Sprite sprite(m_oam_data.begin()+oam_addr);
+        
+        //Assume 8x8 mode for now
+        int sprite_x = sprite.get_x()-SPRITE_WIDTH;
+        int sprite_y = sprite.get_y()-SPRITE_HEIGHT;
+        
+        int sprite_row_offset = int(curr_scanline) - sprite_y;
+        LCDPallette pallette = sprite.get_pallette_number() ? get_obj_pal1() : get_obj_pal0();
+        
+        if ((curr_scanline >= (sprite_y)) &&
+            (curr_scanline < (sprite_y+SPRITE_HEIGHT)) &&
+            (sprite_x > -SPRITE_WIDTH)
+            )
+        {
+            uint16_t tile_offset = sprite.get_pattern_number();
+            tile_to_pixels(SPRITE_HEIGHT, m_data.begin()+tile_offset,
+                           sprite_x, sprite_y,
+                           0, sprite_row_offset,
+                           pallette, scanline_pixels);
+        }
+    }*/
 //}
 
     m_display.draw(scanline_pixels);
@@ -294,7 +331,7 @@ void LCD::write8(uint16_t addr, uint8_t value)
     {
         if ((addr-LCD_REGS_START) == SCROLLY)
         {
-            value = 0;
+            //value = 0;
             printf("scrolly set to 0x%02x\n", value);
         }
         

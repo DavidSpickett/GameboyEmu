@@ -14,13 +14,16 @@
 
 namespace
 {
-    template< typename... Args >
+#if DEBUG_INSTR
+   template< typename... Args >
     void debug_print(const char* format, Args... args)
     {
-#if DEBUG_INSTR
+
         printf(format, args...);
-#endif
     }
+#else
+#define debug_print(...)
+#endif
 }
 
 namespace
@@ -38,7 +41,7 @@ namespace
     }
 }
 
-uint8_t add_a_n(Z80& proc, uint8_t b1)
+inline uint8_t add_a_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -108,7 +111,7 @@ namespace
     }
 }
 
-uint8_t sub_n(Z80& proc, uint8_t b1)
+inline uint8_t sub_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -162,7 +165,7 @@ uint8_t sub_n(Z80& proc, uint8_t b1)
     return 4;
 }
 
-uint8_t ldh_a_n(Z80& proc)
+inline uint8_t ldh_a_n(Z80& proc)
 {
     uint8_t offs = proc.fetch_byte();
     uint16_t addr = 0xff00 + offs;
@@ -172,7 +175,7 @@ uint8_t ldh_a_n(Z80& proc)
     return 12;
 }
 
-uint8_t jr_n(Z80& proc)
+inline uint8_t jr_n(Z80& proc)
 {
     int8_t offs = proc.fetch_byte();
     
@@ -197,7 +200,7 @@ namespace
     }
 }
 
-uint8_t cp_n(Z80& proc, uint8_t b1)
+inline uint8_t cp_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -247,7 +250,7 @@ uint8_t cp_n(Z80& proc, uint8_t b1)
     return 4;
 }
 
-uint8_t ret(Z80& proc)
+inline uint8_t ret(Z80& proc)
 {
     //Get addr from stack
     uint16_t new_addr = proc.mem.read16(proc.sp.read());
@@ -259,7 +262,7 @@ uint8_t ret(Z80& proc)
     return 8;
 }
 
-uint8_t inc_nn(Z80& proc, uint8_t b1)
+inline uint8_t inc_nn(Z80& proc, uint8_t b1)
 {
     std::string pair = "?";
     
@@ -287,7 +290,7 @@ uint8_t inc_nn(Z80& proc, uint8_t b1)
     return 8;
 }
 
-uint8_t ld_hl_plus_a(Z80& proc)
+inline uint8_t ld_hl_plus_a(Z80& proc)
 {
     //Write A to addr (hl)
     uint16_t hl = proc.get_hl();
@@ -313,7 +316,7 @@ namespace
     }
 }
 
-uint8_t dec_n(Z80& proc, uint8_t b1)
+inline uint8_t dec_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -359,7 +362,7 @@ uint8_t dec_n(Z80& proc, uint8_t b1)
     return 4;
 }
 
-uint8_t pop_nn(Z80& proc, uint8_t b1)
+inline uint8_t pop_nn(Z80& proc, uint8_t b1)
 {
     std::string pair = "?";
     uint16_t value = proc.mem.read16(proc.sp.read());
@@ -408,7 +411,7 @@ namespace {
     }
 }
 
-uint8_t rla(Z80& proc)
+inline uint8_t rla(Z80& proc)
 {
     uint8_t new_val = generic_rl_n(proc, proc.a.read());
     proc.a.write(new_val);
@@ -417,7 +420,7 @@ uint8_t rla(Z80& proc)
     return 4;
 }
 
-uint8_t push_nn(Z80& proc, uint8_t b1)
+inline uint8_t push_nn(Z80& proc, uint8_t b1)
 {
     uint16_t value=0;
     std::string pair = "?";
@@ -450,7 +453,7 @@ uint8_t push_nn(Z80& proc, uint8_t b1)
     return 16;
 }
 
-uint8_t call_nn(Z80& proc)
+inline uint8_t call_nn(Z80& proc)
 {
     //Equivalent of push pc, jump addr
     uint16_t j_addr = proc.fetch_short();
@@ -467,7 +470,7 @@ uint8_t call_nn(Z80& proc)
     return 12;
 }
 
-uint8_t ld_offs_n_a(Z80& proc)
+inline uint8_t ld_offs_n_a(Z80& proc)
 {
     uint16_t addr = 0xff00 + proc.fetch_byte();
     proc.mem.write8(addr, proc.a.read());
@@ -476,7 +479,7 @@ uint8_t ld_offs_n_a(Z80& proc)
     return 12;
 }
 
-uint8_t ld_n_a(Z80& proc, uint8_t b1)
+inline uint8_t ld_n_a(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -565,7 +568,7 @@ namespace
     }
 }
 
-uint8_t inc_n(Z80& proc, uint8_t b1)
+inline uint8_t inc_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -615,7 +618,7 @@ uint8_t inc_n(Z80& proc, uint8_t b1)
     return 4;
 }
 
-uint8_t ld_offs_c_a(Z80& proc)
+inline uint8_t ld_offs_c_a(Z80& proc)
 {
     uint16_t addr = 0xff00 + proc.c.read();
     proc.mem.write8(addr, proc.a.read());
@@ -624,7 +627,7 @@ uint8_t ld_offs_c_a(Z80& proc)
     return 8;
 }
 
-uint8_t ld_a_n(Z80& proc, uint8_t b1)
+inline uint8_t ld_a_n(Z80& proc, uint8_t b1)
 {
     uint8_t cycles = 4;
     std::string reg_name;
@@ -710,7 +713,7 @@ uint8_t ld_a_n(Z80& proc, uint8_t b1)
     return cycles;
 }
 
-uint8_t jr_cc_n(Z80& proc, uint8_t b1)
+inline uint8_t jr_cc_n(Z80& proc, uint8_t b1)
 {
     uint8_t cycles = 8;
     int8_t offset = proc.fetch_byte();
@@ -753,7 +756,7 @@ uint8_t jr_cc_n(Z80& proc, uint8_t b1)
     return cycles;
 }
 
-uint8_t rl_n(Z80& proc, uint8_t b1)
+inline uint8_t rl_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -799,7 +802,7 @@ uint8_t rl_n(Z80& proc, uint8_t b1)
     return 8;
 }
 
-uint8_t bit_b_hl(Z80& proc, uint8_t b1)
+inline uint8_t bit_b_hl(Z80& proc, uint8_t b1)
 {
     uint16_t addr = proc.get_hl();
     uint8_t to_test = proc.mem.read8(addr);
@@ -846,7 +849,7 @@ uint8_t bit_b_hl(Z80& proc, uint8_t b1)
     return 12;
 }
 
-uint8_t bit_b_r(Z80& proc, uint8_t b1)
+inline uint8_t bit_b_r(Z80& proc, uint8_t b1)
 {
     uint8_t cycles = 8;
     uint8_t bit;
@@ -1112,7 +1115,7 @@ uint8_t bit_b_r(Z80& proc, uint8_t b1)
     return cycles;
 }
 
-uint8_t xor_n(Z80& proc, uint8_t b1)
+inline uint8_t xor_n(Z80& proc, uint8_t b1)
 {
     uint8_t cycles;
     std::string prt = "xor %s";
@@ -1185,7 +1188,7 @@ uint8_t xor_n(Z80& proc, uint8_t b1)
     return cycles;
 }
 
-uint8_t ld_nn_n(Z80& proc, uint8_t b1)
+inline uint8_t ld_nn_n(Z80& proc, uint8_t b1)
 {
     uint8_t b2 = proc.fetch_byte();
     Register<uint8_t>* reg = nullptr;
@@ -1220,7 +1223,7 @@ uint8_t ld_nn_n(Z80& proc, uint8_t b1)
     return 8;
 }
 
-uint8_t ld_n_nn(Z80& proc, uint8_t b1)
+inline uint8_t ld_n_nn(Z80& proc, uint8_t b1)
 {
     uint16_t imm = proc.fetch_short();
     
@@ -1253,7 +1256,7 @@ uint8_t ld_n_nn(Z80& proc, uint8_t b1)
     return 12;
 }
 
-uint8_t ld_hl_dec_a(Z80& proc, uint8_t b1)
+inline uint8_t ld_hl_dec_a(Z80& proc, uint8_t b1)
 {
     uint8_t temp8 = proc.a.read();
     uint16_t addr = proc.get_hl();
@@ -1266,13 +1269,13 @@ uint8_t ld_hl_dec_a(Z80& proc, uint8_t b1)
     return 8;
 }
 
-uint8_t nop()
+inline uint8_t nop()
 {
     debug_print("%s\n", "nop");
     return 4;
 }
 
-uint8_t jp_nn(Z80& proc)
+inline uint8_t jp_nn(Z80& proc)
 {
     uint16_t addr = proc.fetch_short();
     proc.pc.write(addr);
@@ -1280,21 +1283,22 @@ uint8_t jp_nn(Z80& proc)
     debug_print("jp 0x%04x\n", addr);
     return 12;
 }
-uint8_t di(Z80& proc)
+
+inline uint8_t di(Z80& proc)
 {
     proc.interrupt_enable = false;
     debug_print("%s\n", "di");
     return 4;
 }
 
-uint8_t ei(Z80& proc)
+inline uint8_t ei(Z80& proc)
 {
     proc.interrupt_enable = true;
     debug_print("%s\n", "ei");
     return 4;
 }
 
-uint8_t ld_r1_r2(Z80& proc, uint8_t b1)
+inline uint8_t ld_r1_r2(Z80& proc, uint8_t b1)
 {
     uint8_t cycles = 4;
     Register<uint8_t>* lhs = nullptr;
@@ -1555,7 +1559,7 @@ uint8_t ld_r1_r2(Z80& proc, uint8_t b1)
     return cycles;
 }
 
-uint8_t ld_a_hl_plus(Z80& proc)
+inline uint8_t ld_a_hl_plus(Z80& proc)
 {
     uint16_t addr = proc.get_hl();
     proc.a.write(proc.mem.read8(addr));
@@ -1565,7 +1569,7 @@ uint8_t ld_a_hl_plus(Z80& proc)
     return 8;
 }
 
-uint8_t rst_n(Z80& proc, uint8_t b1)
+inline uint8_t rst_n(Z80& proc, uint8_t b1)
 {
     //Push present address on to stack
     proc.sp.dec(2);
@@ -1622,7 +1626,7 @@ namespace
     }
 }
 
-uint8_t and_n(Z80& proc, uint8_t b1)
+inline uint8_t and_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -1674,7 +1678,7 @@ uint8_t and_n(Z80& proc, uint8_t b1)
     return 4;
 }
 
-uint8_t dec_nn(Z80& proc, uint8_t b1)
+inline uint8_t dec_nn(Z80& proc, uint8_t b1)
 {
     std::string reg;
     
@@ -1715,7 +1719,7 @@ namespace {
     }
 }
 
-uint8_t or_n(Z80& proc, uint8_t b1)
+inline uint8_t or_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -1768,7 +1772,7 @@ uint8_t or_n(Z80& proc, uint8_t b1)
     return 4;
 }
 
-uint8_t cpl(Z80& proc)
+inline uint8_t cpl(Z80& proc)
 {
     uint8_t new_val = ~proc.a.read();
     proc.a.write(new_val);
@@ -1799,7 +1803,7 @@ namespace {
     }
 }
 
-uint8_t adc_a_n(Z80& proc, uint8_t b1)
+inline uint8_t adc_a_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -1858,7 +1862,7 @@ namespace {
     }
 }
 
-uint8_t swap_n(Z80& proc, uint8_t b1)
+inline uint8_t swap_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -1911,7 +1915,7 @@ uint8_t swap_n(Z80& proc, uint8_t b1)
     return 8;
 }
 
-uint8_t add_hl_n(Z80& proc, uint8_t b1)
+inline uint8_t add_hl_n(Z80& proc, uint8_t b1)
 {
     uint16_t original = proc.get_hl();
     uint16_t new_val  = original;
@@ -1950,7 +1954,7 @@ uint8_t add_hl_n(Z80& proc, uint8_t b1)
     return 8;
 }
 
-uint8_t jp_hl(Z80& proc)
+inline uint8_t jp_hl(Z80& proc)
 {
     proc.pc.write(proc.get_hl());
     
@@ -1965,7 +1969,7 @@ namespace {
     }
 }
 
-uint8_t res_b_n(Z80& proc, uint8_t b1)
+inline uint8_t res_b_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     uint8_t bit;
@@ -2042,7 +2046,7 @@ uint8_t res_b_n(Z80& proc, uint8_t b1)
     return 8;
 }
 
-uint8_t jp_cc_nn(Z80& proc, uint8_t b1)
+inline uint8_t jp_cc_nn(Z80& proc, uint8_t b1)
 {
     uint16_t jump_addr = proc.fetch_short();
     bool jump = false;
@@ -2077,7 +2081,7 @@ uint8_t jp_cc_nn(Z80& proc, uint8_t b1)
     return 12;
 }
 
-uint8_t ret_cc(Z80& proc, uint8_t b1)
+inline uint8_t ret_cc(Z80& proc, uint8_t b1)
 {
     bool jump = false;
     std::string ret_type;
@@ -2131,7 +2135,7 @@ namespace {
     }
 }
 
-uint8_t sla_n(Z80& proc, uint8_t b1)
+inline uint8_t sla_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -2174,7 +2178,7 @@ uint8_t sla_n(Z80& proc, uint8_t b1)
     return 8;
 }
 
-uint8_t call_cc_nn(Z80& proc, uint8_t b1)
+inline uint8_t call_cc_nn(Z80& proc, uint8_t b1)
 {
     std::string ctype;
     bool jump = false;
@@ -2216,7 +2220,7 @@ uint8_t call_cc_nn(Z80& proc, uint8_t b1)
     return 12;
 }
 
-uint8_t rlca(Z80& proc)
+inline uint8_t rlca(Z80& proc)
 {
     uint8_t a = proc.a.read();
     uint8_t new_a = a<<1;
@@ -2233,7 +2237,7 @@ uint8_t rlca(Z80& proc)
     return 4;
 }
 
-uint8_t add_sp_n(Z80& proc)
+inline uint8_t add_sp_n(Z80& proc)
 {
     int8_t offs = proc.fetch_byte();
     
@@ -2269,7 +2273,7 @@ namespace {
     }
 }
 
-uint8_t rlc_n(Z80& proc, uint8_t b1)
+inline uint8_t rlc_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -2315,7 +2319,7 @@ uint8_t rlc_n(Z80& proc, uint8_t b1)
     return 8;
 }
 
-uint8_t reti(Z80& proc)
+inline uint8_t reti(Z80& proc)
 {
     uint16_t addr = proc.mem.read16(proc.sp.read());
     proc.pc.write(addr);
@@ -2344,7 +2348,7 @@ namespace
     }
 }
 
-uint8_t sbc_a_n(Z80& proc, uint8_t b1)
+inline uint8_t sbc_a_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -2389,7 +2393,7 @@ uint8_t sbc_a_n(Z80& proc, uint8_t b1)
     return 4;
 }
 
-uint8_t ld_a_c(Z80& proc)
+inline uint8_t ld_a_c(Z80& proc)
 {
     uint16_t addr = 0xff00 + uint16_t(proc.c.read());
     proc.a.write(proc.mem.read8(addr));
@@ -2398,7 +2402,7 @@ uint8_t ld_a_c(Z80& proc)
     return 8;
 }
 
-uint8_t scf(Z80& proc)
+inline uint8_t scf(Z80& proc)
 {
     proc.f.set_c(true);
     
@@ -2406,7 +2410,7 @@ uint8_t scf(Z80& proc)
     return 4;
 }
 
-uint8_t ld_nn_sp(Z80& proc)
+inline uint8_t ld_nn_sp(Z80& proc)
 {
     uint16_t addr = proc.fetch_short();
     proc.mem.write16(addr, proc.sp.read());
@@ -2415,7 +2419,7 @@ uint8_t ld_nn_sp(Z80& proc)
     return 20;
 }
 
-uint8_t ld_sp_hl(Z80& proc)
+inline uint8_t ld_sp_hl(Z80& proc)
 {
     proc.sp.write(proc.get_hl());
     debug_print("%s", "ld sp hl\n");
@@ -2436,7 +2440,7 @@ namespace {
     }
 }
 
-uint8_t srl_n(Z80& proc, uint8_t b1)
+inline uint8_t srl_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
     
@@ -2481,7 +2485,7 @@ uint8_t srl_n(Z80& proc, uint8_t b1)
     return 8;
 }
 
-uint8_t ldhl_sp_n(Z80& proc)
+inline uint8_t ldhl_sp_n(Z80& proc)
 {
     uint8_t offs = proc.fetch_byte();
     uint16_t addr = proc.sp.read() + offs;
@@ -2491,7 +2495,7 @@ uint8_t ldhl_sp_n(Z80& proc)
     return 12;
 }
 
-uint8_t rcca(Z80& proc)
+inline uint8_t rcca(Z80& proc)
 {
     uint8_t a = proc.a.read();
     proc.f.set_n(false);
@@ -2506,7 +2510,7 @@ uint8_t rcca(Z80& proc)
     return 4;
 }
 
-uint8_t ld_a_hl_minus(Z80& proc)
+inline uint8_t ld_a_hl_minus(Z80& proc)
 {
     uint16_t addr = proc.get_hl();
     uint8_t value = proc.mem.read8(addr);
@@ -2517,11 +2521,14 @@ uint8_t ld_a_hl_minus(Z80& proc)
     return 8;
 }
 
-uint8_t stop(Z80& proc)
+inline uint8_t stop(Z80& proc)
 {
     proc.fetch_byte(); //2 byte opcode for some reason
-    
-    throw std::runtime_error("Impliment me!");
+    //proc.stopped = true;
+    throw std::runtime_error("impliment me!");
+    //currently we only read buttons when asked to, so this would need
+    //to turn on some kind of fast reading mode until we restarted.
+    printf("%s\n", "stop");
     return 4;
 }
 
@@ -2540,7 +2547,7 @@ namespace
     }
 }
 
-uint8_t rr_n(Z80& proc, uint8_t b1)
+inline uint8_t rr_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = NULL;
     
@@ -2584,7 +2591,35 @@ uint8_t rr_n(Z80& proc, uint8_t b1)
     return 8;
 }
 
-uint8_t halt(Z80& proc)
+inline uint8_t daa(Z80& proc)
+{
+    uint8_t a = proc.a.read();
+    bool n = proc.f.get_n();
+    
+    uint8_t lower = a & 0xf;
+    if ((lower > 9) || proc.f.get_h())
+    {
+        a += n ? -0x06 : 0x06;
+    }
+    
+    //This is done on the new value of a
+    uint8_t upper = a >> 4;
+    if ((upper > 9) || proc.f.get_c())
+    {
+        a += n ? -0x60 : 0x60;
+    }
+    
+    proc.a.write(a);
+    
+    proc.f.set_h(false);
+    proc.f.set_z(a==0);
+    
+    
+    debug_print("%s\n", "daa");
+    return 4;
+}
+
+inline uint8_t halt(Z80& proc)
 {
     proc.halted = true;
     
@@ -2592,7 +2627,7 @@ uint8_t halt(Z80& proc)
     return 4;
 }
 
-uint8_t cb_prefix_instr(Z80& proc)
+inline uint8_t cb_prefix_instr(Z80& proc)
 {
     uint8_t temp8 = proc.fetch_byte();
     uint8_t cycles;
@@ -3006,6 +3041,9 @@ void Step(Z80& proc)
             break;
         case 0x76:
             cycles = halt(proc);
+            break;
+        case 0x27:
+            cycles = daa(proc);
             break;
         default:
         {

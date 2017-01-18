@@ -10,20 +10,21 @@
 #include <fstream>
 #include "utils.hpp"
 
-void DefaultMemoryManager::AddFile(std::string path, uint16_t addr)
+void DefaultMemoryManager::AddFile(std::string path)
 {
     //Copy file into memory at given location
     std::ifstream in(path.c_str(), std::ifstream::ate | std::ifstream::binary);
-    if ((addr + in.tellg()) > m_mem.size())
+    
+    if (!in.is_open())
     {
-        throw std::runtime_error("Cannot add file to memory, overflows end.");
+        throw std::runtime_error(formatted_string("File %s does not exist.", path.c_str()));
     }
     
     //Go back to beginning and copy to end
     in.seekg(0);
     std::copy(std::istreambuf_iterator<char>(in),
               std::istreambuf_iterator<char>(),
-              &m_mem[addr]);
+              m_mem.begin());
 }
 
 MemoryManager& MemoryMap::get_mm(uint16_t addr)
