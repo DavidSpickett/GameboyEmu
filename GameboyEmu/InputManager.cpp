@@ -15,6 +15,64 @@ namespace {
     const uint8_t MODE_BUTTON = 1;
 }
 
+namespace {
+    uint8_t get_dir_joypad(const uint8_t* state)
+    {
+        uint8_t new_joypad = 0x0f;
+        
+        if (state[SDL_SCANCODE_DOWN])
+        {
+            new_joypad &= ~(1<<3);
+        }
+        if (state[SDL_SCANCODE_UP])
+        {
+            new_joypad &= ~(1<<2);
+        }
+        if (state[SDL_SCANCODE_LEFT])
+        {
+            new_joypad &= ~(1<<1);
+        }
+        if (state[SDL_SCANCODE_RIGHT])
+        {
+            new_joypad &= ~1;
+        }
+        
+        return new_joypad;
+    }
+    
+    uint8_t get_button_joypad(const uint8_t* state)
+    {
+        uint8_t new_joypad = 0x0f;
+        
+        if (state[SDL_SCANCODE_RETURN]) //Start
+        {
+            new_joypad &= ~(1<<3);
+        }
+        if (state[SDL_SCANCODE_RSHIFT]) //Select
+        {
+            new_joypad &= ~(1<<2);
+        }
+        if (state[SDL_SCANCODE_Z]) //B
+        {
+            new_joypad &= ~(1<<1);
+        }
+        if (state[SDL_SCANCODE_X]) //A
+        {
+            new_joypad &= ~1;
+        }
+        
+        return new_joypad;
+    }
+}
+
+bool InputManager::read_inputs()
+{
+    const uint8_t *state = SDL_GetKeyboardState(NULL);
+    uint8_t dir = get_dir_joypad(state);
+    uint8_t but = get_button_joypad(state);
+    return (dir == 0x0f) && (but == 0x0f);
+}
+
 uint8_t InputManager::read8(uint16_t addr)
 {
     if (addr != JOYPAD_REG)
@@ -23,47 +81,7 @@ uint8_t InputManager::read8(uint16_t addr)
     }
     
     const uint8_t *state = SDL_GetKeyboardState(NULL);
-    m_joypad = 0x0f;
-    
-    if (m_mode == MODE_DIR)
-    {
-        if (state[SDL_SCANCODE_DOWN])
-        {
-            m_joypad &= ~(1<<3);
-            m_proc->stopped = false;
-        }
-        if (state[SDL_SCANCODE_UP])
-        {
-            m_joypad &= ~(1<<2);
-        }
-        if (state[SDL_SCANCODE_LEFT])
-        {
-            m_joypad &= ~(1<<1);
-        }
-        if (state[SDL_SCANCODE_RIGHT])
-        {
-            m_joypad &= ~1;
-        }
-    }
-    else
-    {
-        if (state[SDL_SCANCODE_RETURN]) //Start
-        {
-            m_joypad &= ~(1<<3);
-        }
-        if (state[SDL_SCANCODE_RSHIFT]) //Select
-        {
-            m_joypad &= ~(1<<2);
-        }
-        if (state[SDL_SCANCODE_Z]) //B
-        {
-            m_joypad &= ~(1<<1);
-        }
-        if (state[SDL_SCANCODE_X]) //A
-        {
-            m_joypad &= ~1;
-        }
-    }
+    m_joypad = m_mode == MODE_DIR ? get_dir_joypad(state) : get_button_joypad(state);
     
     //printf("Joypad: 0x%02x\n", m_joypad);
     return m_joypad;

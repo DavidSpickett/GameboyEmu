@@ -113,10 +113,10 @@ public:
     uint8_t read()            { return *m_value; }
     
     bool get_lcd_operation()              { return *m_value & (1<<7); }
-    uint16_t get_window_tile_table_addr() { return *m_value & (1<<6) ? 0x9C00 : 0x9800; }
+    uint16_t get_window_tile_table_addr() { return *m_value & (1<<6) ? 0x9C00-LCD_MEM_START : 0x9800-LCD_MEM_START; }
     bool get_window_display()             { return *m_value & (1<<5); }
-    uint16_t get_bgrnd_tile_data_addr()   { return *m_value & (1<<4) ? 0x8000 : 0x8800; }
-    uint16_t get_bgrnd_tile_table_addr()  { return *m_value & (1<<3) ? 0x9c00 : 0x9800; }
+    uint16_t get_bgrnd_tile_data_addr()   { return *m_value & (1<<4) ? 0x8000-LCD_MEM_START : 0x8800-LCD_MEM_START; }
+    uint16_t get_bgrnd_tile_table_addr()  { return *m_value & (1<<3) ? 0x9c00-LCD_MEM_START : 0x9800-LCD_MEM_START; }
     uint8_t get_sprite_size()             { return *m_value & (1<<2) ? 16 : 8; }
     uint8_t get_colour_0_transp()         { return *m_value & (1<<1) ? 1 : 0; }
     bool background_display()             { return *m_value & 1; }
@@ -148,6 +148,7 @@ class LCD: public MemoryManager
     
         void show_display();
         void draw();
+        void _draw();
         void tick(size_t curr_cycles);
     
         Z80* m_proc; /////HACK HACK HACK

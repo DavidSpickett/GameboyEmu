@@ -12,6 +12,8 @@
 
 const size_t LCD_WIDTH  = 160;
 const size_t LCD_HEIGHT = 144;
+//const size_t LCD_WIDTH  = 256;
+//const size_t LCD_HEIGHT = 256;
 
 LCDWindow::LCDWindow()
 {
@@ -101,10 +103,8 @@ const LCDPallette LCD::get_pallete(uint16_t addr)
 
 namespace
 {
-    void tile_to_pixels(uint8_t h,
-                        std::vector<uint8_t>::const_iterator data_b,
-                        int startx, int starty,
-                        int offsx, int offsy,
+    void tile_to_pixels(std::vector<uint8_t>::const_iterator data_b,
+                        int startx, int starty, int offsx, int offsy,
                         const LCDPallette& pallette,
                         std::vector<Pixel>& pixels)
     {
@@ -123,19 +123,76 @@ namespace
             //Pallette remaps colours
             Pixel new_pixel(startx - offsx + (7-shift), starty, pallette[c]);
             
-            //Because of scrolling, x=0 on the screen could be in the middle
-            // of a tile, meaning we generate negative co-ords. Ignore these
-            // and off screen pixels
+            //probably not needed
             if (
-                 ((new_pixel.x > 0) && (new_pixel.x < LCD_WIDTH)) &&
-                 (new_pixel.y < LCD_HEIGHT)
+                ((new_pixel.x >= 0) && (new_pixel.x < LCD_WIDTH)) &&
+                ((new_pixel.y >= 0) && (new_pixel.y < LCD_HEIGHT))
                 )
             {
                 pixels.push_back(new_pixel);
             }
         }
     }
+    
+    /*void tile_to_all_pixels(uint8_t h,
+                        std::vector<uint8_t>::const_iterator data_b,
+                        int startx, int starty,
+                        const LCDPallette& pallette,
+                        std::vector<Pixel>& pixels)
+    {
+        pixels.reserve(pixels.size()+8);
+        
+        for (int i=0; i<h; ++i)
+        {
+            uint8_t b1 = *(data_b + (i*2));
+            uint8_t b2 = *(data_b + (i*2)+1);
+        
+            //Signed int!!
+            for (int shift=7; shift>= 0; --shift)
+            {
+                uint8_t lsb = (b1 >> shift) & 0x1;
+                uint8_t msb = (b2 >> shift) & 0x1;
+                uint8_t c = (msb << 1) | lsb;
+            
+                //Pallette remaps colours
+                Pixel new_pixel(startx + (7-shift), starty+i, pallette[c]);
+            
+                pixels.push_back(new_pixel);
+            }
+        }
+    }*/
 }
+/*
+void LCD::draw()
+{
+    std::vector<Pixel> line_pixels;
+    
+    if (m_control_reg.get_sprite_size() != 8)
+    {
+        throw std::runtime_error("Tile size is not 8!!!");
+    }
+    
+    if (m_control_reg.background_display())
+    {
+        const uint16_t background_tile_addr_table = m_control_reg.get_bgrnd_tile_table_addr() - LCD_MEM_START;
+        
+        const uint16_t background_tile_data = m_control_reg.get_bgrnd_tile_data_addr() - LCD_MEM_START;
+        
+        LCDPallette pallette = get_bgrnd_pallette();
+        for (uint16_t y=0; y < 32; ++y)
+        {
+            for (uint16_t x=0; x < 32; ++x)
+            {
+                uint16_t tile_index = m_data[background_tile_addr_table+(32*y)+x];
+                uint16_t tile_addr = background_tile_data+(16*tile_index);
+                
+                tile_to_all_pixels(8, m_data.begin() + tile_addr, x*8, y*8, pallette, line_pixels);
+            }
+        }
+    }
+    
+    m_display.draw(line_pixels);
+}*/
 
 void LCD::draw()
 {
@@ -154,10 +211,10 @@ void LCD::draw()
     if (m_control_reg.background_display())
     {
         //Address of table of tile indexes that form the background
-        const uint16_t background_tile_addr_table = m_control_reg.get_bgrnd_tile_table_addr() - LCD_MEM_START;
+        const uint16_t background_tile_addr_table = m_control_reg.get_bgrnd_tile_table_addr();
         
         //Data describing the tiles themselves
-        const uint16_t background_tile_data = m_control_reg.get_bgrnd_tile_data_addr() - LCD_MEM_START;
+        const uint16_t background_tile_data = m_control_reg.get_bgrnd_tile_data_addr();
         
         //The point in the background at which pixel 0,0 on the screen is taken from.
         const uint8_t start_x = get_scroll_x();
@@ -167,13 +224,11 @@ void LCD::draw()
         const uint8_t TILE_BYTES = 16;
         
         //There is only one line of tiles we are interested in since we're only doing one scanline
-        const uint8_t tile_row = (curr_scanline + start_y) / TILE_SIDE;
+        //Note that Y wraps
+        const uint16_t tile_row = (uint8_t(curr_scanline + start_y) / TILE_SIDE);
         
         //Then we must start somewhere in that row
-        const uint8_t tile_row_offset = start_x / TILE_SIDE;
-        
-        //Offset into the table of indexes
-        uint16_t tile_index_offset = (tile_row*32) + tile_row_offset;
+        uint8_t tile_row_offset = (start_x / TILE_SIDE) % 32;
         
         //Which row of pixels within the tile
         const uint8_t tile_pixel_row = (curr_scanline + start_y) % TILE_SIDE;
@@ -182,15 +237,20 @@ void LCD::draw()
         const uint8_t tile_pixel_row_offset = start_x % TILE_SIDE;
         
         LCDPallette bgrnd_pal = get_bgrnd_pallette();
-        for (uint8_t x=0; x<160; x+=TILE_SIDE, ++tile_index_offset)
+        for (uint8_t x=0; x<168; x+=TILE_SIDE, ++tile_row_offset)
         {
+            if (tile_row_offset >= 32)
+            {
+                tile_row_offset %= 32;
+            }
+            
             //Get actual value of index from the table
-            const uint8_t tile_index = m_data[background_tile_addr_table + tile_index_offset];
+            const uint8_t tile_index = m_data[background_tile_addr_table+(32*tile_row)+tile_row_offset];
             
             //The final address to read pixel data from
             uint16_t tile_addr = background_tile_data+(tile_index*TILE_BYTES);
             
-            tile_to_pixels(TILE_SIDE, m_data.begin()+tile_addr,
+            tile_to_pixels(m_data.begin()+tile_addr,
                 x, curr_scanline,
                 tile_pixel_row_offset, tile_pixel_row,
                 bgrnd_pal,
@@ -200,8 +260,9 @@ void LCD::draw()
             //can incremement x by 8 each time. It gets the pixels before and ahead of x.
         }
     }
-    /*
+ 
     //Sprites
+    /*
     const uint64_t SPRITE_INFO_BYTES = 4;
     const uint16_t oam_size = LCD_OAM_END-LCD_OAM_START;
     
@@ -225,7 +286,7 @@ void LCD::draw()
             )
         {
             uint16_t tile_offset = sprite.get_pattern_number();
-            tile_to_pixels(SPRITE_HEIGHT, m_data.begin()+tile_offset,
+            tile_to_pixels(m_data.begin()+tile_offset,
                            sprite_x, sprite_y,
                            0, sprite_row_offset,
                            pallette, scanline_pixels);
@@ -254,9 +315,13 @@ void LCD::tick(size_t curr_cycles)
         //154 scan lines, 144 + 10 vblank period
         m_last_scan_change_cycles = curr_cycles;
         
-        if (curr_scanline != 153)
+        if (curr_scanline <= 144)
         {
             draw();
+        }
+        
+        if (curr_scanline != 153)
+        {
             curr_scanline = inc_curr_scanline();
             
             if (curr_scanline == LCD_HEIGHT)
@@ -333,6 +398,10 @@ void LCD::write8(uint16_t addr, uint8_t value)
         {
             //value = 0;
             printf("scrolly set to 0x%02x\n", value);
+        }
+        if ((addr-LCD_REGS_START) == SCROLLX)
+        {
+            printf("scrollx set to 0x%02x\n", value);
         }
         
         set_reg8(addr, value);

@@ -88,6 +88,8 @@ public:
     
     void tick(size_t curr_cycles);
     
+    InputManager m_input_handler;
+    
     void set_proc_pointers(Z80* proc)
     {
         m_input_handler.m_proc = proc;
@@ -104,7 +106,6 @@ private:
     HardwareIORegs m_hardware_regs_handler;
     DefaultMemoryManager m_default_handler;
     NullMemoryManager m_null_handler;
-    InputManager m_input_handler;
     SoundHandler m_sound_handler;
 };
 

@@ -434,13 +434,16 @@ uint16_t ROMHandler::read16(uint16_t addr)
 
 void ROMHandler::write16(uint16_t addr, uint16_t value)
 {
- /*   if (
-        (addr == 0x1000) || //Mysterious ROM store that Tetris does, writes SP to ROM?
-        (addr == 0x0008) ||
-        (addr == 0x1008)
-       )
+    //Ignore RAM disable on MBC1
+    if ((addr >= 0x0000) && (addr < 0x2000))
     {
-        return;
-    }*/
-    throw std::runtime_error("Implement me!");
+        if ((value & 0xf) == 0x0a)
+        {
+            throw std::runtime_error("Trying to enable RAM?");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("Implement me!");
+    }
 }

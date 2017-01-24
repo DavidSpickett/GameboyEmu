@@ -26,7 +26,7 @@ public:
     {}
     
     int_type read() {return m_value;}
-    void write(int_type val)
+    virtual void write(int_type val)
     {
         m_value = val;
         
@@ -69,6 +69,17 @@ public:
     FlagRegister(std::string name):
         Register(name)
     {}
+    
+    void write(uint8_t val)
+    {
+        //You can't write the bottom 4 bits of the flag register!
+        m_value = val & 0xf0;
+        
+        if (logging)
+        {
+            printf("Reg: %s new value: 0x%x\n", name.c_str(), val);
+        }
+    }
     
     bool get_z() { return get_bit(7); }
     bool get_n() { return get_bit(6); }

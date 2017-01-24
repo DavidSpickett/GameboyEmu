@@ -29,6 +29,8 @@ public:
     uint16_t read16(uint16_t addr) {throw std::runtime_error("?");}
     void write16(uint16_t addr, uint16_t value) {throw std::runtime_error("?");}
     
+    bool read_inputs();
+    
     void tick(size_t curr_cycles);
     Z80* m_proc;
     

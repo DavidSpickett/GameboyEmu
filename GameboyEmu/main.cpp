@@ -28,7 +28,7 @@ void skip_bootstrap(Z80& proc)
 
 int main(int argc, const char * argv[]) {
     //MemoryMap map("Tetris (World).gb");
-    MemoryMap map("opus5.gb");
+    MemoryMap map("gb-test-roms-master/cpu_instrs/individual/01-special.gb");
     Z80 proc(map);
     //Icky
     map.set_proc_pointers(&proc);
@@ -40,12 +40,9 @@ int main(int argc, const char * argv[]) {
         SDL_Event event;
         SDL_PollEvent(&event);
         
-        if (!proc.halted && !proc.stopped)
-        {
-            Step(proc);
-        }
+        Step(proc);
         
-        if (proc.pc.read() == 0x29fe)
+        if (proc.pc.read() == 0xc1b9)
         {
             //return 0;
             uint8_t foo = 1;
