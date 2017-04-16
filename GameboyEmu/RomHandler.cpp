@@ -12,13 +12,12 @@
 
 std::string ROMHandler::get_string(const uint16_t start, size_t len)
 {
-    file_str.seekg(start);
     std::vector<char> temp_str;
     temp_str.resize(len+1);
     
     for (uint16_t addr = start; addr < (start+len); ++addr)
     {
-        uint8_t b = file_str.get();
+        uint8_t b = m_rom_start_contents[addr];
         temp_str[addr-start] = b;
         
         //Assume unused are all on the end
@@ -423,8 +422,7 @@ void ROMHandler::write8(uint16_t addr, uint8_t value)
 
 uint8_t ROMHandler::get_byte(uint16_t addr)
 {
-    file_str.seekg(addr);
-    return file_str.get();
+    return m_rom_start_contents[addr];
 }
 
 uint16_t ROMHandler::read16(uint16_t addr)

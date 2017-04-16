@@ -356,12 +356,11 @@ void LCD::write8(uint16_t addr, uint8_t value)
     {
         if ((addr-LCD_REGS_START) == SCROLLY)
         {
-            //value = 0;
-            printf("scrolly set to 0x%02x\n", value);
+            //printf("scrolly set to 0x%02x\n", value);
         }
         if ((addr-LCD_REGS_START) == SCROLLX)
         {
-            printf("scrollx set to 0x%02x\n", value);
+            //printf("scrollx set to 0x%02x\n", value);
         }
         
         set_reg8(addr, value);

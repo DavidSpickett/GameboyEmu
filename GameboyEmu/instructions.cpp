@@ -10,8 +10,8 @@
 #include <iostream>
 #include "utils.hpp"
 
-#define DEBUG_INSTR 1
-int print = 0;
+#define DEBUG_INSTR 0
+int print = 1;
 
 namespace
 {

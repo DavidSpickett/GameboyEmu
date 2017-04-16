@@ -17,6 +17,7 @@
 
 const uint16_t ROM_MODE = 0;
 const uint16_t RAM_MODE = 1;
+const uint16_t ROM_FIXED_BLOCK_SIZE = 0x4000;
 
 class ROMHandler: public MemoryManager
 {
@@ -33,6 +34,9 @@ public:
         {
             throw std::runtime_error(formatted_string("File %s does not exist.", file_path.c_str()));
         }
+        
+        m_rom_start_contents.resize(ROM_FIXED_BLOCK_SIZE);
+        file_str.read((char*)&m_rom_start_contents[0], ROM_FIXED_BLOCK_SIZE);
         
         printf("%s\n", get_info().c_str());
         if (is_cgb_only())
@@ -68,6 +72,7 @@ public:
     void tick(size_t curr_cycles) {}
     
 private:
+    std::vector<uint8_t> m_rom_start_contents;
     std::string get_string(const uint16_t start, size_t len);
     uint8_t get_byte(uint16_t addr);
     

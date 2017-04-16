@@ -28,6 +28,7 @@ void skip_bootstrap(Z80& proc)
 
 int main(int argc, const char * argv[]) {
     MemoryMap map("ttt.gb");
+    //MemoryMap map("Tetris (World).gb");
     //MemoryMap map("gb-test-roms-master/cpu_instrs/individual/04-op r,imm.gb");
     Z80 proc(map);
     //Icky
