@@ -141,14 +141,13 @@ void LCD::draw()
     const uint8_t curr_scanline = get_curr_scanline();
     
     std::vector<Pixel> scanline_pixels;
+    //Data describing the tiles themselves
+    const uint16_t background_tile_data = m_control_reg.get_bgrnd_tile_data_addr();
     
     if (m_control_reg.background_display())
     {
         //Address of table of tile indexes that form the background
         const uint16_t background_tile_addr_table = m_control_reg.get_bgrnd_tile_table_addr();
-        
-        //Data describing the tiles themselves
-        const uint16_t background_tile_data = m_control_reg.get_bgrnd_tile_data_addr();
         
         //The point in the background at which pixel 0,0 on the screen is taken from.
         const uint8_t start_x = get_scroll_x();
@@ -194,6 +193,14 @@ void LCD::draw()
             //can incremement x by 8 each time. It gets the pixels before and ahead of x.
         }
     }
+    else
+    {
+        //White bgrnd for sprite testing
+        for (int x=0 ; x != LCD_WIDTH; ++x)
+        {
+            scanline_pixels.push_back(Pixel(x, curr_scanline, 0));
+        }
+    }
  
     //Sprites
     if (m_control_reg.get_sprite_size() != 8)
@@ -208,7 +215,8 @@ void LCD::draw()
     const int SPRITE_WIDTH  = 8;
     const int SPRITE_BYTES  = 2*SPRITE_HEIGHT;
     
-    for (uint16_t oam_addr=0; oam_addr < oam_size; oam_addr+=SPRITE_INFO_BYTES)
+//    for (uint16_t oam_addr=0; oam_addr < oam_size; oam_addr+=SPRITE_INFO_BYTES)
+    for (uint16_t oam_addr=0; oam_addr < SPRITE_INFO_BYTES; oam_addr+=SPRITE_INFO_BYTES)
     {
         Sprite sprite(m_oam_data.begin()+oam_addr);
         
@@ -220,14 +228,15 @@ void LCD::draw()
         int sprite_row_offset = int(curr_scanline) - sprite_y;
         LCDPallette pallette = sprite.get_pallette_number() ? get_obj_pal1() : get_obj_pal0();
         
-        if ((curr_scanline >= (sprite_y)) &&
+        if ((curr_scanline >= sprite_y) &&
             (curr_scanline < (sprite_y+SPRITE_HEIGHT)) &&
             (sprite_x > -SPRITE_WIDTH)
             )
         {
-            uint16_t tile_offset = sprite.get_pattern_number();
-            tile_to_pixels(m_data.begin()+(tile_offset*SPRITE_HEIGHT),
-                           sprite_x, sprite_y,
+            //Sprite pixels are stored in the same place as backgound tiles
+            uint16_t tile_offset = sprite.get_pattern_number()*SPRITE_BYTES;
+            tile_to_pixels(m_data.begin()+background_tile_data+tile_offset,
+                           sprite_x, curr_scanline,
                            0, sprite_row_offset,
                            pallette, scanline_pixels);
         }
