@@ -36,10 +36,15 @@ int main(int argc, const char * argv[]) {
     
     skip_bootstrap(proc);
 
+    SDL_Event event;
     while(1)
     {
-        SDL_Event event;
         SDL_PollEvent(&event);
+        
+        if(event.type == SDL_QUIT)
+        {
+            break;
+        }
         
         Step(proc);
         

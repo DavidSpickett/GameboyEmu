@@ -67,6 +67,7 @@ void LCDWindow::draw(const std::vector<Pixel>& pixels)
     }
 
     //Draw
+    //SDL_RenderPresent(m_renderer);
     static int delay = 0;
     if (delay == 200)
     {
