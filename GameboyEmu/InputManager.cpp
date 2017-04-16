@@ -10,9 +10,11 @@
 #include <SDL2/SDL.h>
 #include "Z80.hpp"
 
-namespace {
+namespace
+{
     const uint8_t MODE_DIR = 0;
     const uint8_t MODE_BUTTON = 1;
+    const uint8_t MODE_INVALID = 2;
 }
 
 namespace {
@@ -26,14 +28,18 @@ namespace {
     
     uint8_t get_joy_vaue(uint8_t mode, const uint8_t* state)
     {
-        const int* button_codes = mode == MODE_DIR ? joypad_keycodes : button_keycodes;
         uint8_t new_pad_value = 0x0f;
         
-        for (int i=0; i != 4; ++i)
+        if (mode != MODE_INVALID)
         {
-            if (state[*(button_codes+i)])
+            const int* button_codes = mode == MODE_DIR ? joypad_keycodes : button_keycodes;
+            
+            for (int i=0; i != 4; ++i)
             {
-                new_pad_value = clear_bit(new_pad_value, i);
+                if (state[*(button_codes+i)])
+                {
+                    new_pad_value = clear_bit(new_pad_value, i);
+                }
             }
         }
         
@@ -65,16 +71,15 @@ uint8_t InputManager::read8(uint16_t addr)
 
 void InputManager::write8(uint16_t addr, uint8_t value)
 {
-    if ((value != 0x10) && (value != 0x20))
+    if ((value & 0x30) == 0x30)
     {
-        throw std::runtime_error("Unknown joypad read value!");
+        m_mode = MODE_INVALID;
     }
-    
-    if ((value & (1<<5)) == 0)
+    else if ((value & (1<<4)) == 0)
     {
         m_mode = MODE_DIR;
     }
-    else if ((value & (1<<4)) == 0)
+    else if ((value & (1<<5)) == 0)
     {
         m_mode = MODE_BUTTON;
     }
