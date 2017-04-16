@@ -103,10 +103,17 @@ const LCDPallette LCD::get_pallete(uint16_t addr)
 
 namespace
 {
-    void tile_to_pixels(std::vector<uint8_t>::const_iterator data_b,
-                        int startx, int starty, int offsx, int offsy,
-                        const LCDPallette& pallette,
-                        std::vector<Pixel>& pixels)
+    //Note that tile also means sprite here, colour data is in the same format.
+    void tile_row_to_pixels(
+        std::vector<uint8_t>::const_iterator data_b, //Pointer to pixel data
+        int startx, //Top left x co-ord of the tile.
+        int starty, //Top left y co-ord of the tile.
+        int offsx,  //Index within selected row to start getting pixels
+        int offsy,  //Index of row within tile to get pixels from
+        const LCDPallette& pallette, //Pallete to choose colour values from
+        std::vector<Pixel>& pixels, //Pixel vector to add new pixels to
+        bool is_sprite //Set to handle transparancy of colour 0
+        )
     {
         pixels.reserve(pixels.size()+8);
         
@@ -120,8 +127,14 @@ namespace
             uint8_t msb = (b2 >> shift) & 0x1;
             uint8_t c = (msb << 1) | lsb;
             
+            if (is_sprite && c==0)
+            {
+                //Colour 0 is always 'transparent' for sprites
+                continue;
+            }
+            
             //Pallette remaps colours
-            Pixel new_pixel(startx - offsx + (7-shift), starty, pallette[c]);
+            Pixel new_pixel(startx - offsx + (7-shift), starty+offsy, pallette[c]);
             
             //probably not needed
             if (
@@ -183,11 +196,12 @@ void LCD::draw()
             //The final address to read pixel data from
             uint16_t tile_addr = background_tile_data+(tile_index*TILE_BYTES);
             
-            tile_to_pixels(m_data.begin()+tile_addr,
-                x, curr_scanline,
+            tile_row_to_pixels(m_data.begin()+tile_addr,
+                x, curr_scanline-tile_pixel_row,
                 tile_pixel_row_offset, tile_pixel_row,
                 bgrnd_pal,
-                scanline_pixels);
+                scanline_pixels,
+                false);
             
             //The idea being that these pixels are always the full row, that's why we
             //can incremement x by 8 each time. It gets the pixels before and ahead of x.
@@ -235,10 +249,12 @@ void LCD::draw()
         {
             //Sprite pixels are stored in the same place as backgound tiles
             uint16_t tile_offset = sprite.get_pattern_number()*SPRITE_BYTES;
-            tile_to_pixels(m_data.begin()+background_tile_data+tile_offset,
-                           sprite_x, curr_scanline,
-                           0, sprite_row_offset,
-                           pallette, scanline_pixels);
+            tile_row_to_pixels(m_data.begin()+background_tile_data+tile_offset,
+                        sprite_x, sprite_y,
+                        0, sprite_row_offset,
+                        pallette,
+                        scanline_pixels,
+                        true);
         }
     }
 
