@@ -53,6 +53,19 @@ struct Pixel
     {
     }
     
+    bool operator < (const Pixel& p) const
+    {
+        return (c < p.c);
+    }
+    
+    SDL_Point to_SDL_point()
+    {
+        SDL_Point ret;
+        ret.x = x;
+        ret.y = y;
+        return ret;
+    }
+    
     int x;
     int y;
     uint8_t c;
@@ -78,7 +91,7 @@ public:
     ~LCDWindow();
     
     void init();
-    void draw(const std::vector<Pixel>& pixels);
+    void draw(std::vector<Pixel>& pixels);
     SDL_Window* m_window;
     
 private:

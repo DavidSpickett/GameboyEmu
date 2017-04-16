@@ -51,13 +51,36 @@ void LCDWindow::init()
     SDL_RenderPresent(m_renderer);
 }
 
-void LCDWindow::draw(const std::vector<Pixel>& pixels)
+void LCDWindow::draw(std::vector<Pixel>& pixels)
 {
     if (m_window == NULL)
     {
         throw std::runtime_error("Cannot draw, the LCD window has not been init.");
     }
     
+    //Sorts them into runs of the same colour then draws once per colour
+    /*
+    std::sort(pixels.begin(), pixels.end());
+    
+    std::vector<SDL_Point> points;
+    uint8_t last_colour = 0xff;
+    for (std::vector<Pixel>::iterator it=pixels.begin(); it != pixels.end(); ++it)
+    {
+        if ((it->c != last_colour) || (it == (pixels.end()-1)))
+        {
+            if (points.size())
+            {
+                colour c = m_colours[last_colour];
+                SDL_SetRenderDrawColor(m_renderer, c.r, c.g, c.b, c.a);
+                SDL_RenderDrawPoints(m_renderer, &points[0], int(points.size()));
+            }
+            points.clear();
+        }
+        last_colour = it->c;
+        points.push_back(it->to_SDL_point());
+    }*/
+    
+    //Draw pixels one by one
     std::vector<Pixel>::const_iterator it = pixels.begin();
     for (; it != pixels.end(); ++it)
     {
