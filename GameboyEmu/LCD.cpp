@@ -133,66 +133,7 @@ namespace
             }
         }
     }
-    
-    /*void tile_to_all_pixels(uint8_t h,
-                        std::vector<uint8_t>::const_iterator data_b,
-                        int startx, int starty,
-                        const LCDPallette& pallette,
-                        std::vector<Pixel>& pixels)
-    {
-        pixels.reserve(pixels.size()+8);
-        
-        for (int i=0; i<h; ++i)
-        {
-            uint8_t b1 = *(data_b + (i*2));
-            uint8_t b2 = *(data_b + (i*2)+1);
-        
-            //Signed int!!
-            for (int shift=7; shift>= 0; --shift)
-            {
-                uint8_t lsb = (b1 >> shift) & 0x1;
-                uint8_t msb = (b2 >> shift) & 0x1;
-                uint8_t c = (msb << 1) | lsb;
-            
-                //Pallette remaps colours
-                Pixel new_pixel(startx + (7-shift), starty+i, pallette[c]);
-            
-                pixels.push_back(new_pixel);
-            }
-        }
-    }*/
 }
-/*
-void LCD::draw()
-{
-    std::vector<Pixel> line_pixels;
-    
-    if (m_control_reg.get_sprite_size() != 8)
-    {
-        throw std::runtime_error("Tile size is not 8!!!");
-    }
-    
-    if (m_control_reg.background_display())
-    {
-        const uint16_t background_tile_addr_table = m_control_reg.get_bgrnd_tile_table_addr() - LCD_MEM_START;
-        
-        const uint16_t background_tile_data = m_control_reg.get_bgrnd_tile_data_addr() - LCD_MEM_START;
-        
-        LCDPallette pallette = get_bgrnd_pallette();
-        for (uint16_t y=0; y < 32; ++y)
-        {
-            for (uint16_t x=0; x < 32; ++x)
-            {
-                uint16_t tile_index = m_data[background_tile_addr_table+(32*y)+x];
-                uint16_t tile_addr = background_tile_data+(16*tile_index);
-                
-                tile_to_all_pixels(8, m_data.begin() + tile_addr, x*8, y*8, pallette, line_pixels);
-            }
-        }
-    }
-    
-    m_display.draw(line_pixels);
-}*/
 
 void LCD::draw()
 {
@@ -201,13 +142,6 @@ void LCD::draw()
     
     std::vector<Pixel> scanline_pixels;
     
-    if (m_control_reg.get_sprite_size() != 8)
-    {
-        throw std::runtime_error("Tile size is not 8!!!");
-    }
-    
-    //for (uint8_t curr_scanline=0; curr_scanline != 144; ++curr_scanline)
-    //{
     if (m_control_reg.background_display())
     {
         //Address of table of tile indexes that form the background
@@ -262,12 +196,17 @@ void LCD::draw()
     }
  
     //Sprites
-    /*
+    if (m_control_reg.get_sprite_size() != 8)
+    {
+        throw std::runtime_error("Sprite size is 8x16!!");
+    }
+    
     const uint64_t SPRITE_INFO_BYTES = 4;
     const uint16_t oam_size = LCD_OAM_END-LCD_OAM_START;
     
-    const int SPRITE_HEIGHT = 8;
+    const int SPRITE_HEIGHT = 8; //TODO: 16 height mode
     const int SPRITE_WIDTH  = 8;
+    const int SPRITE_BYTES  = 2*SPRITE_HEIGHT;
     
     for (uint16_t oam_addr=0; oam_addr < oam_size; oam_addr+=SPRITE_INFO_BYTES)
     {
@@ -275,7 +214,8 @@ void LCD::draw()
         
         //Assume 8x8 mode for now
         int sprite_x = sprite.get_x()-SPRITE_WIDTH;
-        int sprite_y = sprite.get_y()-SPRITE_HEIGHT;
+        //Note that this is offset by 16 even when sprites are 8x8 pixels
+        int sprite_y = sprite.get_y()-16;
         
         int sprite_row_offset = int(curr_scanline) - sprite_y;
         LCDPallette pallette = sprite.get_pallette_number() ? get_obj_pal1() : get_obj_pal0();
@@ -286,13 +226,12 @@ void LCD::draw()
             )
         {
             uint16_t tile_offset = sprite.get_pattern_number();
-            tile_to_pixels(m_data.begin()+tile_offset,
+            tile_to_pixels(m_data.begin()+(tile_offset*SPRITE_HEIGHT),
                            sprite_x, sprite_y,
                            0, sprite_row_offset,
                            pallette, scanline_pixels);
         }
-    }*/
-//}
+    }
 
     m_display.draw(scanline_pixels);
 }

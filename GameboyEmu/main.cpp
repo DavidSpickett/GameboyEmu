@@ -27,8 +27,8 @@ void skip_bootstrap(Z80& proc)
 }
 
 int main(int argc, const char * argv[]) {
-    //MemoryMap map("Tetris (World).gb");
-    MemoryMap map("gb-test-roms-master/cpu_instrs/individual/01-special.gb");
+    MemoryMap map("ttt.gb");
+    //MemoryMap map("gb-test-roms-master/cpu_instrs/individual/04-op r,imm.gb");
     Z80 proc(map);
     //Icky
     map.set_proc_pointers(&proc);
@@ -42,12 +42,12 @@ int main(int argc, const char * argv[]) {
         
         Step(proc);
         
-        if (proc.pc.read() == 0xc1b9)
+        /*if (proc.pc.read() == 0x2400)
         {
             //return 0;
             uint8_t foo = 1;
             (void)foo;
-        }
+        }*/
     }
     
     return 0;

@@ -16,60 +16,37 @@ namespace {
 }
 
 namespace {
-    uint8_t get_dir_joypad(const uint8_t* state)
+    uint8_t clear_bit(uint8_t val, int bit)
     {
-        uint8_t new_joypad = 0x0f;
-        
-        if (state[SDL_SCANCODE_DOWN])
-        {
-            new_joypad &= ~(1<<3);
-        }
-        if (state[SDL_SCANCODE_UP])
-        {
-            new_joypad &= ~(1<<2);
-        }
-        if (state[SDL_SCANCODE_LEFT])
-        {
-            new_joypad &= ~(1<<1);
-        }
-        if (state[SDL_SCANCODE_RIGHT])
-        {
-            new_joypad &= ~1;
-        }
-        
-        return new_joypad;
+        return val & ~(1<<bit);
     }
     
-    uint8_t get_button_joypad(const uint8_t* state)
+    const int joypad_keycodes[] = {SDL_SCANCODE_RIGHT, SDL_SCANCODE_LEFT, SDL_SCANCODE_UP, SDL_SCANCODE_DOWN};
+    const int button_keycodes[] = {SDL_SCANCODE_X, SDL_SCANCODE_Z, SDL_SCANCODE_RSHIFT, SDL_SCANCODE_RETURN};
+    
+    uint8_t get_joy_vaue(uint8_t mode, const uint8_t* state)
     {
-        uint8_t new_joypad = 0x0f;
+        const int* button_codes = mode == MODE_DIR ? joypad_keycodes : button_keycodes;
+        uint8_t new_pad_value = 0x0f;
         
-        if (state[SDL_SCANCODE_RETURN]) //Start
+        for (int i=0; i != 4; ++i)
         {
-            new_joypad &= ~(1<<3);
-        }
-        if (state[SDL_SCANCODE_RSHIFT]) //Select
-        {
-            new_joypad &= ~(1<<2);
-        }
-        if (state[SDL_SCANCODE_Z]) //B
-        {
-            new_joypad &= ~(1<<1);
-        }
-        if (state[SDL_SCANCODE_X]) //A
-        {
-            new_joypad &= ~1;
+            if (state[*(button_codes+i)])
+            {
+                new_pad_value = clear_bit(new_pad_value, i);
+            }
         }
         
-        return new_joypad;
+        return new_pad_value;
     }
 }
 
 bool InputManager::read_inputs()
 {
+    //Used to get the console out of a halted state.
     const uint8_t *state = SDL_GetKeyboardState(NULL);
-    uint8_t dir = get_dir_joypad(state);
-    uint8_t but = get_button_joypad(state);
+    uint8_t dir = get_joy_vaue(MODE_DIR, state);
+    uint8_t but = get_joy_vaue(MODE_BUTTON, state);
     return (dir == 0x0f) && (but == 0x0f);
 }
 
@@ -80,8 +57,7 @@ uint8_t InputManager::read8(uint16_t addr)
         throw std::runtime_error(formatted_string("Unknown read of address 0x%04x from input manager.", addr));
     }
     
-    const uint8_t *state = SDL_GetKeyboardState(NULL);
-    m_joypad = m_mode == MODE_DIR ? get_dir_joypad(state) : get_button_joypad(state);
+    m_joypad = get_joy_vaue(m_mode, SDL_GetKeyboardState(NULL));
     
     //printf("Joypad: 0x%02x\n", m_joypad);
     return m_joypad;
@@ -89,6 +65,11 @@ uint8_t InputManager::read8(uint16_t addr)
 
 void InputManager::write8(uint16_t addr, uint8_t value)
 {
+    if ((value != 0x10) && (value != 0x20))
+    {
+        throw std::runtime_error("Unknown joypad read value!");
+    }
+    
     if ((value & (1<<5)) == 0)
     {
         m_mode = MODE_DIR;
