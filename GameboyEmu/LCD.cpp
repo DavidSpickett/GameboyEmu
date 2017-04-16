@@ -108,7 +108,6 @@ namespace
         std::vector<uint8_t>::const_iterator data_b, //Pointer to pixel data
         int startx, //Top left x co-ord of the tile.
         int starty, //Top left y co-ord of the tile.
-        int offsx,  //Index within selected row to start getting pixels
         int offsy,  //Index of row within tile to get pixels from
         const LCDPallette& pallette, //Pallete to choose colour values from
         std::vector<Pixel>& pixels, //Pixel vector to add new pixels to
@@ -134,7 +133,7 @@ namespace
             }
             
             //Pallette remaps colours
-            Pixel new_pixel(startx - offsx + (7-shift), starty+offsy, pallette[c]);
+            Pixel new_pixel(startx + (7-shift), starty+offsy, pallette[c]);
             
             //probably not needed
             if (
@@ -179,9 +178,6 @@ void LCD::draw()
         //Which row of pixels within the tile
         const uint8_t tile_pixel_row = (curr_scanline + start_y) % TILE_SIDE;
         
-        //Where in that row in the tile we should start
-        const uint8_t tile_pixel_row_offset = start_x % TILE_SIDE;
-        
         LCDPallette bgrnd_pal = get_bgrnd_pallette();
         for (uint8_t x=0; x<168; x+=TILE_SIDE, ++tile_row_offset)
         {
@@ -198,7 +194,7 @@ void LCD::draw()
             
             tile_row_to_pixels(m_data.begin()+tile_addr,
                 x, curr_scanline-tile_pixel_row,
-                tile_pixel_row_offset, tile_pixel_row,
+                tile_pixel_row,
                 bgrnd_pal,
                 scanline_pixels,
                 false);
@@ -251,7 +247,7 @@ void LCD::draw()
             uint16_t tile_offset = sprite.get_pattern_number()*SPRITE_BYTES;
             tile_row_to_pixels(m_data.begin()+background_tile_data+tile_offset,
                         sprite_x, sprite_y,
-                        0, sprite_row_offset,
+                        sprite_row_offset,
                         pallette,
                         scanline_pixels,
                         true);
