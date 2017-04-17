@@ -128,8 +128,8 @@ void LCD::draw_to_pixels()
     const uint8_t curr_scanline = get_curr_scanline();
     
     //Data describing the tiles themselves
-    bool signed_tile_nos = m_control_reg.get_bgrnd_tile_data_addr() == 0x0800;
-    
+    uint16_t background_tile_data_addr = m_control_reg.get_bgrnd_tile_data_addr();
+    bool signed_tile_nos = background_tile_data_addr == 0x0800;
     
     if (m_control_reg.background_display())
     {
@@ -166,14 +166,13 @@ void LCD::draw_to_pixels()
             
             if (signed_tile_nos)
             {
-                int8_t signed_tile_index = tile_index;
-                tile_index = 127 + signed_tile_index;
+                tile_index += 128;
             }
             
             //The final address to read pixel data from
             uint16_t tile_addr = tile_index*TILE_BYTES;
             
-            tile_row_to_pixels(m_data.begin()+tile_addr,
+            tile_row_to_pixels(m_data.begin() + tile_addr + background_tile_data_addr,
                 x - (start_x % TILE_SIDE), curr_scanline-tile_pixel_row,
                 0,//start_x % TILE_SIDE,
                 tile_pixel_row,
