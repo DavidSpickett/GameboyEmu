@@ -2403,6 +2403,7 @@ inline uint8_t ld_sp_hl(Z80& proc)
 namespace {
     uint8_t generic_srl_n(Z80& proc, uint8_t value)
     {
+        //Note that the MSB being 0 is the default behaviour on this platform
         uint8_t new_value = value >> 1;
         
         proc.f.set_z(new_value==0);
