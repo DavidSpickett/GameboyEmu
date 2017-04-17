@@ -107,13 +107,13 @@ void LCD::tile_row_to_pixels(
         }
         
         int newx = startx + (7-shift) - offsx;
-        if ((newx > LCD_WIDTH) || (newx < 0))
+        if ((newx >= LCD_WIDTH) || (newx < 0))
         {
             continue;
         }
         
         int newy = starty + offsy;
-        if ((newy > LCD_HEIGHT) || (newy < 0))
+        if ((newy >= LCD_HEIGHT) || (newy < 0))
         {
             continue;
         }
@@ -128,7 +128,8 @@ void LCD::draw_to_pixels()
     const uint8_t curr_scanline = get_curr_scanline();
     
     //Data describing the tiles themselves
-    const uint16_t background_tile_data = m_control_reg.get_bgrnd_tile_data_addr();
+    bool signed_tile_nos = m_control_reg.get_bgrnd_tile_data_addr() == 0x0800;
+    
     
     if (m_control_reg.background_display())
     {
@@ -161,10 +162,16 @@ void LCD::draw_to_pixels()
             }
             
             //Get actual value of index from the table
-            const uint8_t tile_index = m_data[background_tile_addr_table+(32*tile_row)+tile_row_offset];
+            uint8_t tile_index = m_data[background_tile_addr_table+(32*tile_row)+tile_row_offset];
+            
+            if (signed_tile_nos)
+            {
+                int8_t signed_tile_index = tile_index;
+                tile_index = 127 + signed_tile_index;
+            }
             
             //The final address to read pixel data from
-            uint16_t tile_addr = background_tile_data+(tile_index*TILE_BYTES);
+            uint16_t tile_addr = tile_index*TILE_BYTES;
             
             tile_row_to_pixels(m_data.begin()+tile_addr,
                 x - (start_x % TILE_SIDE), curr_scanline-tile_pixel_row,
@@ -211,7 +218,7 @@ void LCD::draw_to_pixels()
         {
             //Sprite pixels are stored in the same place as backgound tiles
             uint16_t tile_offset = sprite.get_pattern_number()*SPRITE_BYTES;
-            tile_row_to_pixels(m_data.begin()+background_tile_data+tile_offset,
+            tile_row_to_pixels(m_data.begin()+tile_offset,
                         sprite_x, sprite_y,
                         0,
                         sprite_row_offset,
@@ -241,7 +248,7 @@ void LCD::tick(size_t curr_cycles)
         //154 scan lines, 144 + 10 vblank period
         m_last_scan_change_cycles = curr_cycles;
         
-        if (curr_scanline <= 144)
+        if (curr_scanline < 144)
         {
             draw_to_pixels();
         }

@@ -148,8 +148,8 @@ class LCD: public MemoryManager
         {
             if (m_window != NULL)
             {
-                SDL_DestroyWindow(m_window);
                 SDL_DestroyRenderer(m_renderer);
+                SDL_DestroyWindow(m_window);
                 SDL_Quit();
             }
         }
