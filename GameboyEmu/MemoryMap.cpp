@@ -106,6 +106,12 @@ uint8_t MemoryMap::read8(uint16_t addr)
 
 void MemoryMap::write8(uint16_t addr, uint8_t value)
 {
+    //Output for instruction tests
+    if (addr == 0xff01)
+    {
+        printf("%c", value);
+    }
+    
     //Bodge to get the bootstrap out of memory
     if ((addr == 0xff50) && (value == 1))
     {

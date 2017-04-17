@@ -2645,42 +2645,184 @@ inline uint8_t set_b_r(Z80& proc, uint8_t b1)
     return 8;
 }
 
+uint8_t ccf(Z80& proc)
+{
+    proc.f.set_c(!proc.f.get_z());
+    proc.f.set_n(false);
+    proc.f.set_h(false);
+    
+    debug_print("ccf\n");
+    return 4;
+}
+
+namespace
+{
+    uint8_t generic_rrc_n(Z80& proc, uint8_t value)
+    {
+        uint8_t res = value >> 1;
+        proc.f.set_c(value & 0x1);
+        proc.f.set_z(res == 0);
+        proc.f.set_n(false);
+        proc.f.set_h(false);
+        
+        return res;
+    }
+}
+
+uint8_t rrc_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = NULL;
+    
+    switch (b1)
+    {
+        case 0x0f:
+            reg = &proc.a;
+            break;
+        case 0x08:
+            reg = &proc.b;
+            break;
+        case 0x09:
+            reg = &proc.c;
+            break;
+        case 0x0A:
+            reg = &proc.d;
+            break;
+        case 0x0B:
+            reg = &proc.e;
+            break;
+        case 0x0c:
+            reg = &proc.h;
+            break;
+        case 0x0d:
+            reg = &proc.l;
+            break;
+        //HL as addr
+        case 0x0e:
+        {
+            uint16_t addr = proc.get_hl();
+            uint8_t value = generic_rrc_n(proc, proc.mem.read8(addr));
+            proc.mem.write8(addr, value);
+            
+            debug_print("rrc (hl)\n");
+            return 16;
+        }
+    }
+    
+    reg->write(generic_rrc_n(proc, reg->read()));
+    
+    debug_print("rrc %s\n", reg->name.c_str());
+    return 8;
+}
+
+namespace
+{
+    uint8_t generic_sra_n(Z80& proc, uint8_t value)
+    {
+        uint8_t res = value >> 1;
+        //MSB doesn't change
+        if (value & 0x80)
+        {
+            res |= 0x80;
+        }
+        
+        proc.f.set_z(res==0);
+        proc.f.set_n(false);
+        proc.f.set_h(false);
+        proc.f.set_c(value & 0x1);
+        
+        return res;
+    }
+}
+
+uint8_t sra_n(Z80& proc, uint8_t b1)
+{
+    Register<uint8_t>* reg = NULL;
+    
+    switch (b1)
+    {
+        case 0x2f:
+            reg = &proc.a;
+            break;
+        case 0x28:
+            reg = &proc.b;
+            break;
+        case 0x29:
+            reg = &proc.c;
+            break;
+        case 0x2a:
+            reg = &proc.d;
+            break;
+        case 0x2b:
+            reg = &proc.e;
+            break;
+        case 0x2c:
+            reg = &proc.h;
+            break;
+        case 0x2d:
+            reg = &proc.l;
+            break;
+        //HL as addr
+        case 0x2e:
+        {
+            uint16_t addr = proc.get_hl();
+            uint8_t value = generic_sra_n(proc, proc.mem.read8(addr));
+            proc.mem.write8(addr, value);
+            
+            debug_print("sra (hl)\n");
+            return 16;
+        }
+    }
+    
+    reg->write(generic_sra_n(proc, reg->read()));
+    
+    debug_print("sra %s\n", reg->name.c_str());
+    return 8;
+}
+
 inline uint8_t cb_prefix_instr(Z80& proc)
 {
     uint8_t temp8 = proc.fetch_byte();
     uint8_t cycles;
     
-    if ((temp8 >= 0x40) && (temp8 <= 0x7f))
+    if ((temp8 >= 0x00) && (temp8 <= 0x07))
     {
-        cycles = bit_b_r(proc, temp8);
+        cycles = rlc_n(proc, temp8);
+    }
+    else if ((temp8 >= 0x08) && (temp8 <= 0xf))
+    {
+        cycles = rrc_n(proc, temp8);
     }
     else if ((temp8 >= 0x10) && (temp8 <= 0x17))
     {
         cycles = rl_n(proc, temp8);
     }
-    else if ((temp8 >= 0x30) && (temp8 <= 0x37))
+    else if ((temp8 >= 0x18) && (temp8 <= 0x1f))
     {
-        cycles = swap_n(proc, temp8);
-    }
-    else if ((temp8 >= 0x80) && (temp8 <= 0xBf))
-    {
-        cycles = res_b_n(proc, temp8);
+        cycles = rr_n(proc, temp8);
     }
     else if ((temp8 >= 0x20) && (temp8 <= 0x27))
     {
         cycles = sla_n(proc, temp8);
     }
-    else if ((temp8 >= 0x00) && (temp8 <= 0x07))
+    else if ((temp8 >= 0x28) && (temp8 <= 0x2f))
     {
-        cycles = rlc_n(proc, temp8);
+        cycles = sra_n(proc, temp8);
+    }
+    else if ((temp8 >= 0x30) && (temp8 <= 0x37))
+    {
+        cycles = swap_n(proc, temp8);
     }
     else if ((temp8 >= 0x38) && (temp8 <= 0x3f))
     {
         cycles = srl_n(proc, temp8);
     }
-    else if ((temp8 >= 0x18) && (temp8 <= 0x1f))
+    else if ((temp8 >= 0x40) && (temp8 <= 0x7f))
     {
-        cycles = rr_n(proc, temp8);
+        cycles = bit_b_r(proc, temp8);
+    }
+    else if ((temp8 >= 0x80) && (temp8 <= 0xBf))
+    {
+        cycles = res_b_n(proc, temp8);
     }
     else if ((temp8 >= 0xc0) && (temp8 <= 0xff))
     {
@@ -3084,6 +3226,9 @@ void Step(Z80& proc)
                 break;
             case 0x27:
                 cycles = daa(proc);
+                break;
+            case 0x3f:
+                cycles = ccf(proc);
                 break;
             default:
             {
