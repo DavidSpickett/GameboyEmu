@@ -27,8 +27,8 @@ void skip_bootstrap(Z80& proc)
 }
 
 int main(int argc, const char * argv[]) {
-    //MemoryMap map("opus5.gb");
-    MemoryMap map("Tetris (World).gb");
+    MemoryMap map("ttt.gb");
+    //MemoryMap map("Tetris (World).gb");
     //MemoryMap map("gb-test-roms-master/cpu_instrs/cpu_instrs.gb");
     Z80 proc(map);
     //Icky
@@ -40,18 +40,17 @@ int main(int argc, const char * argv[]) {
     while(1)
     {
         SDL_PollEvent(&event);
-        
         if(event.type == SDL_QUIT)
         {
             break;
         }
         
-        /*if (proc.pc.read() == 0x03f2)
+        if (proc.pc.read() == 0x03f2)
         {
             //Bodge to speed up tic tac toe rom when it's playing sound
             printf("Skipped sound loop.\n");
             proc.f.set_z(true);
-        }*/
+        }
         
         Step(proc);
         
