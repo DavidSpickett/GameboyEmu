@@ -2628,6 +2628,52 @@ inline uint8_t halt(Z80& proc)
     return 4;
 }
 
+inline uint8_t set_b_r(Z80& proc, uint8_t b1)
+{
+    uint8_t bit_no = (b1-0xc0)/8;
+    Register<uint8_t>* reg = NULL;
+    
+    switch (b1 % 8)
+    {
+        case 0:
+            reg = &proc.b;
+            break;
+        case 1:
+            reg = &proc.c;
+            break;
+        case 2:
+            reg = &proc.d;
+            break;
+        case 3:
+            reg = &proc.e;
+            break;
+        case 4:
+            reg = &proc.h;
+            break;
+        case 5:
+            reg = &proc.l;
+            break;
+        case 6:
+        {
+            //Use HL as addr
+            uint16_t addr = proc.get_hl();
+            uint8_t temp8 = proc.mem.read8(addr);
+            proc.mem.write8(addr, temp8 | (1<<bit_no));
+            
+            debug_print("set %d, (hl)\n", bit_no);
+            return 16;
+        }
+        case 7:
+            reg = &proc.a;
+            break;
+    }
+    
+    reg->write(reg->read() | (1<<bit_no));
+    
+    debug_print("set %d, %s\n", bit_no, reg->name.c_str());
+    return 8;
+}
+
 inline uint8_t cb_prefix_instr(Z80& proc)
 {
     uint8_t temp8 = proc.fetch_byte();
@@ -2664,6 +2710,10 @@ inline uint8_t cb_prefix_instr(Z80& proc)
     else if ((temp8 >= 0x18) && (temp8 <= 0x1f))
     {
         cycles = rr_n(proc, temp8);
+    }
+    else if ((temp8 >= 0xc0) && (temp8 <= 0xff))
+    {
+        cycles = set_b_r(proc, temp8);
     }
     else
     {
