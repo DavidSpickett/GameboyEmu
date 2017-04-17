@@ -11,7 +11,7 @@
 #include "utils.hpp"
 
 #define DEBUG_INSTR 1
-int print = 1;
+int print = 0;
 
 namespace
 {
@@ -1975,38 +1975,9 @@ namespace {
 inline uint8_t res_b_n(Z80& proc, uint8_t b1)
 {
     Register<uint8_t>* reg = nullptr;
-    uint8_t bit;
+    uint8_t bit = (b1-0x80)/8;
     
-    if ((b1 >= 0x80) && (b1 < 0x88))
-    {
-        bit = 0;
-    }
-    else if ((b1 >= 0x88) && (b1 < 0x90))
-    {
-        bit = 1;
-    }
-    else if ((b1 >= 0x90) && (b1 < 0x98))
-    {
-        bit = 2;
-    }
-    else if ((b1 >= 0x98) && (b1 < 0xa0))
-    {
-        bit = 3;
-    }
-    else if ((b1 >= 0xa0) && (b1 < 0xa8))
-    {
-        bit = 4;
-    }
-    else if ((b1 >= 0xa8) && (b1 < 0xb0))
-    {
-        bit = 5;
-    }
-    else
-    {
-        throw std::runtime_error("Couldn't get bit no. for res instr!");
-    }
-    
-    switch (b1 & 0xf)
+    switch (b1 % 8)
     {
         case 0x0:
             reg = &proc.b;
@@ -2026,9 +1997,6 @@ inline uint8_t res_b_n(Z80& proc, uint8_t b1)
         case 0x5:
             reg = &proc.l;
             break;
-        case 0x7:
-            reg = &proc.a;
-            break;
         //use hl
         case 0x6:
         {
@@ -2039,6 +2007,9 @@ inline uint8_t res_b_n(Z80& proc, uint8_t b1)
             debug_print("res %d, (hl)\n", bit);
             return 16;
         }
+        case 0x7:
+            reg = &proc.a;
+            break;
         default:
             throw std::runtime_error("Couldn't decode res instr!");
     }
