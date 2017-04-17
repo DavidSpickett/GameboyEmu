@@ -15,6 +15,9 @@
 #include <SDL2/SDL.h>
 #include "MemoryManager.hpp"
 
+const size_t LCD_WIDTH  = 160;
+const size_t LCD_HEIGHT = 144;
+
 typedef std::vector<uint8_t> LCDPallette;
 
 class Sprite
@@ -58,14 +61,6 @@ struct Pixel
         return (c < p.c);
     }
     
-    SDL_Point to_SDL_point()
-    {
-        SDL_Point ret;
-        ret.x = x;
-        ret.y = y;
-        return ret;
-    }
-    
     int x;
     int y;
     uint8_t c;
@@ -78,25 +73,15 @@ struct colour
     {
     }
     
+    colour():
+    a(SDL_ALPHA_OPAQUE), r(255), g(255), b(255)
+    {
+    }
+    
     uint8_t r;
     uint8_t g;
     uint8_t b;
     uint8_t a;
-};
-
-class LCDWindow
-{
-public:
-    LCDWindow();
-    ~LCDWindow();
-    
-    void init();
-    void draw(std::vector<Pixel>& pixels);
-    SDL_Window* m_window;
-    
-private:
-    SDL_Renderer* m_renderer;
-    std::vector<colour> m_colours;
 };
 
 const uint16_t LCDCONTROL = 0xff40-LCD_REGS_START;
@@ -144,13 +129,29 @@ class LCD: public MemoryManager
 {
     public:
         LCD():
-            m_display(),  m_proc(nullptr)
+            m_proc(nullptr)
         {
             m_data.resize(LCD_MEM_END-LCD_MEM_START, 0);
             m_oam_data.resize(LCD_OAM_END-LCD_OAM_START, 0);
             m_registers.resize(LCD_REGS_END-LCD_REGS_START, 0);
+            m_pixel_data.resize(LCD_WIDTH*LCD_HEIGHT);
             
             m_control_reg = LCDControlReg(&m_registers[LCDCONTROL]);
+            
+            m_colours.push_back(colour(0xff, 0xff, 0xff));
+            m_colours.push_back(colour(0xb9, 0xb9, 0xb9));
+            m_colours.push_back(colour(0x6b, 0x6b, 0x6b));
+            m_colours.push_back(colour(0x00, 0x00, 0x00));
+        }
+    
+        ~LCD()
+        {
+            if (m_window != NULL)
+            {
+                SDL_DestroyWindow(m_window);
+                SDL_DestroyRenderer(m_renderer);
+                SDL_Quit();
+            }
         }
     
         void write8(uint16_t addr, uint8_t value);
@@ -159,20 +160,32 @@ class LCD: public MemoryManager
         uint16_t read16(uint16_t addr);
         void write16(uint16_t addr, uint16_t value);
     
-        void show_display();
-        void draw();
-        void _draw();
+        void SDLInit();
+        void SDLDraw(uint8_t curr_scanline);
+    
+        void draw_to_pixels();
         void tick(size_t curr_cycles);
     
         Z80* m_proc; /////HACK HACK HACK
     
     private:
+        SDL_Renderer* m_renderer;
+        SDL_Window* m_window;
+        std::vector<colour> m_colours;
+    
         LCDControlReg m_control_reg;
-        LCDWindow m_display;
         std::vector<uint8_t> m_data;
         std::vector<uint8_t> m_oam_data;
         std::vector<uint8_t> m_registers;
+        std::vector<colour> m_pixel_data;
         uint8_t m_last_scan_change_cycles;
+    
+        void tile_row_to_pixels(
+            std::vector<uint8_t>::const_iterator data_b,
+            int startx, int starty,
+            int offsx, int offsy,
+            bool is_sprite,
+            const LCDPallette& pallette);
 
         uint8_t get_scroll_x()
         {

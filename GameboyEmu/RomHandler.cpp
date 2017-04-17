@@ -367,7 +367,7 @@ uint8_t ROMHandler::read8(uint16_t addr)
         return m_ram_bank[addr-CART_RAM_START];
     }
     
-    uint8_t value  = get_byte(addr);
+    uint8_t value = get_byte(addr);
     //printf("Read addr: 0x%04x from ROM got 0x%02x\n", addr, value);
     return value;
 }

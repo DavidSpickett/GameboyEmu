@@ -10,83 +10,19 @@
 #include "utils.hpp"
 #include "Z80.hpp"
 
-const size_t LCD_WIDTH  = 160;
-const size_t LCD_HEIGHT = 144;
-//const size_t LCD_WIDTH  = 256;
-//const size_t LCD_HEIGHT = 256;
-
-LCDWindow::LCDWindow()
-{
-    m_colours.push_back(colour(0xff, 0xff, 0xff));
-    m_colours.push_back(colour(0xb9, 0xb9, 0xb9));
-    m_colours.push_back(colour(0x6b, 0x6b, 0x6b));
-    m_colours.push_back(colour(0x00, 0x00, 0x00));
-}
-
-void LCDWindow::init()
-{
-    //Initialize SDL
-    if(SDL_Init(SDL_INIT_VIDEO) < 0)
-    {
-        throw std::runtime_error(
-            formatted_string("SDL could not initialize! SDL_Error: %s\n", SDL_GetError()));
-    }
-    
-    //Create window
-    m_window = SDL_CreateWindow("Gameboy Emulator",
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        LCD_WIDTH, LCD_HEIGHT,
-        SDL_WINDOW_SHOWN);
-    
-    if(m_window == NULL)
-    {
-        throw std::runtime_error(formatted_string(
-            "Window could not be created! SDL_Error: %s\n", SDL_GetError()));
-    }
-    
-    m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED);
-
-    SDL_SetRenderDrawColor(m_renderer, m_colours[0].r, m_colours[0].g, m_colours[0].b, m_colours[0].a);
-    SDL_RenderClear(m_renderer);
-    SDL_RenderPresent(m_renderer);
-}
-
-void LCDWindow::draw(std::vector<Pixel>& pixels)
+void LCD::SDLDraw(uint8_t curr_scanline)
 {
     if (m_window == NULL)
     {
         throw std::runtime_error("Cannot draw, the LCD window has not been init.");
     }
     
-    //Sorts them into runs of the same colour then draws once per colour
-    /*
-    std::sort(pixels.begin(), pixels.end());
-    
-    std::vector<SDL_Point> points;
-    uint8_t last_colour = 0xff;
-    for (std::vector<Pixel>::iterator it=pixels.begin(); it != pixels.end(); ++it)
+    int start_index = curr_scanline*LCD_WIDTH;
+    for (int x=0; x != LCD_WIDTH; ++x)
     {
-        if ((it->c != last_colour) || (it == (pixels.end()-1)))
-        {
-            if (points.size())
-            {
-                colour c = m_colours[last_colour];
-                SDL_SetRenderDrawColor(m_renderer, c.r, c.g, c.b, c.a);
-                SDL_RenderDrawPoints(m_renderer, &points[0], int(points.size()));
-            }
-            points.clear();
-        }
-        last_colour = it->c;
-        points.push_back(it->to_SDL_point());
-    }*/
-    
-    //Draw pixels one by one
-    std::vector<Pixel>::const_iterator it = pixels.begin();
-    for (; it != pixels.end(); ++it)
-    {
-        colour c = m_colours[it->c];
+        colour c = m_pixel_data[start_index+x];
         SDL_SetRenderDrawColor(m_renderer, c.r, c.g, c.b, c.a);
-        SDL_RenderDrawPoint(m_renderer, it->x, it->y);
+        SDL_RenderDrawPoint(m_renderer, x, curr_scanline);
     }
 
     //Draw
@@ -98,16 +34,6 @@ void LCDWindow::draw(std::vector<Pixel>& pixels)
         delay = 0;
     }
     delay++;
-}
-
-LCDWindow::~LCDWindow()
-{
-    if (m_window != NULL)
-    {
-        SDL_DestroyWindow(m_window);
-        SDL_DestroyRenderer(m_renderer);
-        SDL_Quit();
-    }
 }
 
 const LCDPallette LCD::get_pallete(uint16_t addr)
@@ -125,58 +51,82 @@ const LCDPallette LCD::get_pallete(uint16_t addr)
     return ret;
 }
 
-namespace
+void LCD::SDLInit()
 {
-    //Note that tile also means sprite here, colour data is in the same format.
-    void tile_row_to_pixels(
-        std::vector<uint8_t>::const_iterator data_b, //Pointer to pixel data
-        int startx, //Top left x co-ord of the tile.
-        int starty, //Top left y co-ord of the tile.
-        int offsy,  //Index of row within tile to get pixels from
-        const LCDPallette& pallette, //Pallete to choose colour values from
-        std::vector<Pixel>& pixels, //Pixel vector to add new pixels to
-        bool is_sprite //Set to handle transparancy of colour 0
-        )
+    //Initialize SDL
+    if(SDL_Init(SDL_INIT_VIDEO) < 0)
     {
-        pixels.reserve(pixels.size()+8);
+        throw std::runtime_error(
+                                 formatted_string("SDL could not initialize! SDL_Error: %s\n", SDL_GetError()));
+    }
+    
+    //Create window
+    m_window = SDL_CreateWindow("Gameboy Emulator",
+                                SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                                LCD_WIDTH, LCD_HEIGHT,
+                                SDL_WINDOW_SHOWN);
+    
+    if(m_window == NULL)
+    {
+        throw std::runtime_error(formatted_string(
+                                                  "Window could not be created! SDL_Error: %s\n", SDL_GetError()));
+    }
+    
+    m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED);
+    
+    SDL_SetRenderDrawColor(m_renderer, m_colours[0].r, m_colours[0].g, m_colours[0].b, m_colours[0].a);
+    SDL_RenderClear(m_renderer);
+    SDL_RenderPresent(m_renderer);
+}
+
+//Note that tile also means sprite here, colour data is in the same format.
+void LCD::tile_row_to_pixels(
+    std::vector<uint8_t>::const_iterator data_b, //Pointer to pixel data
+    int startx, //Top left x co-ord of the tile.
+    int starty, //Top left y co-ord of the tile.
+    int offsx,  //Srolling window x offset
+    int offsy,  //Index of row within tile to get pixels from
+    bool is_sprite, //Set to handle transparancy of colour 0
+    const LCDPallette& pallette //Colour mapping
+    )
+{
+    uint8_t b1 = *(data_b + (offsy*2));
+    uint8_t b2 = *(data_b + (offsy*2)+1);
+    
+    //Signed int!!
+    for (int shift=7; shift>= 0; --shift)
+    {
+        uint8_t lsb = (b1 >> shift) & 0x1;
+        uint8_t msb = (b2 >> shift) & 0x1;
+        uint8_t c = (msb << 1) | lsb;
         
-        uint8_t b1 = *(data_b + (offsy*2));
-        uint8_t b2 = *(data_b + (offsy*2)+1);
-        
-        //Signed int!!
-        for (int shift=7; shift>= 0; --shift)
+        if (is_sprite && c==0)
         {
-            uint8_t lsb = (b1 >> shift) & 0x1;
-            uint8_t msb = (b2 >> shift) & 0x1;
-            uint8_t c = (msb << 1) | lsb;
-            
-            if (is_sprite && c==0)
-            {
-                //Colour 0 is always 'transparent' for sprites
-                continue;
-            }
-            
-            //Pallette remaps colours
-            Pixel new_pixel(startx + (7-shift), starty+offsy, pallette[c]);
-            
-            //probably not needed
-            if (
-                ((new_pixel.x >= 0) && (new_pixel.x < LCD_WIDTH)) &&
-                ((new_pixel.y >= 0) && (new_pixel.y < LCD_HEIGHT))
-                )
-            {
-                pixels.push_back(new_pixel);
-            }
+            //Colour 0 is always 'transparent' for sprites
+            continue;
         }
+        
+        int newx = startx + (7-shift) - offsx;
+        if ((newx > LCD_WIDTH) || (newx < 0))
+        {
+            continue;
+        }
+        
+        int newy = starty + offsy;
+        if ((newy > LCD_HEIGHT) || (newy < 0))
+        {
+            continue;
+        }
+        
+        m_pixel_data[(newy*LCD_WIDTH)+newx] = m_colours[pallette[c]];
     }
 }
 
-void LCD::draw()
+void LCD::draw_to_pixels()
 {
     //Lines are drawn one at a time
     const uint8_t curr_scanline = get_curr_scanline();
     
-    std::vector<Pixel> scanline_pixels;
     //Data describing the tiles themselves
     const uint16_t background_tile_data = m_control_reg.get_bgrnd_tile_data_addr();
     
@@ -217,22 +167,14 @@ void LCD::draw()
             uint16_t tile_addr = background_tile_data+(tile_index*TILE_BYTES);
             
             tile_row_to_pixels(m_data.begin()+tile_addr,
-                x, curr_scanline-tile_pixel_row,
+                x - (start_x % TILE_SIDE), curr_scanline-tile_pixel_row,
+                0,//start_x % TILE_SIDE,
                 tile_pixel_row,
-                bgrnd_pal,
-                scanline_pixels,
-                false);
+                false,
+                bgrnd_pal);
             
             //The idea being that these pixels are always the full row, that's why we
             //can incremement x by 8 each time. It gets the pixels before and ahead of x.
-        }
-    }
-    else
-    {
-        //White bgrnd for sprite testing
-        for (int x=0 ; x != LCD_WIDTH; ++x)
-        {
-            scanline_pixels.push_back(Pixel(x, curr_scanline, 0));
         }
     }
  
@@ -249,7 +191,7 @@ void LCD::draw()
     const int SPRITE_WIDTH  = 8;
     const int SPRITE_BYTES  = 2*SPRITE_HEIGHT;
     
-//    for (uint16_t oam_addr=0; oam_addr < oam_size; oam_addr+=SPRITE_INFO_BYTES)
+    //for (uint16_t oam_addr=0; oam_addr < oam_size; oam_addr+=SPRITE_INFO_BYTES)
     for (uint16_t oam_addr=0; oam_addr < SPRITE_INFO_BYTES; oam_addr+=SPRITE_INFO_BYTES)
     {
         Sprite sprite(m_oam_data.begin()+oam_addr);
@@ -271,14 +213,14 @@ void LCD::draw()
             uint16_t tile_offset = sprite.get_pattern_number()*SPRITE_BYTES;
             tile_row_to_pixels(m_data.begin()+background_tile_data+tile_offset,
                         sprite_x, sprite_y,
+                        0,
                         sprite_row_offset,
-                        pallette,
-                        scanline_pixels,
-                        true);
+                        true,
+                        pallette);
         }
     }
 
-    m_display.draw(scanline_pixels);
+    SDLDraw(curr_scanline);
 }
 
 void LCD::tick(size_t curr_cycles)
@@ -301,7 +243,7 @@ void LCD::tick(size_t curr_cycles)
         
         if (curr_scanline <= 144)
         {
-            draw();
+            draw_to_pixels();
         }
         
         if (curr_scanline != 153)
@@ -336,14 +278,8 @@ void LCD::tick(size_t curr_cycles)
         else
         {
             set_curr_scanline(0);
-            //draw();
         }
     }
-}
-
-void LCD::show_display()
-{
-    m_display.init();
 }
 
 uint8_t LCD::read8(uint16_t addr)
@@ -380,11 +316,11 @@ void LCD::write8(uint16_t addr, uint8_t value)
     {
         if ((addr-LCD_REGS_START) == SCROLLY)
         {
-            //printf("scrolly set to 0x%02x\n", value);
+            printf("scrolly set to 0x%02x\n", value);
         }
         if ((addr-LCD_REGS_START) == SCROLLX)
         {
-            //printf("scrollx set to 0x%02x\n", value);
+            printf("scrollx set to 0x%02x\n", value);
         }
         
         set_reg8(addr, value);
@@ -455,10 +391,11 @@ void LCD::do_after_reg_write(uint16_t addr)
     {
         case LCDCONTROL:
         {
-            if (m_control_reg.get_lcd_operation() && (m_display.m_window == NULL))
+            if (m_control_reg.get_lcd_operation() && (m_window == NULL))
             {
-                show_display();
+                SDLInit();
             }
+            
             break;
         }
         case CURLINE:

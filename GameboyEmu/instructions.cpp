@@ -10,7 +10,7 @@
 #include <iostream>
 #include "utils.hpp"
 
-#define DEBUG_INSTR 0
+#define DEBUG_INSTR 1
 int print = 1;
 
 namespace
@@ -2697,13 +2697,6 @@ void Step(Z80& proc)
     {
         //Fetch first byte from PC
         debug_print("PC: 0x%04x - ", proc.pc.read());
-        
-        if (proc.pc.read() == 0x03f2)
-        {
-            //Bodge to speed up tic tac toe rom when it's playing sound
-            printf("Skipped sound loop.\n");
-            proc.f.set_z(true);
-        }
         
         uint8_t b1 = proc.fetch_byte();
         

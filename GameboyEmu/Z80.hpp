@@ -154,21 +154,23 @@ public:
     
     void add_call(uint16_t from, uint16_t to, uint16_t sp)
     {
-        m_callstack_frames.push_back(
+        return;
+        /*m_callstack_frames.push_back(
             formatted_string("calling 0x%04x from 0x%04x sp is 0x%04x", to, from, sp));
-        print_callstack();
+        print_callstack();*/
     }
     
     void add_ret(uint16_t to, bool is_reti)
     {
-        m_callstack_frames.push_back(formatted_string("return to 0x%04x", to));
+        return;
+        /*m_callstack_frames.push_back(formatted_string("return to 0x%04x", to));
         print_callstack();
         m_callstack_frames.pop_back(); //Remove call/ret pair
         
         if (!is_reti && m_callstack_frames.size())
         {
             m_callstack_frames.pop_back();
-        }
+        }*/
     }
     
     bool interrupt_enable;
