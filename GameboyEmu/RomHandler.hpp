@@ -29,14 +29,19 @@ public:
         m_ram_enable(false),
         m_rom_ram_mode(RAM_MODE) //Zelda seems to expect RAM mode to start with
     {
+        std::streampos file_size = 0;
         file_str = std::ifstream(file_path.c_str(), std::ifstream::binary);
         if (!file_str.is_open())
         {
             throw std::runtime_error(formatted_string("File %s does not exist.", file_path.c_str()));
         }
         
-        m_rom_start_contents.resize(ROM_FIXED_BLOCK_SIZE);
-        file_str.read((char*)&m_rom_start_contents[0], ROM_FIXED_BLOCK_SIZE);
+        file_size = file_str.tellg();
+        file_str.seekg(0, std::ios::end);
+        file_size = file_str.tellg() - file_size;
+        file_str.seekg(0, std::ios::beg);
+        m_rom_contents.resize(file_size);
+        file_str.read((char*)&m_rom_contents[0], file_size);
         
         printf("%s\n", get_info().c_str());
         if (is_cgb_only())
@@ -72,7 +77,7 @@ public:
     void tick(size_t curr_cycles) {}
     
 private:
-    std::vector<uint8_t> m_rom_start_contents;
+    std::vector<uint8_t> m_rom_contents;
     std::string get_string(const uint16_t start, size_t len);
     uint8_t get_byte(uint16_t addr);
     

@@ -17,7 +17,7 @@ std::string ROMHandler::get_string(const uint16_t start, size_t len)
     
     for (uint16_t addr = start; addr < (start+len); ++addr)
     {
-        uint8_t b = m_rom_start_contents[addr];
+        uint8_t b = m_rom_contents[addr];
         temp_str[addr-start] = b;
         
         //Assume unused are all on the end
@@ -354,8 +354,9 @@ uint8_t ROMHandler::read8(uint16_t addr)
             rom_bank += (m_ram_bank_no << 5);
         }
         
-        size_t offset = 16*1024*rom_bank;
-        return get_byte(addr-SWITCHABLE_ROM_START+offset);
+        //-1 because switchable banks are 1 indexed, bank 0 is always mapped in the 16k before switchable
+        size_t offset = 16*1024*(rom_bank-1);
+        return get_byte(addr+offset);
     }
     else if ((addr >= CART_RAM_START) && (addr < CART_RAM_END))
     {
@@ -422,7 +423,7 @@ void ROMHandler::write8(uint16_t addr, uint8_t value)
 
 uint8_t ROMHandler::get_byte(uint16_t addr)
 {
-    return m_rom_start_contents[addr];
+    return m_rom_contents[addr];
 }
 
 uint16_t ROMHandler::read16(uint16_t addr)
