@@ -12,10 +12,17 @@
 #include <stdio.h>
 #include "MemoryManager.hpp"
 
+const uint16_t DIVCOUNT = 0xff04;
+const uint16_t TIMECNT  = 0xff05;
+const uint16_t TIMEMOD  = 0xff06;
+const uint16_t TIMECONT = 0xff07;
+
 class HardwareIORegs: public MemoryManager
 {
 public:
-    HardwareIORegs()
+    HardwareIORegs():
+        m_clock_enable(false), m_timer_countdown_start(1024),
+        m_timer_countdown(1024), m_divider_countdown(256)
     {
     }
     
@@ -25,7 +32,18 @@ public:
     uint16_t read16(uint16_t addr);
     void write16(uint16_t addr, uint16_t value);
     
-    void tick(size_t curr_cycles) {}
+    void tick(size_t curr_cycles);
+
+private:
+    size_t m_cycles;
+    bool m_clock_enable;
+    uint8_t m_divider_cnt;
+    uint8_t m_time_cont;
+    uint32_t m_timer_countdown_start;
+    uint32_t m_timer_countdown;
+    uint32_t m_divider_countdown;
+    uint8_t m_time_mod;
+    uint8_t m_time_cnt;
 };
 
 #endif /* HardwareIORegs_hpp */

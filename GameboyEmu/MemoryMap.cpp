@@ -168,4 +168,5 @@ void MemoryMap::tick(size_t curr_cycles)
     m_interrupt_handler.tick(curr_cycles);
     m_input_handler.tick(curr_cycles);
     m_lcd_handler.tick(curr_cycles);
+    m_hardware_regs_handler.tick(curr_cycles);
 }

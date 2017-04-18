@@ -1612,7 +1612,7 @@ inline uint8_t rst_n(Z80& proc, uint8_t b1)
     proc.pc.write(offset);
     
     debug_print("rst 0x%04x\n", offset);
-    return 32;
+    return 16;
 }
 
 namespace
