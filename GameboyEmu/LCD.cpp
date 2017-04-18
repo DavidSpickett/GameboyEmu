@@ -133,7 +133,7 @@ void LCD::draw_to_pixels()
     
     if (m_control_reg.get_window_display())
     {
-        printf("Skipping window display!");
+        printf("Skipping window display!\n");
     }
     
     if (m_control_reg.background_display())
