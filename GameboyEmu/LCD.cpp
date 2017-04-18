@@ -131,6 +131,11 @@ void LCD::draw_to_pixels()
     uint16_t background_tile_data_addr = m_control_reg.get_bgrnd_tile_data_addr();
     bool signed_tile_nos = background_tile_data_addr == 0x0800;
     
+    if (m_control_reg.get_window_display())
+    {
+        printf("Skipping window display!");
+    }
+    
     if (m_control_reg.background_display())
     {
         //Address of table of tile indexes that form the background
@@ -196,9 +201,9 @@ void LCD::draw_to_pixels()
     const int SPRITE_HEIGHT = 8; //TODO: 16 height mode
     const int SPRITE_WIDTH  = 8;
     const int SPRITE_BYTES  = 2*SPRITE_HEIGHT;
-    
-    //for (uint16_t oam_addr=0; oam_addr < oam_size; oam_addr+=SPRITE_INFO_BYTES)
-    for (uint16_t oam_addr=0; oam_addr < SPRITE_INFO_BYTES; oam_addr+=SPRITE_INFO_BYTES)
+
+    for (uint16_t oam_addr=0; oam_addr < oam_size; oam_addr+=SPRITE_INFO_BYTES)
+    //for (uint16_t oam_addr=0; oam_addr < SPRITE_INFO_BYTES; oam_addr+=SPRITE_INFO_BYTES)
     {
         Sprite sprite(m_oam_data.begin()+oam_addr);
         
@@ -322,11 +327,11 @@ void LCD::write8(uint16_t addr, uint8_t value)
     {
         if ((addr-LCD_REGS_START) == SCROLLY)
         {
-            printf("scrolly set to 0x%02x\n", value);
+            //printf("scrolly set to 0x%02x\n", value);
         }
         if ((addr-LCD_REGS_START) == SCROLLX)
         {
-            printf("scrollx set to 0x%02x\n", value);
+            //printf("scrollx set to 0x%02x\n", value);
         }
         
         set_reg8(addr, value);

@@ -111,12 +111,19 @@ void MemoryMap::write8(uint16_t addr, uint8_t value)
     {
         printf("%c", value);
     }
-    
     //Bodge to get the bootstrap out of memory
-    if ((addr == 0xff50) && (value == 1))
+    else if ((addr == 0xff50) && (value == 1))
     {
         m_bootstrap_in_mem = false;
         return;
+    }
+    //Start a DMA transfer
+    else if (addr == 0xff46)
+    {
+        /*This potentially is wrong because we will count the cycles
+         of this instruction against the timing of the DMA.*/
+        m_dma_transfer = DMATransfer(uint16_t(value) << 8);
+        //printf("Setup DMA transfer from 0x%04x\n", m_dma_transfer.source_addr);
     }
     
     MemoryManager& m = get_mm(addr);
@@ -139,6 +146,25 @@ void MemoryMap::write16(uint16_t addr, uint16_t value)
 
 void MemoryMap::tick(size_t curr_cycles)
 {
+    if (m_dma_transfer.cycles_remaining > 0)
+    {
+        m_dma_transfer.cycles_remaining -= curr_cycles;
+        
+        if (m_dma_transfer.cycles_remaining <= 0)
+        {
+            //printf("Doing DMA transfer from 0x%04x\n", m_dma_transfer.source_addr);
+            m_dma_transfer.cycles_remaining = -1;
+            
+            MemoryManager& source_m = get_mm(m_dma_transfer.source_addr);
+            uint16_t read_addr = m_dma_transfer.source_addr;
+            //Hex 0x100!!
+            for (uint16_t write_addr=LCD_OAM_START; write_addr<LCD_OAM_END; ++read_addr,++write_addr)
+            {
+                m_lcd_handler.write8(write_addr, source_m.read8(read_addr));
+            }
+        }
+    }
+    
     m_interrupt_handler.tick(curr_cycles);
     m_input_handler.tick(curr_cycles);
     m_lcd_handler.tick(curr_cycles);

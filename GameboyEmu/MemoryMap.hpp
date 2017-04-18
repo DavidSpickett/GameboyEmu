@@ -21,6 +21,20 @@
 #include "InputManager.hpp"
 #include "SoundHandler.hpp"
 
+struct DMATransfer
+{
+    DMATransfer(uint16_t source_addr):
+        cycles_remaining(640), source_addr(source_addr)
+    {}
+    
+    DMATransfer():
+        cycles_remaining(-1), source_addr(0)
+    {}
+    
+    int cycles_remaining;
+    uint16_t source_addr;
+};
+
 class DefaultMemoryManager: public MemoryManager
 {
 public:
@@ -75,7 +89,7 @@ class MemoryMap
 {
 public:
     MemoryMap(std::string cartridge_name):
-    m_bootstrap_in_mem(true), m_rom_handler(cartridge_name)
+    m_bootstrap_in_mem(true), m_rom_handler(cartridge_name), m_dma_transfer()
     {
         m_default_handler.AddFile("GameBoyBios.gb");
     }
@@ -98,6 +112,7 @@ public:
     }
     
 private:
+    DMATransfer m_dma_transfer;
     bool m_bootstrap_in_mem;
     MemoryManager& get_mm(uint16_t addr);
     InterruptManager m_interrupt_handler;
