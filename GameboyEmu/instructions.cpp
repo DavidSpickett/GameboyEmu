@@ -2359,6 +2359,15 @@ inline uint8_t sbc_a_n(Z80& proc, uint8_t b1)
             debug_print("%s\n", "sbc a, (hl)");
             return 8;
         }
+        case 0xde:
+        {
+            //Use byte given
+            uint8_t value = proc.fetch_byte();
+            generic_sbc_n(proc, value);
+            
+            debug_print("sbc a, 0x%02x\n", value);
+            return 8;
+        }
     }
     
     generic_sbc_n(proc, reg->read());
@@ -3195,6 +3204,7 @@ void Step(Z80& proc)
             case 0x9c:
             case 0x9d:
             case 0x9e:
+            case 0xde:
                 cycles = sbc_a_n(proc, b1);
                 break;
             case 0xf2:
