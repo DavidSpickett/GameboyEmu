@@ -21,6 +21,7 @@ public:
     void client_read();
     
 private:
+    void process_command(char* data, size_t len);
     void send_to_client(char* data, size_t len);
     
     int m_client_fd;

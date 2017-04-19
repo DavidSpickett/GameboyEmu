@@ -195,4 +195,20 @@ void GDBHandler::handle_command(char* received, size_t size)
     bool good_packet = verify_gdb_packet_structure(received, size);
     char response = good_packet ? '+' : '-';
     send_to_client(&response, 1);
+    
+    if (good_packet)
+    {
+        process_command(received+1, size-4);
+    }
+}
+
+void GDBHandler::process_command(char* data, size_t len)
+{
+    std::string qsupported = "qSupported";
+    if ((len > qsupported.size()) &&
+        strncmp(data, qsupported.c_str(), qsupported.size()) == 0)
+    {
+        data[len] = 0;
+        printf("Got qSupported: %s\n", data);
+    }
 }
