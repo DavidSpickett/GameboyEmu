@@ -255,7 +255,7 @@ void LCD::draw_to_pixels()
         int sprite_y = sprite.get_y()-16;
         
         int sprite_row_offset = int(curr_scanline) - sprite_y;
-        LCDPallette pallette = sprite.get_pallette_number() ? m_obj_pal_1 : m_obj_pal_0;
+        LCDPallette& pallette = sprite.get_pallette_number() ? m_obj_pal_1 : m_obj_pal_0;
         
         if ((curr_scanline >= sprite_y) &&
             (curr_scanline < (sprite_y+SPRITE_HEIGHT)) &&
@@ -264,7 +264,6 @@ void LCD::draw_to_pixels()
         {
             //Sprite pixels are stored in the same place as backgound tiles
             uint16_t tile_offset = sprite.get_pattern_number();
-            printf("Tile offset: %02x\n", tile_offset);
             if (SPRITE_HEIGHT == 16)
             {
                 tile_offset &= ~1;
@@ -274,6 +273,11 @@ void LCD::draw_to_pixels()
             std::vector<uint8_t>::const_iterator norm_sprite(m_data.begin()+tile_offset);
             if (sprite.get_y_flip())
             {
+                /*Because we give it a pointer to the last byte and go back
+                 the lines are reversed so colour 0b01 becomes 0b10.
+                 This is a temp fix for that until I can think of something more elegant.*/
+                std::swap(pallette[1], pallette[2]);
+                
                 //You'd think this would need a -1 but it doesn't.
                 std::vector<uint8_t>::const_reverse_iterator inv_sprite(norm_sprite+SPRITE_BYTES);
                 tile_row_to_pixels(inv_sprite,
@@ -283,6 +287,8 @@ void LCD::draw_to_pixels()
                                    true,
                                    sprite.get_x_flip(),
                                    pallette);
+                
+                std::swap(pallette[1], pallette[2]);
             }
             else
             {
