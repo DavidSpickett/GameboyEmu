@@ -93,7 +93,7 @@ inline uint8_t add_a_n(Z80& proc, uint8_t b1)
     
     generic_add_a_n(proc, reg->read());
     
-    debug_print("add a, %s\n", reg->name.c_str());
+    debug_print("add a, %s\n", reg->name);
     return 4;
 }
 
@@ -164,7 +164,7 @@ inline uint8_t sub_n(Z80& proc, uint8_t b1)
     
     generic_sub_n(proc, reg->read());
     
-    debug_print("sub %s\n", reg->name.c_str());
+    debug_print("sub %s\n", reg->name);
     return 4;
 }
 
@@ -248,7 +248,7 @@ inline uint8_t cp_n(Z80& proc, uint8_t b1)
     }
     
     generic_cp_n(proc, reg->read());
-    debug_print("cp %s\n", reg->name.c_str());
+    debug_print("cp %s\n", reg->name);
     
     return 4;
 }
@@ -361,7 +361,7 @@ inline uint8_t dec_n(Z80& proc, uint8_t b1)
     uint8_t new_val = generic_dec_n(proc, reg->read());
     reg->write(new_val);
     
-    debug_print("dec %s\n", reg->name.c_str());
+    debug_print("dec %s\n", reg->name);
     return 4;
 }
 
@@ -551,7 +551,7 @@ inline uint8_t ld_n_a(Z80& proc, uint8_t b1)
     
     reg->write(proc.a.read());
     
-    debug_print("ld %s, a\n", reg->name.c_str());
+    debug_print("ld %s, a\n", reg->name);
     return 4;
 }
                      
@@ -617,7 +617,7 @@ inline uint8_t inc_n(Z80& proc, uint8_t b1)
     uint8_t new_val = generic_inc_n(proc, orig_val);
     reg->write(new_val);
     
-    debug_print("inc %s\n", reg->name.c_str());
+    debug_print("inc %s\n", reg->name);
     return 4;
 }
 
@@ -801,7 +801,7 @@ inline uint8_t rl_n(Z80& proc, uint8_t b1)
     uint8_t new_val = generic_rl_n(proc, reg->read());
     reg->write(new_val);
     
-    debug_print("rl %s\n", reg->name.c_str());
+    debug_print("rl %s\n", reg->name);
     return 8;
 }
 
@@ -1113,7 +1113,7 @@ inline uint8_t bit_b_r(Z80& proc, uint8_t b1)
     proc.f.set_n(false);
     proc.f.set_h(true);
     
-    debug_print("bit %d, %s\n", bit, reg->name.c_str());
+    debug_print("bit %d, %s\n", bit, reg->name);
     
     return cycles;
 }
@@ -1222,7 +1222,7 @@ inline uint8_t ld_nn_n(Z80& proc, uint8_t b1)
     
     reg->write(b2);
     
-    debug_print("ld %s, 0x%02x\n", reg->name.c_str(), b2);
+    debug_print("ld %s, 0x%02x\n", reg->name, b2);
     return 8;
 }
 
@@ -1500,7 +1500,7 @@ inline uint8_t ld_r1_r2(Z80& proc, uint8_t b1)
             
             proc.mem.write8(addr, reg->read());
             
-            debug_print("ld (hl), %s\n", reg->name.c_str());
+            debug_print("ld (hl), %s\n", reg->name);
             return 8;
         }
          
@@ -1539,7 +1539,7 @@ inline uint8_t ld_r1_r2(Z80& proc, uint8_t b1)
             
             reg->write(value);
             
-            debug_print("ld %s, (hl)\n", reg->name.c_str());
+            debug_print("ld %s, (hl)\n", reg->name);
             return 8;
         }
         //ld (hl), n
@@ -1557,7 +1557,7 @@ inline uint8_t ld_r1_r2(Z80& proc, uint8_t b1)
     }
     
     lhs->write(rhs->read());
-    debug_print("ld %s, %s\n", lhs->name.c_str(), rhs->name.c_str());
+    debug_print("ld %s, %s\n", lhs->name, rhs->name);
     
     return cycles;
 }
@@ -1677,7 +1677,7 @@ inline uint8_t and_n(Z80& proc, uint8_t b1)
     
     generic_and_n(proc, reg->read());
     
-    debug_print("and %s\n", reg->name.c_str());
+    debug_print("and %s\n", reg->name);
     return 4;
 }
 
@@ -1771,7 +1771,7 @@ inline uint8_t or_n(Z80& proc, uint8_t b1)
     
     generic_or_n(proc, reg->read());
     
-    debug_print("or %s\n", reg->name.c_str());
+    debug_print("or %s\n", reg->name);
     return 4;
 }
 
@@ -1854,7 +1854,7 @@ inline uint8_t adc_a_n(Z80& proc, uint8_t b1)
     
     generic_adc_a(proc, reg->read());
     
-    debug_print("adc a, %s\n", reg->name.c_str());
+    debug_print("adc a, %s\n", reg->name);
     return 4;
 }
 
@@ -1914,7 +1914,7 @@ inline uint8_t swap_n(Z80& proc, uint8_t b1)
     reg->write(value);
     proc.f.set_z(value==0);
     
-    debug_print("swap %s\n", reg->name.c_str());
+    debug_print("swap %s\n", reg->name);
     return 8;
 }
 
@@ -2016,7 +2016,7 @@ inline uint8_t res_b_n(Z80& proc, uint8_t b1)
     
     reg->write(reset_bit(reg->read(), bit));
     
-    debug_print("res %d, %s\n", bit, reg->name.c_str());
+    debug_print("res %d, %s\n", bit, reg->name);
     return 8;
 }
 
@@ -2148,7 +2148,7 @@ inline uint8_t sla_n(Z80& proc, uint8_t b1)
     
     reg->write(generic_sla(proc, reg->read()));
     
-    debug_print("sla %s\n", reg->name.c_str());
+    debug_print("sla %s\n", reg->name);
     return 8;
 }
 
@@ -2289,7 +2289,7 @@ inline uint8_t rlc_n(Z80& proc, uint8_t b1)
     uint8_t new_value = generic_rlc(proc, reg->read());
     reg->write(new_value);
     
-    debug_print("rlc %s\n", reg->name.c_str());
+    debug_print("rlc %s\n", reg->name);
     return 8;
 }
 
@@ -2372,7 +2372,7 @@ inline uint8_t sbc_a_n(Z80& proc, uint8_t b1)
     
     generic_sbc_n(proc, reg->read());
     
-    debug_print("sbc a, %s\n", reg->name.c_str());
+    debug_print("sbc a, %s\n", reg->name);
     return 4;
 }
 
@@ -2465,7 +2465,7 @@ inline uint8_t srl_n(Z80& proc, uint8_t b1)
     
     reg->write(generic_srl_n(proc, reg->read()));
     
-    debug_print("srl %s\n", reg->name.c_str());
+    debug_print("srl %s\n", reg->name);
     return 8;
 }
 
@@ -2569,7 +2569,7 @@ inline uint8_t rr_n(Z80& proc, uint8_t b1)
     }
     
     reg->write(generic_rr_n(proc, reg->read()));
-    debug_print("rr %s\n", reg->name.c_str());
+    debug_print("rr %s\n", reg->name);
     return 8;
 }
 
@@ -2651,7 +2651,7 @@ inline uint8_t set_b_r(Z80& proc, uint8_t b1)
     
     reg->write(reg->read() | (1<<bit_no));
     
-    debug_print("set %d, %s\n", bit_no, reg->name.c_str());
+    debug_print("set %d, %s\n", bit_no, reg->name);
     return 8;
 }
 
@@ -2720,7 +2720,7 @@ uint8_t rrc_n(Z80& proc, uint8_t b1)
     
     reg->write(generic_rrc_n(proc, reg->read()));
     
-    debug_print("rrc %s\n", reg->name.c_str());
+    debug_print("rrc %s\n", reg->name);
     return 8;
 }
 
@@ -2785,7 +2785,7 @@ uint8_t sra_n(Z80& proc, uint8_t b1)
     
     reg->write(generic_sra_n(proc, reg->read()));
     
-    debug_print("sra %s\n", reg->name.c_str());
+    debug_print("sra %s\n", reg->name);
     return 8;
 }
 

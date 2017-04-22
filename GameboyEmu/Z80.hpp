@@ -17,13 +17,17 @@
 template <class int_type> class Register
 {
 public:
-    Register(std::string name):
-        m_value(0), name(name), logging(false)
-    {}
+    Register(std::string name_str):
+        m_value(0), logging(false)
+    {
+        strncpy(name, name_str.c_str(), 3);
+    }
     
-    Register(int_type value, std::string name):
-        m_value(value), name(name), logging(false)
-    {}
+    Register(int_type value, std::string name_str):
+        m_value(value), logging(false)
+    {
+        strncpy(name, name_str.c_str(), 3);
+    }
     
     int_type read() {return m_value;}
     virtual void write(int_type val)
@@ -32,7 +36,7 @@ public:
         
         if (logging)
         {
-            printf("Reg: %s new value: 0x%x\n", name.c_str(), val);
+            printf("Reg: %s new value: 0x%x\n", name, val);
         }
     }
     
@@ -42,7 +46,7 @@ public:
         
         if (logging)
         {
-            printf("Reg: %s inc by %d to: 0x%x\n", name.c_str(), val, m_value);
+            printf("Reg: %s inc by %d to: 0x%x\n", name, val, m_value);
         }
     }
     
@@ -52,11 +56,11 @@ public:
         
         if (logging)
         {
-            printf("Reg: %s dec by %d to: 0x%x\n", name.c_str(), val, m_value);
+            printf("Reg: %s dec by %d to: 0x%x\n", name, val, m_value);
         }
     }
     
-    const std::string name;
+    char name[3];
     bool logging;
     
 protected:
@@ -67,7 +71,7 @@ class FlagRegister: public Register<uint8_t>
 {
 public:
     FlagRegister(std::string name):
-        Register(name)
+        Register(name.c_str())
     {}
     
     void write(uint8_t val)
@@ -77,7 +81,7 @@ public:
         
         if (logging)
         {
-            printf("Reg: %s new value: 0x%x\n", name.c_str(), val);
+            printf("Reg: %s new value: 0x%x\n", name, val);
         }
     }
     

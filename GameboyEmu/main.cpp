@@ -30,7 +30,9 @@ void skip_bootstrap(Z80& proc)
 struct emu_args
 {
     emu_args():
-        skip_boot(false), scale_factor(1), rom_name("")
+        skip_boot(false),
+        scale_factor(1),
+        rom_name("")
     {}
     
     std::string to_str()
