@@ -88,8 +88,9 @@ private:
 class MemoryMap
 {
 public:
-    MemoryMap(std::string cartridge_name, bool bootstrap_skipped):
-    m_bootstrap_in_mem(true), m_rom_handler(cartridge_name), m_dma_transfer()
+    MemoryMap(std::string cartridge_name, bool bootstrap_skipped, int scale_factor):
+    m_bootstrap_in_mem(true), m_rom_handler(cartridge_name), m_dma_transfer(),
+    m_lcd_handler(scale_factor)
     {
         if (!bootstrap_skipped)
         {

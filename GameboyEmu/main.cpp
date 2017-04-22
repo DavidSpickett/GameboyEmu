@@ -27,15 +27,71 @@ void skip_bootstrap(Z80& proc)
     proc.mem.write8(0xff40, 0x91);
 }
 
-int main(int argc, const char * argv[]) {
-    bool skip_boot = true;
-    std::string rom_name = "Tetris (World).gb";
+struct emu_args
+{
+    emu_args():
+        skip_boot(false), scale_factor(1), rom_name("")
+    {}
     
-    MemoryMap map(rom_name, skip_boot);
+    std::string to_str()
+    {
+        return formatted_string(
+                "skip_boot=%d scale_fcator=%d rom_name=%s\n",
+                skip_boot,
+                scale_factor,
+                rom_name.c_str());
+    }
+    
+    bool skip_boot;
+    int scale_factor;
+    std::string rom_name;
+};
+
+emu_args process_args(int argc, const char* argv[])
+{
+    emu_args a;
+    
+    for (int i=1; i<argc; ++i)
+    {
+        const char* arg_ptr = argv[i];
+        
+        char skip_boot_arg[] = "skipboot";
+        if (strncmp(arg_ptr, skip_boot_arg, strlen(skip_boot_arg)) == 0)
+        {
+            a.skip_boot = true;
+        }
+        
+        char scale_arg[] = "--scale=";
+        if (strncmp(arg_ptr, scale_arg, strlen(scale_arg)) == 0)
+        {
+            const char* factor = argv[i]+strlen(scale_arg);
+            a.scale_factor = int(strtol(factor, NULL, 10));
+        }
+        
+        char rom_arg[] = "--rom=";
+        if (strncmp(arg_ptr, rom_arg, strlen(rom_arg)) == 0)
+        {
+            a.rom_name = std::string(arg_ptr+strlen(rom_arg), strlen(arg_ptr));
+        }
+    }
+    
+    if (a.rom_name.empty())
+    {
+        throw std::runtime_error("Rom name is required. (--rom=<path>)");
+    }
+    
+    return a;
+}
+
+int main(int argc, const char * argv[]) {
+    emu_args a = process_args(argc, argv);
+    printf("%s", a.to_str().c_str());
+    
+    MemoryMap map(a.rom_name, a.skip_boot, a.scale_factor);
     Z80 proc(map);
     map.set_proc_pointers(&proc);
     
-    if (skip_boot)
+    if (a.skip_boot)
     {
         skip_bootstrap(proc);
     }

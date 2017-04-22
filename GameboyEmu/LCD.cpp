@@ -22,7 +22,14 @@ void LCD::SDLDraw(uint8_t curr_scanline)
     {
         colour c = m_pixel_data[start_index+x];
         SDL_SetRenderDrawColor(m_renderer, c.r, c.g, c.b, c.a);
-        SDL_RenderDrawPoint(m_renderer, x, curr_scanline);
+        
+        SDL_Rect r;
+        r.h = m_scale_factor;
+        r.w = m_scale_factor;
+        r.x = x*m_scale_factor;
+        r.y = curr_scanline*m_scale_factor;
+        
+        SDL_RenderFillRect(m_renderer, &r);
     }
 
     //Draw
@@ -61,9 +68,11 @@ void LCD::SDLInit()
     }
     
     //Create window
+    int width = LCD_WIDTH*m_scale_factor;
+    int height = LCD_HEIGHT*m_scale_factor;
     m_window = SDL_CreateWindow("Gameboy Emulator",
                                 SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                LCD_WIDTH, LCD_HEIGHT,
+                                width, height,
                                 SDL_WINDOW_SHOWN);
     
     if(m_window == NULL)

@@ -128,8 +128,8 @@ class Z80;
 class LCD: public MemoryManager
 {
     public:
-        LCD():
-            m_proc(nullptr), m_last_scan_change_cycles(0)
+        LCD(int scale_factor):
+            m_proc(nullptr), m_last_scan_change_cycles(0), m_scale_factor(scale_factor)
         {
             m_data.resize(LCD_MEM_END-LCD_MEM_START, 0);
             m_oam_data.resize(LCD_OAM_END-LCD_OAM_START, 0);
@@ -172,6 +172,7 @@ class LCD: public MemoryManager
         SDL_Renderer* m_renderer;
         SDL_Window* m_window;
         std::vector<colour> m_colours;
+        int m_scale_factor;
     
         LCDControlReg m_control_reg;
         std::vector<uint8_t> m_data;
