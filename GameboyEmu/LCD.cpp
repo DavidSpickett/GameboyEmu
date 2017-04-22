@@ -120,8 +120,9 @@ void LCD::SDLInit()
 }
 
 //Note that tile also means sprite here, colour data is in the same format.
+template <typename Iterator>
 void LCD::tile_row_to_pixels(
-    std::vector<uint8_t>::const_iterator data_b, //Pointer to pixel data
+    Iterator data_b, //Pointer to pixel data
     int startx, //Top left x co-ord of the tile.
     int starty, //Top left y co-ord of the tile.
     int offsx,  //Srolling window x offset
@@ -266,12 +267,27 @@ void LCD::draw_to_pixels()
             }
             tile_offset *= SPRITE_BYTES;
             
-            tile_row_to_pixels(m_data.begin()+tile_offset,
-                        sprite_x, sprite_y,
-                        0,
-                        sprite_row_offset,
-                        true,
-                        pallette);
+            std::vector<uint8_t>::const_iterator norm_sprite(m_data.begin()+tile_offset);
+            if (sprite.get_y_flip())
+            {
+                std::vector<uint8_t>::const_reverse_iterator inv_sprite(norm_sprite+SPRITE_BYTES-1);
+                tile_row_to_pixels(inv_sprite,
+                                   sprite_x, sprite_y,
+                                   0,
+                                   sprite_row_offset,
+                                   true,
+                                   pallette);
+            }
+            else
+            {
+                tile_row_to_pixels(norm_sprite,
+                                   sprite_x, sprite_y,
+                                   0,
+                                   sprite_row_offset,
+                                   true,
+                                   pallette);
+            }
+            
         }
     }
 

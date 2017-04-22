@@ -171,8 +171,9 @@ class LCD: public MemoryManager
         void SDLDraw(uint8_t curr_scanline);
         void draw_to_pixels();
     
+        template <typename Iterator>
         void tile_row_to_pixels(
-            std::vector<uint8_t>::const_iterator data_b,
+            Iterator data_b,
             int startx, int starty,
             int offsx, int offsy,
             bool is_sprite,
