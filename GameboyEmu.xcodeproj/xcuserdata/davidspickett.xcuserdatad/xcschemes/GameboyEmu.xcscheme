@@ -75,7 +75,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--rom=&quot;opus5.gb&quot;"
+            argument = "--rom=&quot;Tetris (World).gb&quot;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

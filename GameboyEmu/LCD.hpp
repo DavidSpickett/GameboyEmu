@@ -128,25 +128,7 @@ class Z80;
 class LCD: public MemoryManager
 {
     public:
-        LCD(int scale_factor):
-            m_proc(nullptr), m_last_scan_change_cycles(0), m_scale_factor(scale_factor)
-        {
-            m_data.resize(LCD_MEM_END-LCD_MEM_START, 0);
-            m_oam_data.resize(LCD_OAM_END-LCD_OAM_START, 0);
-            m_registers.resize(LCD_REGS_END-LCD_REGS_START, 0);
-            m_pixel_data.resize(LCD_WIDTH*LCD_HEIGHT);
-            
-            m_control_reg = LCDControlReg(&m_registers[LCDCONTROL]);
-            
-            m_colours.push_back(colour(0xff, 0xff, 0xff));
-            m_colours.push_back(colour(0xb9, 0xb9, 0xb9));
-            m_colours.push_back(colour(0x6b, 0x6b, 0x6b));
-            m_colours.push_back(colour(0x00, 0x00, 0x00));
-            
-            m_sdl_width = LCD_WIDTH*m_scale_factor;
-            m_sdl_height = LCD_HEIGHT*m_scale_factor;
-        }
-    
+        LCD(int scale_factor);
         ~LCD()
         {
             if (m_window != NULL)
@@ -231,10 +213,10 @@ class LCD: public MemoryManager
             return ++m_registers[CURLINE];
         }
     
-        const LCDPallette get_pallete(uint16_t addr);
-        const LCDPallette get_bgrnd_pallette() { return get_pallete(BGRDPAL); }
-        const LCDPallette get_obj_pal0() { return get_pallete(OBJPAL0); }
-        const LCDPallette get_obj_pal1() { return get_pallete(OBJPAL1); }
+        LCDPallette get_pallete(uint16_t addr);
+        LCDPallette m_bgrd_pal;
+        LCDPallette m_obj_pal_0;
+        LCDPallette m_obj_pal_1;
     
         void do_after_reg_write(uint16_t addr);
         void do_after_reg_write16(uint16_t addr);

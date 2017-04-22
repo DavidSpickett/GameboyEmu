@@ -10,6 +10,29 @@
 #include "utils.hpp"
 #include "Z80.hpp"
 
+LCD::LCD(int scale_factor):
+m_proc(nullptr), m_last_scan_change_cycles(0), m_scale_factor(scale_factor)
+{
+    m_data.resize(LCD_MEM_END-LCD_MEM_START, 0);
+    m_oam_data.resize(LCD_OAM_END-LCD_OAM_START, 0);
+    m_registers.resize(LCD_REGS_END-LCD_REGS_START, 0);
+    m_pixel_data.resize(LCD_WIDTH*LCD_HEIGHT);
+    
+    m_control_reg = LCDControlReg(&m_registers[LCDCONTROL]);
+    
+    m_colours.push_back(colour(0xff, 0xff, 0xff));
+    m_colours.push_back(colour(0xb9, 0xb9, 0xb9));
+    m_colours.push_back(colour(0x6b, 0x6b, 0x6b));
+    m_colours.push_back(colour(0x00, 0x00, 0x00));
+    
+    m_sdl_width = LCD_WIDTH*m_scale_factor;
+    m_sdl_height = LCD_HEIGHT*m_scale_factor;
+    
+    m_bgrd_pal = LCDPallette(4, 0);
+    m_obj_pal_0 = LCDPallette(4, 0);
+    m_obj_pal_1 = LCDPallette(4, 0);
+}
+
 void LCD::SDLSaveImage(std::string filename)
 {
     SDL_Surface *temp_sur = SDL_CreateRGBSurface(0, m_sdl_width, m_sdl_height, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
@@ -52,7 +75,7 @@ void LCD::SDLDraw(uint8_t curr_scanline)
     delay++;
 }
 
-const LCDPallette LCD::get_pallete(uint16_t addr)
+LCDPallette LCD::get_pallete(uint16_t addr)
 {
     LCDPallette ret;
     
@@ -175,7 +198,6 @@ void LCD::draw_to_pixels()
         //Which row of pixels within the tile
         const uint8_t tile_pixel_row = (curr_scanline + start_y) % TILE_SIDE;
         
-        LCDPallette bgrnd_pal = get_bgrnd_pallette();
         for (uint8_t x=0; x<168; x+=TILE_SIDE, ++tile_row_offset)
         {
             if (tile_row_offset >= 32)
@@ -199,7 +221,7 @@ void LCD::draw_to_pixels()
                 0,//start_x % TILE_SIDE,
                 tile_pixel_row,
                 false,
-                bgrnd_pal);
+                m_bgrd_pal);
             
             //The idea being that these pixels are always the full row, that's why we
             //can incremement x by 8 each time. It gets the pixels before and ahead of x.
@@ -229,7 +251,7 @@ void LCD::draw_to_pixels()
         int sprite_y = sprite.get_y()-16;
         
         int sprite_row_offset = int(curr_scanline) - sprite_y;
-        LCDPallette pallette = sprite.get_pallette_number() ? get_obj_pal1() : get_obj_pal0();
+        LCDPallette pallette = sprite.get_pallette_number() ? m_obj_pal_1 : m_obj_pal_0;
         
         if ((curr_scanline >= sprite_y) &&
             (curr_scanline < (sprite_y+SPRITE_HEIGHT)) &&
@@ -347,15 +369,6 @@ void LCD::write8(uint16_t addr, uint8_t value)
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
-        if ((addr-LCD_REGS_START) == SCROLLY)
-        {
-            //printf("scrolly set to 0x%02x\n", value);
-        }
-        if ((addr-LCD_REGS_START) == SCROLLX)
-        {
-            //printf("scrollx set to 0x%02x\n", value);
-        }
-        
         set_reg8(addr, value);
     }
     else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
@@ -434,6 +447,15 @@ void LCD::do_after_reg_write(uint16_t addr)
         case CURLINE:
             //Writing anything sets the register to 0
             set_curr_scanline(0);
+            break;
+        case BGRDPAL:
+            m_bgrd_pal = get_pallete(BGRDPAL);
+            break;
+        case OBJPAL0:
+            m_obj_pal_0 = get_pallete(OBJPAL0);
+            break;
+        case OBJPAL1:
+            m_obj_pal_1 = get_pallete(OBJPAL1);
             break;
     }
 }
