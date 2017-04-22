@@ -28,14 +28,17 @@ void skip_bootstrap(Z80& proc)
 }
 
 int main(int argc, const char * argv[]) {
-    //MemoryMap map("ttt.gb");
-    MemoryMap map("Tetris (World).gb");
-    //MemoryMap map("testgb/PUZZLE.gb");
+    bool skip_boot = true;
+    std::string rom_name = "Tetris (World).gb";
+    
+    MemoryMap map(rom_name, skip_boot);
     Z80 proc(map);
-    //Icky
     map.set_proc_pointers(&proc);
     
-    skip_bootstrap(proc);
+    if (skip_boot)
+    {
+        skip_bootstrap(proc);
+    }
 
     SDL_Event event;
     while(1)

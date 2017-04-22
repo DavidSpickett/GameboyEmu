@@ -88,10 +88,13 @@ private:
 class MemoryMap
 {
 public:
-    MemoryMap(std::string cartridge_name):
+    MemoryMap(std::string cartridge_name, bool bootstrap_skipped):
     m_bootstrap_in_mem(true), m_rom_handler(cartridge_name), m_dma_transfer()
     {
-        m_default_handler.AddFile("GameBoyBios.gb");
+        if (!bootstrap_skipped)
+        {
+            m_default_handler.AddFile("GameBoyBios.gb");
+        }
     }
     
     uint8_t read8(uint16_t addr);

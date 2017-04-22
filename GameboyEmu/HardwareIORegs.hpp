@@ -22,7 +22,7 @@ class HardwareIORegs: public MemoryManager
 public:
     HardwareIORegs():
         m_clock_enable(false), m_timer_countdown_start(1024),
-        m_timer_countdown(1024), m_divider_countdown(256)
+        m_timer_countdown(1024), m_divider_countdown(256), m_cycles(0)
     {
     }
     
