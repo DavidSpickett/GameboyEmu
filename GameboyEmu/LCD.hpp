@@ -129,7 +129,7 @@ class LCD: public MemoryManager
 {
     public:
         LCD():
-            m_proc(nullptr)
+            m_proc(nullptr), m_last_scan_change_cycles(0)
         {
             m_data.resize(LCD_MEM_END-LCD_MEM_START, 0);
             m_oam_data.resize(LCD_OAM_END-LCD_OAM_START, 0);
@@ -178,7 +178,7 @@ class LCD: public MemoryManager
         std::vector<uint8_t> m_oam_data;
         std::vector<uint8_t> m_registers;
         std::vector<colour> m_pixel_data;
-        uint8_t m_last_scan_change_cycles;
+        size_t m_last_scan_change_cycles;
     
         void tile_row_to_pixels(
             std::vector<uint8_t>::const_iterator data_b,
