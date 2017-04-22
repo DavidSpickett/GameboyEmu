@@ -18,7 +18,7 @@
 const size_t LCD_WIDTH  = 160;
 const size_t LCD_HEIGHT = 144;
 
-typedef std::vector<uint8_t> LCDPallette;
+typedef std::vector<uint8_t> LCDPalette;
 
 class Sprite
 {
@@ -35,13 +35,13 @@ public:
     bool get_priority() { return get_flag(7); }
     bool get_y_flip() { return get_flag(6); }
     bool get_x_flip() { return get_flag(5); }
-    bool get_pallette_number() { return get_flag(4); }
+    bool get_palette_number() { return get_flag(4); }
     
     std::string to_str()
     {
-        return formatted_string("Sprite at X:%d Y:%x priority:%d xflip:%d yflip:%d pallettenum:%d",
+        return formatted_string("Sprite at X:%d Y:%x priority:%d xflip:%d yflip:%d palettenum:%d",
                 get_x(), get_y(), get_priority(), get_x_flip(),
-                get_y_flip(), get_pallette_number());
+                get_y_flip(), get_palette_number());
     }
     
 private:
@@ -178,7 +178,7 @@ class LCD: public MemoryManager
             int offsx, int offsy,
             bool is_sprite,
             bool flip_x,
-            const LCDPallette& pallette);
+            const LCDPalette& palette);
 
         uint8_t get_scroll_x()
         {
@@ -215,10 +215,10 @@ class LCD: public MemoryManager
             return ++m_registers[CURLINE];
         }
     
-        LCDPallette get_pallete(uint16_t addr);
-        LCDPallette m_bgrd_pal;
-        LCDPallette m_obj_pal_0;
-        LCDPallette m_obj_pal_1;
+        LCDPalette get_palette(uint16_t addr);
+        LCDPalette m_bgrd_pal;
+        LCDPalette m_obj_pal_0;
+        LCDPalette m_obj_pal_1;
     
         void do_after_reg_write(uint16_t addr);
         void do_after_reg_write16(uint16_t addr);

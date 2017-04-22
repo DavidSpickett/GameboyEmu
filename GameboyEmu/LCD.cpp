@@ -28,9 +28,9 @@ m_proc(nullptr), m_last_scan_change_cycles(0), m_scale_factor(scale_factor)
     m_sdl_width = LCD_WIDTH*m_scale_factor;
     m_sdl_height = LCD_HEIGHT*m_scale_factor;
     
-    m_bgrd_pal = LCDPallette(4, 0);
-    m_obj_pal_0 = LCDPallette(4, 0);
-    m_obj_pal_1 = LCDPallette(4, 0);
+    m_bgrd_pal = LCDPalette(4, 0);
+    m_obj_pal_0 = LCDPalette(4, 0);
+    m_obj_pal_1 = LCDPalette(4, 0);
 }
 
 void LCD::SDLSaveImage(std::string filename)
@@ -75,9 +75,9 @@ void LCD::SDLDraw(uint8_t curr_scanline)
     delay++;
 }
 
-LCDPallette LCD::get_pallete(uint16_t addr)
+LCDPalette LCD::get_palette(uint16_t addr)
 {
-    LCDPallette ret;
+    LCDPalette ret;
     
     //Lowest bits first
     uint8_t regval = m_registers[addr];
@@ -129,7 +129,7 @@ void LCD::tile_row_to_pixels(
     int offsy,  //Index of row within tile to get pixels from
     bool is_sprite, //Set to handle transparancy of colour 0
     bool flip_x, //Mirror X co-ords
-    const LCDPallette& pallette //Colour mapping
+    const LCDPalette& palette //Colour mapping
     )
 {
     uint8_t b1 = *(data_b + (offsy*2));
@@ -161,7 +161,7 @@ void LCD::tile_row_to_pixels(
             continue;
         }
         
-        m_pixel_data[(newy*LCD_WIDTH)+newx] = m_colours[pallette[c]];
+        m_pixel_data[(newy*LCD_WIDTH)+newx] = m_colours[palette[c]];
     }
 }
 
@@ -255,7 +255,7 @@ void LCD::draw_to_pixels()
         int sprite_y = sprite.get_y()-16;
         
         int sprite_row_offset = int(curr_scanline) - sprite_y;
-        LCDPallette& pallette = sprite.get_pallette_number() ? m_obj_pal_1 : m_obj_pal_0;
+        LCDPalette& palette = sprite.get_palette_number() ? m_obj_pal_1 : m_obj_pal_0;
         
         if ((curr_scanline >= sprite_y) &&
             (curr_scanline < (sprite_y+SPRITE_HEIGHT)) &&
@@ -276,7 +276,7 @@ void LCD::draw_to_pixels()
                 /*Because we give it a pointer to the last byte and go back
                  the lines are reversed so colour 0b01 becomes 0b10.
                  This is a temp fix for that until I can think of something more elegant.*/
-                std::swap(pallette[1], pallette[2]);
+                std::swap(palette[1], palette[2]);
                 
                 //You'd think this would need a -1 but it doesn't.
                 std::vector<uint8_t>::const_reverse_iterator inv_sprite(norm_sprite+SPRITE_BYTES);
@@ -286,9 +286,9 @@ void LCD::draw_to_pixels()
                                    sprite_row_offset,
                                    true,
                                    sprite.get_x_flip(),
-                                   pallette);
+                                   palette);
                 
-                std::swap(pallette[1], pallette[2]);
+                std::swap(palette[1], palette[2]);
             }
             else
             {
@@ -298,7 +298,7 @@ void LCD::draw_to_pixels()
                                    sprite_row_offset,
                                    true,
                                    sprite.get_x_flip(),
-                                   pallette);
+                                   palette);
             }
             
         }
@@ -478,13 +478,13 @@ void LCD::do_after_reg_write(uint16_t addr)
             set_curr_scanline(0);
             break;
         case BGRDPAL:
-            m_bgrd_pal = get_pallete(BGRDPAL);
+            m_bgrd_pal = get_palette(BGRDPAL);
             break;
         case OBJPAL0:
-            m_obj_pal_0 = get_pallete(OBJPAL0);
+            m_obj_pal_0 = get_palette(OBJPAL0);
             break;
         case OBJPAL1:
-            m_obj_pal_1 = get_pallete(OBJPAL1);
+            m_obj_pal_1 = get_palette(OBJPAL1);
             break;
     }
 }
