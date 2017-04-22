@@ -13,6 +13,7 @@
 #include "HardwareIORegs.hpp"
 #include "RomHandler.hpp"
 #include <SDL2/SDL.h>
+#include "GDBHandler.hpp"
 
 void skip_bootstrap(Z80& proc)
 {
@@ -27,9 +28,9 @@ void skip_bootstrap(Z80& proc)
 }
 
 int main(int argc, const char * argv[]) {
-    MemoryMap map("ttt.gb");
-    //MemoryMap map("Tetris (World).gb");
-    //MemoryMap map("gb-test-roms-master/cpu_instrs/cpu_instrs.gb");
+    //MemoryMap map("ttt.gb");
+    MemoryMap map("Tetris (World).gb");
+    //MemoryMap map("testgb/PUZZLE.gb");
     Z80 proc(map);
     //Icky
     map.set_proc_pointers(&proc);
@@ -45,12 +46,12 @@ int main(int argc, const char * argv[]) {
             break;
         }
         
-        if (proc.pc.read() == 0x03f2)
+        /*if (proc.pc.read() == 0x03f2)
         {
             //Bodge to speed up tic tac toe rom when it's playing sound
             printf("Skipped sound loop.\n");
             proc.f.set_z(true);
-        }
+        }*/
         
         Step(proc);
         

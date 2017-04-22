@@ -322,17 +322,18 @@ void GDBHandler::process_command(char* data, size_t len)
         send_gdb_response(file_contents.c_str());
     }*/
     //Get register block
-    /*else if (IS_COMMAND("g"))
+    else if (IS_COMMAND("g"))
     {
         char regblock[9];
         sprintf(regblock, "%08x", m_proc.pc.read());
         send_gdb_response(regblock);
-    }*/
+    }
     //Read the PC/others (8=pc)
     else if (IS_COMMAND("p"))
     {
+        printf("////////////////// P COMMAND: %c\n", data[1]);
         char regblock[9];
-        sprintf(regblock, "%08x", m_proc.pc.read());
+        sprintf(regblock, "%08x", data[1] == '8' ? m_proc.pc.read(): 0);
         send_gdb_response(regblock);
         
         //It thinks this is 32 bit...I think...
