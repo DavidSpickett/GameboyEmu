@@ -190,15 +190,15 @@ void LCD::draw_to_pixels()
     }
  
     //Sprites
-    if (m_control_reg.get_sprite_size() != 8)
+    /*if (m_control_reg.get_sprite_size() != 8)
     {
         throw std::runtime_error("Sprite size is 8x16!!");
-    }
+    }*/
     
     const uint64_t SPRITE_INFO_BYTES = 4;
     const uint16_t oam_size = LCD_OAM_END-LCD_OAM_START;
     
-    const int SPRITE_HEIGHT = 8; //TODO: 16 height mode
+    const int SPRITE_HEIGHT = m_control_reg.get_sprite_size();
     const int SPRITE_WIDTH  = 8;
     const int SPRITE_BYTES  = 2*SPRITE_HEIGHT;
 
@@ -221,7 +221,13 @@ void LCD::draw_to_pixels()
             )
         {
             //Sprite pixels are stored in the same place as backgound tiles
-            uint16_t tile_offset = sprite.get_pattern_number()*SPRITE_BYTES;
+            uint16_t tile_offset = sprite.get_pattern_number();
+            if (SPRITE_HEIGHT == 16)
+            {
+                tile_offset &= ~1;
+            }
+            tile_offset *= SPRITE_BYTES;
+            
             tile_row_to_pixels(m_data.begin()+tile_offset,
                         sprite_x, sprite_y,
                         0,

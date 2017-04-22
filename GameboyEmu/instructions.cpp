@@ -1700,7 +1700,7 @@ inline uint8_t dec_nn(Z80& proc, uint8_t b1)
             reg = "hl";
             break;
         case 0x3b:
-            proc.sp.inc(1);
+            proc.sp.dec(1);
             reg = "sp";
             break;
     }
@@ -2510,7 +2510,7 @@ inline uint8_t stop(Z80& proc)
     proc.fetch_byte(); //2 byte opcode for some reason
     proc.stopped = true;
     
-    printf("%s\n", "stop");
+    debug_print("%s\n", "stop");
     return 4;
 }
 
