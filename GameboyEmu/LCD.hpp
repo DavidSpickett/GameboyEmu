@@ -177,6 +177,7 @@ class LCD: public MemoryManager
             int startx, int starty,
             int offsx, int offsy,
             bool is_sprite,
+            bool flip_x,
             const LCDPallette& pallette);
 
         uint8_t get_scroll_x()

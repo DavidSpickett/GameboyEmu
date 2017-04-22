@@ -128,6 +128,7 @@ void LCD::tile_row_to_pixels(
     int offsx,  //Srolling window x offset
     int offsy,  //Index of row within tile to get pixels from
     bool is_sprite, //Set to handle transparancy of colour 0
+    bool flip_x, //Mirror X co-ords
     const LCDPallette& pallette //Colour mapping
     )
 {
@@ -147,7 +148,8 @@ void LCD::tile_row_to_pixels(
             continue;
         }
         
-        int newx = startx + (7-shift) - offsx;
+        int shift_diff = flip_x ? shift : (7-shift);
+        int newx = startx + shift_diff - offsx;
         if ((newx >= LCD_WIDTH) || (newx < 0))
         {
             continue;
@@ -222,6 +224,7 @@ void LCD::draw_to_pixels()
                 0,//start_x % TILE_SIDE,
                 tile_pixel_row,
                 false,
+                false,
                 m_bgrd_pal);
             
             //The idea being that these pixels are always the full row, that's why we
@@ -261,6 +264,7 @@ void LCD::draw_to_pixels()
         {
             //Sprite pixels are stored in the same place as backgound tiles
             uint16_t tile_offset = sprite.get_pattern_number();
+            printf("Tile offset: %02x\n", tile_offset);
             if (SPRITE_HEIGHT == 16)
             {
                 tile_offset &= ~1;
@@ -270,12 +274,14 @@ void LCD::draw_to_pixels()
             std::vector<uint8_t>::const_iterator norm_sprite(m_data.begin()+tile_offset);
             if (sprite.get_y_flip())
             {
-                std::vector<uint8_t>::const_reverse_iterator inv_sprite(norm_sprite+SPRITE_BYTES-1);
+                //You'd think this would need a -1 but it doesn't.
+                std::vector<uint8_t>::const_reverse_iterator inv_sprite(norm_sprite+SPRITE_BYTES);
                 tile_row_to_pixels(inv_sprite,
                                    sprite_x, sprite_y,
                                    0,
                                    sprite_row_offset,
                                    true,
+                                   sprite.get_x_flip(),
                                    pallette);
             }
             else
@@ -285,6 +291,7 @@ void LCD::draw_to_pixels()
                                    0,
                                    sprite_row_offset,
                                    true,
+                                   sprite.get_x_flip(),
                                    pallette);
             }
             

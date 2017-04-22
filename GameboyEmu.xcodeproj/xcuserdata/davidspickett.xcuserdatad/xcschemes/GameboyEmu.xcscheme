@@ -71,11 +71,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--scale=2"
+            argument = "--scale=3"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--rom=&quot;Tetris (World).gb&quot;"
+            argument = "--rom=&quot;opus5.gb&quot;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
