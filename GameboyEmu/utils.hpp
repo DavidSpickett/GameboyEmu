@@ -31,5 +31,32 @@ std::string formatted_string(const char* format, Args... args)
     delete[] buf;
     return str;
 }
+
+struct emu_args
+{
+    emu_args():
+    skip_boot(false),
+    scale_factor(1),
+    rom_name(""),
+    num_cycles(-1)
+    {}
+    
+    std::string to_str()
+    {
+        return formatted_string(
+                                "skipboot=%d scale=%d rom=\"%s\" numcycles=%d\n",
+                                skip_boot,
+                                scale_factor,
+                                rom_name.c_str(),
+                                num_cycles);
+    }
+    
+    bool skip_boot;
+    int scale_factor;
+    std::string rom_name;
+    long num_cycles;
+};
+
+emu_args process_args(int argc, const char* argv[]);
  
 #endif /* utils_hpp */

@@ -14,6 +14,7 @@
 #include "RomHandler.hpp"
 #include <SDL2/SDL.h>
 #include "GDBHandler.hpp"
+#include "utils.hpp"
 
 void skip_bootstrap(Z80& proc)
 {
@@ -25,64 +26,6 @@ void skip_bootstrap(Z80& proc)
     proc.mem.write8(0xff50, 0x1);
     //Turn on LCD
     proc.mem.write8(0xff40, 0x91);
-}
-
-struct emu_args
-{
-    emu_args():
-        skip_boot(false),
-        scale_factor(1),
-        rom_name("")
-    {}
-    
-    std::string to_str()
-    {
-        return formatted_string(
-                "skip_boot=%d scale_fcator=%d rom_name=%s\n",
-                skip_boot,
-                scale_factor,
-                rom_name.c_str());
-    }
-    
-    bool skip_boot;
-    int scale_factor;
-    std::string rom_name;
-};
-
-emu_args process_args(int argc, const char* argv[])
-{
-    emu_args a;
-    
-    for (int i=1; i<argc; ++i)
-    {
-        const char* arg_ptr = argv[i];
-        
-        char skip_boot_arg[] = "skipboot";
-        if (strncmp(arg_ptr, skip_boot_arg, strlen(skip_boot_arg)) == 0)
-        {
-            a.skip_boot = true;
-        }
-        
-        char scale_arg[] = "--scale=";
-        if (strncmp(arg_ptr, scale_arg, strlen(scale_arg)) == 0)
-        {
-            const char* factor = argv[i]+strlen(scale_arg);
-            a.scale_factor = int(strtol(factor, NULL, 10));
-        }
-        
-        char rom_arg[] = "--rom=";
-        if (strncmp(arg_ptr, rom_arg, strlen(rom_arg)) == 0)
-        {
-            a.rom_name = std::string(arg_ptr+strlen(rom_arg), strlen(arg_ptr));
-        }
-    }
-    
-    if (a.rom_name.empty())
-    {
-        throw std::runtime_error("Rom name is required. (--rom=<path>)");
-    }
-    
-    return a;
 }
 
 int main(int argc, const char * argv[]) {

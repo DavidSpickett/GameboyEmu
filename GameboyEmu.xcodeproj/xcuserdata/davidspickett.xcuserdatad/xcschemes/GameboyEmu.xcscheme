@@ -67,7 +67,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--scale=3"
+            argument = "--scale=2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
