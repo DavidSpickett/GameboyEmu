@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <fstream>
 
 namespace
 {
@@ -64,8 +65,8 @@ GDBHandler::~GDBHandler()
     }
 }
 
-GDBHandler::GDBHandler():
-    m_client_fd(-1)
+GDBHandler::GDBHandler(Z80& proc):
+    m_client_fd(-1), m_proc(proc)
 {
     struct addrinfo hints, *res;
     memset(&hints, 0, sizeof hints);
@@ -81,6 +82,11 @@ GDBHandler::GDBHandler():
                     socket(res->ai_family,
                     res->ai_socktype,
                     res->ai_protocol));
+    
+    int set_option = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char*)&set_option,
+               sizeof(set_option));
+    
     wrap_socket_err("bind", bind(sockfd, res->ai_addr, res->ai_addrlen));
     wrap_socket_err("listen", listen(sockfd, 1));
     
@@ -136,14 +142,38 @@ void GDBHandler::client_read()
         else
         {
             size_t got = read(m_client_fd, received, 200);
-            //For now assume we don't get fragmentation
-            handle_command(received, got);
+            
+            if (got)
+            {
+                char got_str[got+1];
+                strncpy(got_str, received, got);
+                got_str[got] = 0;
+                printf("RECEIVED: %s\n", got_str);
+            
+                if (got >= 4)
+                {
+                    //For now assume we don't get fragmentation
+                    handle_command(received, got);
+                }
+            }
         }
     }
 }
 
 namespace
 {
+    //Checksum is the sum of the packet data only, not the $/# and checksum digits
+    uint8_t calculate_checksum(const char* buffer, size_t len)
+    {
+        uint8_t checksum = 0;
+        const char* end_data = buffer + len;
+        for ( ; buffer != end_data; ++buffer)
+        {
+            checksum += *buffer;
+        }
+        return checksum;
+    }
+    
     bool verify_gdb_packet_structure(char* received, size_t size)
     {
         if (received[0] != '$')
@@ -161,23 +191,43 @@ namespace
         checksum[1] = received[size-1];
         checksum[2] = 0;
         uint8_t expected_checksum = strtol(checksum, NULL, 16);
-        
-        //Checksum is the sum of the packet data only, not the $/# and checksum digits
-        uint8_t got_checksum = 0;
-        char* packet_data = received+1;
-        char* end_packet_data = packet_data + (size-4);
-        for ( ; packet_data != end_packet_data; ++packet_data)
-        {
-            got_checksum += *packet_data;
-        }
+        uint8_t got_checksum = calculate_checksum(received+1, size-4);
         
         return got_checksum == expected_checksum;
     }
+    
+    bool compare_command(std::string cmd, const char* data, size_t len)
+    {
+        return (len >= cmd.size()) &&
+                 (strncmp(data, cmd.c_str(), cmd.size()) == 0);
+    }
+}
+
+void GDBHandler::send_gdb_response(const char* data)
+{
+    size_t len = strlen(data);
+    size_t total_size = len+4;
+    char packet[total_size+1]; //+1 to print later
+    
+    packet[0] = '$';
+    strncpy(&packet[1], data, len);
+    packet[total_size-3] = '#';
+    
+    uint8_t checksum = calculate_checksum(data, len);
+    char checksum_str[3];
+    sprintf(checksum_str, "%02x", checksum);
+    strncpy(packet+2+len, checksum_str, 2);
+    
+    send_to_client(packet, total_size);
+    packet[total_size] = 0;
+    printf("    SENT: %s\n", packet);
+    
+    
 }
 
 void GDBHandler::send_to_client(char* data, size_t len)
 {
-    if (wrap_socket_err("send", int(send(m_client_fd, &data, len, 0))) != len)
+    if (wrap_socket_err("send", int(send(m_client_fd, data, len, 0))) != len)
     {
         throw std::runtime_error("Couldn't send whole packet!");
     }
@@ -185,16 +235,21 @@ void GDBHandler::send_to_client(char* data, size_t len)
 
 void GDBHandler::handle_command(char* received, size_t size)
 {
-    //Not sure why we get this at the start
+    //Ignore client acks
     if (received[0] == '+')
     {
         received++;
+        size--;
+    }
+    if (received[size-1] == '+')
+    {
         size--;
     }
     
     bool good_packet = verify_gdb_packet_structure(received, size);
     char response = good_packet ? '+' : '-';
     send_to_client(&response, 1);
+    printf("ACK %c\n", response);
     
     if (good_packet)
     {
@@ -202,13 +257,95 @@ void GDBHandler::handle_command(char* received, size_t size)
     }
 }
 
+#define IS_COMMAND(cmd) compare_command(cmd, data, len)
+#define RESPOND(response) char s[] = response; send_gdb_response(s)
+
 void GDBHandler::process_command(char* data, size_t len)
 {
-    std::string qsupported = "qSupported";
-    if ((len > qsupported.size()) &&
-        strncmp(data, qsupported.c_str(), qsupported.size()) == 0)
+    //What do we support?
+    if (IS_COMMAND("qSupported"))
     {
-        data[len] = 0;
-        printf("Got qSupported: %s\n", data);
+        RESPOND("PacketSize=500;qXfer:features:read-");
+    }
+    //Just respond with nothing, not sure what this does
+    else if (IS_COMMAND("vMustReplyEmpty"))
+    {
+        RESPOND("");
+    }
+    //Set thread number for subsequent operations (should always be 0 here)
+    else if (IS_COMMAND("Hg"))
+    {
+        RESPOND("OK");
+    }
+    //Why did we halt?
+    else if (IS_COMMAND("?"))
+    {
+        RESPOND("S05");
+    }
+    //Get list of threads
+    else if (IS_COMMAND("qfThreadInfo"))
+    {
+        RESPOND("m01");
+    }
+    //Finish list of threads
+    else if (IS_COMMAND("qsThreadInfo"))
+    {
+        RESPOND("l");
+    }
+    //Set thread for subsequent operations (don't care what or the thread for this)
+    else if (IS_COMMAND("Hc"))
+    {
+        RESPOND("OK");
+    }
+    //Get current thread ID
+    else if (IS_COMMAND("qC"))
+    {
+        RESPOND("QC01");
+    }
+    /*else if (IS_COMMAND("qXfer:features:read:target.xml:0,4fb"))
+    {
+        std::ifstream file_str = std::ifstream("target.xml", std::ios::in);
+        if (!file_str.is_open())
+        {
+            throw std::runtime_error("Cannot find GDB target.xml");
+        }
+        
+        std::string str;
+        std::string file_contents = "l";
+        while (std::getline(file_str, str))
+        {
+            file_contents += str;
+            file_contents.push_back('\n');
+        }
+        
+        //Need to escape this eventually.
+        send_gdb_response(file_contents.c_str());
+    }*/
+    //Get register block
+    /*else if (IS_COMMAND("g"))
+    {
+        char regblock[9];
+        sprintf(regblock, "%08x", m_proc.pc.read());
+        send_gdb_response(regblock);
+    }*/
+    //Read the PC/others (8=pc)
+    else if (IS_COMMAND("p"))
+    {
+        char regblock[9];
+        sprintf(regblock, "%08x", m_proc.pc.read());
+        send_gdb_response(regblock);
+        
+        //It thinks this is 32 bit...I think...
+        //RESPOND("DEADCAFE");
+    }
+    //Read some memory
+    else if (IS_COMMAND("m"))
+    {
+        RESPOND("11223344");
+    }
+    //Anything else respond with 0 for unsupported
+    else
+    {
+        RESPOND("");
     }
 }
