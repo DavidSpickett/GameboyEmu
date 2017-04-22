@@ -181,6 +181,8 @@ public:
     bool halted;
     bool stopped;
     
+    size_t m_total_cycles;
+    
 private:
     std::vector<std::string> m_callstack_frames;
     
@@ -207,8 +209,6 @@ private:
         high.write(value >> 8);
         low.write(uint8_t(value));
     }
-    
-    size_t m_total_cycles;
 };
 
 #endif /* Z80_hpp */

@@ -142,6 +142,9 @@ class LCD: public MemoryManager
             m_colours.push_back(colour(0xb9, 0xb9, 0xb9));
             m_colours.push_back(colour(0x6b, 0x6b, 0x6b));
             m_colours.push_back(colour(0x00, 0x00, 0x00));
+            
+            m_sdl_width = LCD_WIDTH*m_scale_factor;
+            m_sdl_height = LCD_HEIGHT*m_scale_factor;
         }
     
         ~LCD()
@@ -160,10 +163,8 @@ class LCD: public MemoryManager
         uint16_t read16(uint16_t addr);
         void write16(uint16_t addr, uint16_t value);
     
-        void SDLInit();
-        void SDLDraw(uint8_t curr_scanline);
+        void SDLSaveImage(std::string filename);
     
-        void draw_to_pixels();
         void tick(size_t curr_cycles);
     
         Z80* m_proc; /////HACK HACK HACK
@@ -174,12 +175,19 @@ class LCD: public MemoryManager
         std::vector<colour> m_colours;
         int m_scale_factor;
     
+        int m_sdl_height;
+        int m_sdl_width;
+    
         LCDControlReg m_control_reg;
         std::vector<uint8_t> m_data;
         std::vector<uint8_t> m_oam_data;
         std::vector<uint8_t> m_registers;
         std::vector<colour> m_pixel_data;
         size_t m_last_scan_change_cycles;
+    
+        void SDLInit();
+        void SDLDraw(uint8_t curr_scanline);
+        void draw_to_pixels();
     
         void tile_row_to_pixels(
             std::vector<uint8_t>::const_iterator data_b,

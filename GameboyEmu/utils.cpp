@@ -44,7 +44,7 @@ emu_args process_args(int argc, const char* argv[])
         std::string rom_arg = "--rom=";
         if (find_arg(rom_arg, arg_ptr))
         {
-            a.rom_name = std::string(arg_ptr+rom_arg.size(), strlen(arg_ptr));
+            a.rom_name = std::string(arg_ptr+rom_arg.size(), strlen(arg_ptr)-rom_arg.size());
         }
     }
     

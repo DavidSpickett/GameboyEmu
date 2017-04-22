@@ -10,6 +10,15 @@
 #include "utils.hpp"
 #include "Z80.hpp"
 
+void LCD::SDLSaveImage(std::string filename)
+{
+    SDL_Surface *temp_sur = SDL_CreateRGBSurface(0, m_sdl_width, m_sdl_height, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+    SDL_RenderReadPixels(m_renderer, NULL, SDL_PIXELFORMAT_ARGB8888, temp_sur->pixels, temp_sur->pitch);
+    
+    SDL_SaveBMP(temp_sur, filename.c_str());
+    SDL_FreeSurface(temp_sur);
+}
+
 void LCD::SDLDraw(uint8_t curr_scanline)
 {
     if (m_window == NULL)
@@ -64,15 +73,14 @@ void LCD::SDLInit()
     if(SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         throw std::runtime_error(
-                                 formatted_string("SDL could not initialize! SDL_Error: %s\n", SDL_GetError()));
+            formatted_string("SDL could not initialize! SDL_Error: %s\n",
+            SDL_GetError()));
     }
     
     //Create window
-    int width = LCD_WIDTH*m_scale_factor;
-    int height = LCD_HEIGHT*m_scale_factor;
     m_window = SDL_CreateWindow("Gameboy Emulator",
                                 SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                width, height,
+                                m_sdl_width, m_sdl_height,
                                 SDL_WINDOW_SHOWN);
     
     if(m_window == NULL)
@@ -212,7 +220,6 @@ void LCD::draw_to_pixels()
     const int SPRITE_BYTES  = 2*SPRITE_HEIGHT;
 
     for (uint16_t oam_addr=0; oam_addr < oam_size; oam_addr+=SPRITE_INFO_BYTES)
-    //for (uint16_t oam_addr=0; oam_addr < SPRITE_INFO_BYTES; oam_addr+=SPRITE_INFO_BYTES)
     {
         Sprite sprite(m_oam_data.begin()+oam_addr);
         

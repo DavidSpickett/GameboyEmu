@@ -115,12 +115,13 @@ public:
         m_lcd_handler.m_proc = proc;
     }
     
+    LCD m_lcd_handler; //public for screenshots
+    
 private:
     DMATransfer m_dma_transfer;
     bool m_bootstrap_in_mem;
     MemoryManager& get_mm(uint16_t addr);
     InterruptManager m_interrupt_handler;
-    LCD m_lcd_handler;
     ROMHandler m_rom_handler;
     HardwareIORegs m_hardware_regs_handler;
     DefaultMemoryManager m_default_handler;

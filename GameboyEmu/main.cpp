@@ -28,6 +28,16 @@ void skip_bootstrap(Z80& proc)
     proc.mem.write8(0xff40, 0x91);
 }
 
+void screenshot_and_exit(Z80& proc, std::string rom_name, bool& _continue)
+{
+    std::string file_name = rom_name;
+    std::replace(file_name.begin(), file_name.end(), '.', '_');
+    file_name += "_screenshot.bmp";
+    proc.mem.m_lcd_handler.SDLSaveImage(file_name);
+    printf("Exiting and saving screenshot to %s after running for %zu cycles.\n", file_name.c_str(), proc.m_total_cycles);
+    _continue = false;
+}
+
 int main(int argc, const char * argv[]) {
     emu_args a = process_args(argc, argv);
     printf("%s", a.to_str().c_str());
@@ -42,22 +52,44 @@ int main(int argc, const char * argv[]) {
     }
 
     SDL_Event event;
-    while(1)
+    bool run = true;
+    while(run)
     {
         SDL_PollEvent(&event);
-        if(event.type == SDL_QUIT)
+        switch (event.type)
         {
-            break;
+            case SDL_QUIT:
+                run = false;
+                break;
+            case SDL_KEYDOWN:
+            {
+                const uint8_t *state = SDL_GetKeyboardState(NULL);
+                if (state[SDL_SCANCODE_S])
+                {
+                    screenshot_and_exit(proc, a.rom_name, run);
+                    break;
+                }
+                else if (state[SDL_SCANCODE_ESCAPE])
+                {
+                    run = false;
+                    break;
+                }
+            }
         }
         
-        /*if (proc.pc.read() == 0x03f2)
+        if ((a.rom_name == "ttt.gb") && (proc.pc.read() == 0x03f2))
         {
             //Bodge to speed up tic tac toe rom when it's playing sound
-            printf("Skipped sound loop.\n");
+            //printf("Skipped sound loop.\n");
             proc.f.set_z(true);
-        }*/
+        }
         
         Step(proc);
+        
+        if ((a.num_cycles != 0) && (proc.m_total_cycles >= a.num_cycles))
+        {
+            screenshot_and_exit(proc, a.rom_name, run);
+        }
         
         if (proc.pc.read() == 0x256f)
         {

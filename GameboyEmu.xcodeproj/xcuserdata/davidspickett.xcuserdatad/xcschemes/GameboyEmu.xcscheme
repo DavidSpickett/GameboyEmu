@@ -67,11 +67,15 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--numcycles=11273160"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--scale=2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--rom=&quot;Tetris (World).gb&quot;"
+            argument = "--rom=&quot;opus5.gb&quot;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
