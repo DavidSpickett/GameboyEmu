@@ -3,9 +3,9 @@ Builds on Mac OSX El Capitan with XCode and requires the SDL2 library.
 
 ![Tetris](/screenshots/Tetris_example_0.bmp) ![Tetris](/screenshots/Tetris_example_1.bmp)
 
-![Dr. Mario](“/screenshots/Dr Mario_example_0.bmp”)![Dr. Mario](“/screenshots/Dr Mario_example_1.bmp”)
+![Dr. Mario](“/screenshots/Dr_Mario_example_0.bmp”)![Dr. Mario](“/screenshots/Dr_Mario_example_1.bmp”)
 
-![Super Mario Land](“/screenshots/Super Mario Land_example_0.bmp”)  ![Super Mario Land](“/screenshots/Super Mario Land_example_1.bmp”)
+![Super Mario Land](“/screenshots/Super_Mario_Land_example_0.bmp”)  ![Super Mario Land](“/screenshots/Super_Mario_Land_example_1.bmp”)
 
 
 Command Line Options

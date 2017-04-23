@@ -36,7 +36,6 @@
 /* Begin PBXFileReference section */
 		2F0029071DA2D5AF00A06C65 /* MemoryManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MemoryManager.cpp; sourceTree = "<group>"; };
 		2F0029081DA2D5AF00A06C65 /* MemoryManager.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MemoryManager.hpp; sourceTree = "<group>"; };
-		2F44350E1EACD3FB009B84D4 /* READMDE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = READMDE; sourceTree = "<group>"; };
 		2F72BC351D9AFCF6009CC1CC /* GameboyEmu */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GameboyEmu; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F72BC381D9AFCF6009CC1CC /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		2FCBB90B1EA7C23800567444 /* GDBHandler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GDBHandler.cpp; sourceTree = "<group>"; };
@@ -94,7 +93,6 @@
 			isa = PBXGroup;
 			children = (
 				2FF17E511D9B32D800D2E207 /* instructions.cpp */,
-				2F44350E1EACD3FB009B84D4 /* READMDE */,
 				2FF17E521D9B32D800D2E207 /* instructions.hpp */,
 				2FCBB90B1EA7C23800567444 /* GDBHandler.cpp */,
 				2FCBB90C1EA7C23800567444 /* GDBHandler.hpp */,

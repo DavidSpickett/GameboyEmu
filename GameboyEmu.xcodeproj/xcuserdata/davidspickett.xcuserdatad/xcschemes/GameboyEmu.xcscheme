@@ -71,7 +71,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--scale=3"
+            argument = "--scale=1"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -79,8 +79,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--rom=&quot;Super Mario Land (world).gb&quot;"
+            argument = "--rom=&quot;Dr. Mario (World).gb&quot;"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--rom=&quot;Super Mario Land (world).gb&quot;"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>
