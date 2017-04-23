@@ -88,6 +88,7 @@ const uint16_t LCDSTAT    = 0xff41-LCD_REGS_START;
 const uint16_t SCROLLY    = 0xff42-LCD_REGS_START;
 const uint16_t SCROLLX    = 0xff43-LCD_REGS_START;
 const uint16_t CURLINE    = 0xff44-LCD_REGS_START;
+const uint16_t CMPLINE    = 0xff45-LCD_REGS_START;
 const uint16_t BGRDPAL    = 0xff47-LCD_REGS_START;
 const uint16_t OBJPAL0    = 0xff48-LCD_REGS_START;
 const uint16_t OBJPAL1    = 0xff49-LCD_REGS_START;

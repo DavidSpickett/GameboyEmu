@@ -333,10 +333,28 @@ void LCD::tick(size_t curr_cycles)
         if (curr_scanline != 153)
         {
             curr_scanline = inc_curr_scanline();
+            uint8_t lcd_status = get_reg8(LCDSTAT);
+            uint8_t cmp_line = get_reg8(CMPLINE);
             
+            //Occured bit is always set or cleared, interrupt is optional
+            if (curr_scanline == cmp_line)
+            {
+                set_reg8(LCDSTAT, lcd_status | (1<<2));
+            }
+            else
+            {
+                set_reg8(LCDSTAT, lcd_status & ~(1<<6));
+            }
+            
+            //Check if interrupts are needed
             if (curr_scanline == LCD_HEIGHT)
             {
                 m_proc->post_interrupt(VBLANK_INT);
+            }
+            else if ((lcd_status & (1<<6)) &&
+                (curr_scanline == get_reg8(CMPLINE)))
+            {
+                m_proc->post_interrupt(LCD_STAT_INT);
             }
         }
         else
