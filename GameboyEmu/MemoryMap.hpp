@@ -23,7 +23,7 @@
 
 struct DMATransfer
 {
-    DMATransfer(uint16_t source_addr):
+    explicit DMATransfer(uint16_t source_addr):
         cycles_remaining(640), source_addr(source_addr)
     {}
     
@@ -88,7 +88,7 @@ private:
 class MemoryMap
 {
 public:
-    MemoryMap(std::string cartridge_name, bool bootstrap_skipped, int scale_factor):
+    MemoryMap(std::string& cartridge_name, bool bootstrap_skipped, int scale_factor):
     m_bootstrap_in_mem(true), m_rom_handler(cartridge_name), m_dma_transfer(),
     m_lcd_handler(scale_factor)
     {

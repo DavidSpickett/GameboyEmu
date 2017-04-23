@@ -88,9 +88,8 @@ class InterruptManager: public MemoryManager
 {
 public:
     InterruptManager():
-    m_proc(nullptr)
-    {
-    }
+    m_proc(nullptr), m_interrupt_flags(0), m_interrupt_switch(0)
+    {}
     
     uint8_t read8(uint16_t addr)
     {

@@ -17,7 +17,7 @@
 template <class int_type> class Register
 {
 public:
-    Register(std::string name_str):
+    explicit Register(std::string name_str):
         m_value(0), logging(false)
     {
         strncpy(name, name_str.c_str(), 3);
@@ -70,8 +70,8 @@ protected:
 class FlagRegister: public Register<uint8_t>
 {
 public:
-    FlagRegister(std::string name):
-        Register(name.c_str())
+    explicit FlagRegister(std::string name):
+        Register(name)
     {}
     
     void write(uint8_t val)
@@ -105,7 +105,7 @@ private:
 class Z80
 {
 public:
-    Z80(MemoryMap& mem):
+    explicit Z80(MemoryMap& mem):
         pc(0, "pc"),
         sp(0xFFFE, "sp"),
         mem(mem),

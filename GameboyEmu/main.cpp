@@ -28,7 +28,7 @@ void skip_bootstrap(Z80& proc)
     proc.mem.write8(0xff40, 0x91);
 }
 
-void screenshot_and_exit(Z80& proc, std::string rom_name, bool& _continue)
+void screenshot_and_exit(Z80& proc, const std::string& rom_name, bool& _continue)
 {
     std::string file_name = rom_name;
     std::replace(file_name.begin(), file_name.end(), '.', '_');

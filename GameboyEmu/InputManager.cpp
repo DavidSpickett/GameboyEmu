@@ -10,13 +10,6 @@
 #include <SDL2/SDL.h>
 #include "Z80.hpp"
 
-namespace
-{
-    const uint8_t MODE_DIR = 0;
-    const uint8_t MODE_BUTTON = 1;
-    const uint8_t MODE_INVALID = 2;
-}
-
 namespace {
     uint8_t clear_bit(uint8_t val, int bit)
     {

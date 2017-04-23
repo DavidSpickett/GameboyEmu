@@ -12,16 +12,18 @@
 #include <stdio.h>
 #include "MemoryManager.hpp"
 
+const uint8_t MODE_DIR = 0;
+const uint8_t MODE_BUTTON = 1;
+const uint8_t MODE_INVALID = 2;
+
 class Z80;
 
 class InputManager: public MemoryManager
 {
 public:
     InputManager():
-        m_proc(NULL)
-    {
-        m_joypad = 0xff;
-    }
+        m_proc(NULL), m_joypad(0xff), m_mode(MODE_INVALID)
+    {}
     
     uint8_t read8(uint16_t addr);
     void write8(uint16_t addr, uint8_t value);

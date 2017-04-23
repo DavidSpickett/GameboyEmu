@@ -15,7 +15,7 @@
 class GDBHandler
 {
 public:
-    GDBHandler(Z80& proc);
+    explicit GDBHandler(Z80& proc);
     ~GDBHandler();
     
     void handle_command(char* received, size_t size);

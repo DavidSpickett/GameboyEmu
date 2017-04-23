@@ -23,10 +23,9 @@ typedef std::vector<uint8_t> LCDPalette;
 class Sprite
 {
 public:
-    Sprite(std::vector<uint8_t>::const_iterator start):
+    explicit Sprite(std::vector<uint8_t>::const_iterator start):
         m_data(start)
-    {
-    }
+    {}
     
     uint8_t get_y() { return *m_data; }
     uint8_t get_x() { return *(m_data+1); }
@@ -98,10 +97,9 @@ const uint16_t WINPOSX    = 0xff4b-LCD_REGS_START;
 class LCDControlReg
 {
 public:
-    LCDControlReg(uint8_t* value):
+    explicit LCDControlReg(uint8_t* value):
         m_value(value)
-    {
-    }
+    {}
     
     LCDControlReg():
         m_value(NULL)
@@ -111,13 +109,13 @@ public:
     uint8_t read()            { return *m_value; }
     
     bool get_lcd_operation()              { return *m_value & (1<<7); }
-    uint16_t get_window_tile_table_addr() { return *m_value & (1<<6) ? 0x9C00-LCD_MEM_START : 0x9800-LCD_MEM_START; }
+    uint16_t get_window_tile_table_addr() { return (*m_value & (1<<6)) ? 0x9C00-LCD_MEM_START : 0x9800-LCD_MEM_START; }
     bool get_window_display()             { return *m_value & (1<<5); }
-    uint16_t get_bgrnd_tile_data_addr()   { return *m_value & (1<<4) ? 0x8000-LCD_MEM_START : 0x8800-LCD_MEM_START; }
-    uint16_t get_bgrnd_tile_table_addr()  { return *m_value & (1<<3) ? 0x9c00-LCD_MEM_START : 0x9800-LCD_MEM_START; }
-    uint8_t get_sprite_size()             { return *m_value & (1<<2) ? 16 : 8; }
-    uint8_t get_colour_0_transp()         { return *m_value & (1<<1) ? 1 : 0; }
-    bool background_display()             { return *m_value & 1; }
+    uint16_t get_bgrnd_tile_data_addr()   { return (*m_value & (1<<4)) ? 0x8000-LCD_MEM_START : 0x8800-LCD_MEM_START; }
+    uint16_t get_bgrnd_tile_table_addr()  { return (*m_value & (1<<3)) ? 0x9c00-LCD_MEM_START : 0x9800-LCD_MEM_START; }
+    uint8_t get_sprite_size()             { return (*m_value & (1<<2)) ? 16 : 8; }
+    uint8_t get_colour_0_transp()         { return (*m_value & (1<<1)) ? 1 : 0; }
+    bool background_display()             { return (*m_value) & 1; }
     
 private:
     uint8_t* m_value;
@@ -128,7 +126,7 @@ class Z80;
 class LCD: public MemoryManager
 {
     public:
-        LCD(int scale_factor);
+        explicit LCD(int scale_factor);
         ~LCD()
         {
             if (m_window != NULL)
