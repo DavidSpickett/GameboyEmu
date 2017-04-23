@@ -1,8 +1,8 @@
 Another Gameboy (monochrome) emulator written in C++. Very limited compatability,
 Tetris is working fine without sound.
 
-Builds on Mac OSX El Capitan and requires the SDL2 library. Command line options are
-as follows:
+Builds on Mac OSX El Capitan with XCode and requires the SDL2 library. Command line
+options are:
     --rom=<path rom>     Load the ROM file from the given path.
     --numcycles=<number> Number of CPU cycles to run before saving a screenshot
                          and quiting. Mainly for testing.
