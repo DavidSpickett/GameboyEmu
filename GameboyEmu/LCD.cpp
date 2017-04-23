@@ -31,6 +31,8 @@ m_proc(nullptr), m_last_scan_change_cycles(0), m_scale_factor(scale_factor)
     m_bgrd_pal = LCDPalette(4, 0);
     m_obj_pal_0 = LCDPalette(4, 0);
     m_obj_pal_1 = LCDPalette(4, 0);
+    
+    set_reg8(LCDSTAT, LCD_MODE_VBLANK);
 }
 
 void LCD::SDLSaveImage(std::string filename)
@@ -318,49 +320,105 @@ void LCD::tick(size_t curr_cycles)
     */
     const size_t per_scan_line = 114;
     uint8_t curr_scanline = get_curr_scanline();
+    size_t cycle_diff = curr_cycles - m_last_scan_change_cycles;
 
-    if (m_control_reg.get_lcd_operation() &&
-        ((curr_cycles - m_last_scan_change_cycles) > per_scan_line))
+    if (m_control_reg.get_lcd_operation())
     {
-        //154 scan lines, 144 + 10 vblank period
-        m_last_scan_change_cycles = curr_cycles;
+        uint8_t old_mode = get_reg8(LCDSTAT) & 3;
         
-        if (curr_scanline < 144)
+        if (curr_scanline >= 144)
         {
-            draw_to_pixels();
+            set_mode(LCD_MODE_VBLANK);
         }
-        
-        if (curr_scanline != 153)
+        /*
+         Note: These numbers are total guesses. If a game
+         appears stuck it's probably waiting for one of these.
+         Tetris does ldh a, and 3, jr nz for example, which is 24 cycles.
+         */
+        else if (cycle_diff < 50)
         {
-            curr_scanline = inc_curr_scanline();
-            uint8_t lcd_status = get_reg8(LCDSTAT);
-            uint8_t cmp_line = get_reg8(CMPLINE);
-            
-            //Occured bit is always set or cleared, interrupt is optional
-            if (curr_scanline == cmp_line)
-            {
-                set_reg8(LCDSTAT, lcd_status | (1<<2));
-            }
-            else
-            {
-                set_reg8(LCDSTAT, lcd_status & ~(1<<6));
-            }
-            
-            //Check if interrupts are needed
-            if (curr_scanline == LCD_HEIGHT)
-            {
-                m_proc->post_interrupt(VBLANK_INT);
-            }
-            else if ((lcd_status & (1<<6)) &&
-                (curr_scanline == get_reg8(CMPLINE)))
-            {
-                m_proc->post_interrupt(LCD_STAT_INT);
-            }
+            set_mode(LCD_MODE_OAM_ACCESS);
+        }
+        else if (cycle_diff < 100)
+        {
+            set_mode(LCD_MODE_BOTH_ACCESS);
         }
         else
         {
-            set_curr_scanline(0);
+            set_mode(LCD_MODE_HBLANK);
         }
+        
+        if (cycle_diff > per_scan_line)
+        {
+            //154 scan lines, 144 + 10 vblank period
+            m_last_scan_change_cycles = curr_cycles;
+            uint8_t lcd_status = get_reg8(LCDSTAT);
+        
+            if (curr_scanline < 144)
+            {
+                draw_to_pixels();
+            }
+        
+            if (curr_scanline != 153)
+            {
+                curr_scanline = inc_curr_scanline();
+                uint8_t cmp_line = get_reg8(CMPLINE);
+            
+                //Occured bit is always set or cleared, interrupt is optional
+                const int cmpline_bit = 2;
+                if (curr_scanline == cmp_line)
+                {
+                    set_reg8(LCDSTAT, lcd_status | (1<<cmpline_bit));
+                }
+                else
+                {
+                    set_reg8(LCDSTAT, lcd_status & ~(1<<cmpline_bit));
+                }
+            
+                //Note that inerrupt priority follows the bit pattern in the register
+                //VBLANK is highest then LCDSTAT and so on.
+                if (curr_scanline == LCD_HEIGHT)
+                {
+                    m_proc->post_interrupt(VBLANK_INT);
+                }
+                else if ((lcd_status & (1<<6)) &&
+                         (curr_scanline == get_reg8(CMPLINE)))
+                {
+                    m_proc->post_interrupt(LCD_STAT_INT);
+                }
+                else
+                {
+                    uint8_t mode = lcd_status & 3;
+                    
+                    if (mode != old_mode)
+                    {
+                        if ((mode == LCD_MODE_HBLANK) &&
+                            (lcd_status & (1<<3)))
+                        {
+                            m_proc->post_interrupt(LCD_STAT_INT);
+                        }
+                        else if ((mode == LCD_MODE_VBLANK) &&
+                                 (lcd_status & (1<<4)))
+                        {
+                            m_proc->post_interrupt(LCD_STAT_INT);
+                        }
+                        else if ((mode == LCD_MODE_OAM_ACCESS) &&
+                                 (lcd_status & (1<<5)))
+                        {
+                            m_proc->post_interrupt(LCD_STAT_INT);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                set_curr_scanline(0);
+            }
+        }
+    }
+    else
+    {
+        set_mode(LCD_MODE_VBLANK);
     }
 }
 
@@ -374,7 +432,7 @@ uint8_t LCD::read8(uint16_t addr)
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
-        return get_reg8(addr);
+        return get_reg8(get_regs_addr(addr));
     }
     else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
     {
@@ -396,7 +454,7 @@ void LCD::write8(uint16_t addr, uint8_t value)
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
-        set_reg8(addr, value);
+        set_reg8(get_regs_addr(addr), value);
     }
     else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
     {
@@ -424,7 +482,7 @@ uint16_t LCD::read16(uint16_t addr)
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
-        return get_reg16(addr);
+        return get_reg16(get_regs_addr(addr));
     }
     else
     {
@@ -449,7 +507,7 @@ void LCD::write16(uint16_t addr, uint16_t value)
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
-        set_reg16(addr, value);
+        set_reg16(get_regs_addr(addr), value);
     }
     else
     {

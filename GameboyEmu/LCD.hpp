@@ -95,6 +95,11 @@ const uint16_t OBJPAL1    = 0xff49-LCD_REGS_START;
 const uint16_t WINPOSY    = 0xff4a-LCD_REGS_START; //Yes, Y is first.
 const uint16_t WINPOSX    = 0xff4b-LCD_REGS_START;
 
+const uint8_t LCD_MODE_HBLANK      = 0;
+const uint8_t LCD_MODE_VBLANK      = 1;
+const uint8_t LCD_MODE_OAM_ACCESS  = 2;
+const uint8_t LCD_MODE_BOTH_ACCESS = 3;
+
 class LCDControlReg
 {
 public:
@@ -178,6 +183,13 @@ class LCD: public MemoryManager
             bool is_sprite,
             bool flip_x,
             const LCDPalette& palette);
+    
+        void set_mode(uint8_t mode)
+        {
+            m_registers[LCDSTAT] &= ~3;
+            m_registers[LCDSTAT] |= mode;
+            //printf("Set LCD mode to %d\n", mode);
+        }
 
         uint8_t get_scroll_x()
         {
@@ -224,25 +236,19 @@ class LCD: public MemoryManager
     
         uint16_t get_regs_addr(uint16_t addr) { return addr - LCD_REGS_START; }
     
-        uint8_t get_reg8(uint16_t addr) { return m_registers[get_regs_addr(addr)]; }
+        uint8_t get_reg8(uint16_t addr) { return m_registers[addr]; }
         void set_reg8(uint16_t addr, uint8_t value)
         {
-            addr = get_regs_addr(addr);
             m_registers[addr] = value;
             do_after_reg_write(addr);
         }
     
-        //Might want to move these into a register block class
-        // and do them in terms of write 8, so that later we can get callbacks
-        // when a register changes.
         uint16_t get_reg16(uint16_t addr)
         {
-            addr = get_regs_addr(addr);
             return m_registers[addr] | (m_registers[addr+1] << 8);
         }
         void set_reg16(uint16_t addr, uint16_t value)
         {
-            addr = get_regs_addr(addr);
             m_registers[addr] = value;
             m_registers[addr+1] = value >> 8;
             do_after_reg_write16(addr);
