@@ -102,6 +102,12 @@ private:
     void set_bit(uint8_t bit, bool val) { m_value &= ~(1<<bit); m_value |= uint8_t(val) << bit; }
 };
 
+#define VBLANK_INT         0
+#define LCD_STAT_INT       1
+#define TIMER_OVERFLOW_INT 2
+#define END_SERIAL_INT     3
+#define PIN_INT            4
+
 class Z80
 {
 public:
@@ -122,6 +128,11 @@ public:
         halted(false),
         stopped(false)
     {
+        m_interrupt_addrs.push_back(0x0040);
+        m_interrupt_addrs.push_back(0x0048);
+        m_interrupt_addrs.push_back(0x0050);
+        m_interrupt_addrs.push_back(0x0058);
+        m_interrupt_addrs.push_back(0x0060);
     }
     
     Register <uint16_t> pc;
@@ -177,6 +188,8 @@ public:
         }*/
     }
     
+    void post_interrupt(uint8_t num);
+    
     bool interrupt_enable;
     bool halted;
     bool stopped;
@@ -184,6 +197,7 @@ public:
     size_t m_total_cycles;
     
 private:
+    std::vector<uint16_t> m_interrupt_addrs;
     std::vector<std::string> m_callstack_frames;
     
     void print_callstack()

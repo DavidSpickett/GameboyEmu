@@ -336,27 +336,7 @@ void LCD::tick(size_t curr_cycles)
             
             if (curr_scanline == LCD_HEIGHT)
             {
-                if (m_proc != nullptr)
-                {
-                    //TODO: do all this in the proc itself?
-                    if ((m_proc->mem.read8(0xffff) & 1) && m_proc->interrupt_enable)
-                    {
-                        //Save PC to stack
-                        m_proc->sp.dec(2);
-                        m_proc->mem.write16(m_proc->sp.read(), m_proc->pc.read());
-                        //Then jump there.
-                        m_proc->pc.write(0x0040);
-                        
-                        //Set occurred flag (bit 0)
-                        m_proc->mem.write8(0xff0f, m_proc->mem.read8(0xff0f) | 1);
-                        //printf("-----V-Blank interrupt-----\n");
-                        
-                        //Disable ints until the program enables them again
-                        m_proc->interrupt_enable = false;
-                        //Unhalt if need be
-                        m_proc->halted = false;
-                    }
-                }
+                m_proc->post_interrupt(VBLANK_INT);
             }
         }
         else

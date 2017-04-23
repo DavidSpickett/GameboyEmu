@@ -29,6 +29,40 @@ std::string Z80::status_string()
     return pc_+f.to_string()+sp_+_1+_2+_3+_4;
 }
 
+void Z80::post_interrupt(uint8_t num)
+{
+    printf("Interrupt posted 0x%x\n", num);
+    
+    if (num > 5)
+    {
+        throw std::runtime_error("Can't raise interrupt > 5!");
+    }
+    
+    if (interrupt_enable)
+    {
+        bool enabled = mem.read8(INTERRUPT_SWITCH) & (1<<num);
+        if (enabled)
+        {
+            //Save PC to stack
+            sp.dec(2);
+            mem.write16(sp.read(), pc.read());
+            //Then jump to new addr
+            pc.write(m_interrupt_addrs[num]);
+            
+            //Set occurred bit
+            mem.write8(INTERRUPT_FLAGS, mem.read8(INTERRUPT_FLAGS) | (1 << num));
+            
+            /*Disable ints until the program enables them again (and make sure
+             we don't push to the stack twice in one step.*/
+            interrupt_enable = false;
+            
+            //Unhalt if need be
+            halted = false;
+        }
+    }
+    
+}
+
 void Z80::tick(uint8_t cycles)
 {
     //In future, expand 'tick' concept to other peripherals
