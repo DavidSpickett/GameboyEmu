@@ -1,24 +1,28 @@
-A Gameboy (monochrome) emulator written in C++. Very limited compatibility,
-Tetris is working fine without sound. Builds on Mac OSX El Capitan with XCode and 
-requires the SDL2 library. 
+A Gameboy (monochrome) emulator written in C++. Very limited compatibility, Tetris is the most playable so far. 
+Builds on Mac OSX El Capitan with XCode and requires the SDL2 library. 
 
-Command line options
+Command Line Options
 --------------------
-    * --rom=<path rom>     Load the ROM file from the given path.
-    * —-numcycles=<number> Number of CPU cycles to run before saving a screenshot
-                         and quitting. Mainly for testing.
-    * skipboot             Skip the boot ROM. If not given then a BIOS file called
-                         "GameBoyBios.gb" is required in the same folder as the
-                         emulator.
-    * --scale=<number>     Set the dimension of each pixel on screen. 1 means 1 Gameboy
-                         pixel is one pixel on screen. 2 means each pixel is a 2x2 square
-                         and so on. Note that screenshots are taken at the window size
-                         not the Gameboy's resolution.
 
-Input keys
-----------
+|Option              |Meaning                                                                                                                                |
+|--------------------|——-------------------------------------------------------------------------------------------------------------------------------------|
+|--rom=<path to rom> |Load ROM file from given path. (required)                                                                                              |
+|—numcycles=<number> |Number of cycles to run before taking and screenshot then quitting. (for testing, default of 0 meaning run forever)                    |
+|—scale=<number>     |Set the dimension of each pixel. default of 1 means 1 Gameboy pixel is 1 pixel on screen, 2 means each pixel is a 2x2 square and so on.|
+|skipboot            |Skip the boot ROM. If not set a BIOS file in the same folder called “GameboyBios.gb” is required.                                      |
 
-|Gameboy Button | Keyboard key|
+Usage
+-----
+
+./GameboyEmu --rom=“Tetris (world).gb” --scale=2 skipboot
+./GameboyEmu --numcycles=100000 --rom=“opus5.gb”
+
+(note that argument order is not important)
+
+Input
+-----
+
+|Gameboy Button | Keyboard Key|
 |---------------|-------------|
 |UP             |up arrow     |
 |DOWN           |down arrow   |
@@ -32,8 +36,8 @@ Input keys
 You can also press 's' to take a screenshot and then exit (printing the no. of cycles ran) or
 press 'esc' to quit directly.
 
-Things to do/known issues
--------------------------
+To Do and Known Issues
+----------------------
     - Upon loosing a round of Tetris the screen fills with blocks apart from the last row.
     - Window display is not working. (pause menu in Super Mario Land)
     - Sound is completely non functional.
