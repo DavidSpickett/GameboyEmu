@@ -147,7 +147,7 @@ class LCD: public MemoryManager
     
         void tick(size_t curr_cycles);
     
-        Z80* m_proc; /////HACK HACK HACK
+        Z80* m_proc; //Probably not ideal
     
     private:
         SDL_Renderer* m_renderer;
