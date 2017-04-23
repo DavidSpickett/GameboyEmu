@@ -53,3 +53,14 @@ To Do and Known Issues
 - Test framework, which is what the screenshot functions are for eventually.
 - Background scrolling has some corruption (opus5<i></i>.gb).
 - Get the GDB Handler working with the GDB Z80 port.
+- ROM and RAM bank controller support.
+
+Resources
+---------
+- http://gameboy.mongenel.com/dmg/asmmemmap.html (memory map)
+- http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html (opcode map)
+- http://fms.komkon.org/GameBoy/Tech/Software.html (register info)
+- http://bgb.bircd.org/pandocs.htm#interrupts (general specifications)
+- http://gbdev.gg8.se/wiki/articles/Memory_Bank_Controllers (MBC info)
+- http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf (general info and instruction descriptions)
+- http://www.z80.info/zip/z80cpu_um.pdf (instruction descriptions)
