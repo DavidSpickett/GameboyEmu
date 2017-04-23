@@ -1,7 +1,9 @@
 A Gameboy (monochrome) emulator written in C++. Very limited compatibility, Tetris is the most playable so far. 
 Builds on Mac OSX El Capitan with XCode and requires the SDL2 library. 
 
-![Tetris 0](/screenshots/Tetris_example_0.bmp?raw=true)![Tetris 1](/screenshots/Tetris_example_1.bmp?raw=true)
+![Tetris](/screenshots/Tetris_example_0.bmp)        ![Tetris](/screenshots/Tetris_example_1.bmp)
+![Dr. Mario](/screenshots/Dr Mario_example_0.bmp)        ![Dr. Mario](/screenshots/Dr Mario_example_1.bmp)
+![Super Mario Land](/screenshots/Super Mario Land_example_0.bmp)        ![Super Mario Land](/screenshots/Super Mario Land_example_1.bmp)
 
 
 Command Line Options
