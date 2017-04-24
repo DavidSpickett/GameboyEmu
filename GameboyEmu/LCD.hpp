@@ -169,11 +169,17 @@ class LCD: public MemoryManager
         std::vector<uint8_t> m_oam_data;
         std::vector<uint8_t> m_registers;
         std::vector<colour> m_pixel_data;
-        size_t m_last_scan_change_cycles;
+        size_t m_last_tick_cycles;
+        size_t m_lcd_line_cycles;
+        uint8_t m_curr_scanline;
     
         void SDLInit();
-        void SDLDraw(uint8_t curr_scanline);
-        void draw_to_pixels();
+        void SDLDraw();
+        void SDLClear();
+    
+        void draw_background();
+        void draw_sprites();
+        void draw_window();
     
         template <typename Iterator>
         void tile_row_to_pixels(
@@ -209,21 +215,6 @@ class LCD: public MemoryManager
         uint8_t get_winpos_y()
         {
             return m_registers[WINPOSY];
-        }
-    
-        uint8_t get_curr_scanline()
-        {
-            return m_registers[CURLINE];
-        }
-    
-        void set_curr_scanline(uint8_t value)
-        {
-            m_registers[CURLINE] = value;
-        }
-    
-        uint8_t inc_curr_scanline()
-        {
-            return ++m_registers[CURLINE];
         }
     
         LCDPalette get_palette(uint16_t addr);

@@ -11,7 +11,9 @@
 #include "Z80.hpp"
 
 LCD::LCD(int scale_factor):
-m_proc(nullptr), m_last_scan_change_cycles(0), m_scale_factor(scale_factor)
+m_proc(nullptr), m_last_tick_cycles(0),
+m_lcd_line_cycles(0), m_scale_factor(scale_factor),
+m_curr_scanline(145)
 {
     m_data.resize(LCD_MEM_END-LCD_MEM_START, 0);
     m_oam_data.resize(LCD_OAM_END-LCD_OAM_START, 0);
@@ -32,7 +34,7 @@ m_proc(nullptr), m_last_scan_change_cycles(0), m_scale_factor(scale_factor)
     m_obj_pal_0 = LCDPalette(4, 0);
     m_obj_pal_1 = LCDPalette(4, 0);
     
-    set_reg8(LCDSTAT, LCD_MODE_VBLANK);
+    set_mode(LCD_MODE_VBLANK);
 }
 
 void LCD::SDLSaveImage(std::string filename)
@@ -44,14 +46,24 @@ void LCD::SDLSaveImage(std::string filename)
     SDL_FreeSurface(temp_sur);
 }
 
-void LCD::SDLDraw(uint8_t curr_scanline)
+void LCD::SDLClear()
 {
-    if (m_window == NULL)
-    {
-        throw std::runtime_error("Cannot draw, the LCD window has not been init.");
-    }
+    //Clear whole screen when LCD is disabled.
+    SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
     
-    int start_index = curr_scanline*LCD_WIDTH;
+    SDL_Rect r;
+    r.h = m_sdl_height;
+    r.w = m_sdl_width;
+    r.x = 0;
+    r.y = 0;
+    
+    SDL_RenderFillRect(m_renderer, &r);
+    SDL_RenderPresent(m_renderer);
+}
+
+void LCD::SDLDraw()
+{
+    int start_index = m_curr_scanline*LCD_WIDTH;
     for (int x=0; x != LCD_WIDTH; ++x)
     {
         colour c = m_pixel_data[start_index+x];
@@ -61,7 +73,7 @@ void LCD::SDLDraw(uint8_t curr_scanline)
         r.h = m_scale_factor;
         r.w = m_scale_factor;
         r.x = x*m_scale_factor;
-        r.y = curr_scanline*m_scale_factor;
+        r.y = m_curr_scanline*m_scale_factor;
         
         SDL_RenderFillRect(m_renderer, &r);
     }
@@ -167,86 +179,15 @@ void LCD::tile_row_to_pixels(
     }
 }
 
-void LCD::draw_to_pixels()
+void LCD::draw_sprites()
 {
-    //Lines are drawn one at a time
-    const uint8_t curr_scanline = get_curr_scanline();
-    
-    //Data describing the tiles themselves
-    uint16_t background_tile_data_addr = m_control_reg.get_bgrnd_tile_data_addr();
-    bool signed_tile_nos = background_tile_data_addr == 0x0800;
-    
-    if (m_control_reg.get_window_display())
-    {
-        printf("Skipping window display!\n");
-    }
-    
-    if (m_control_reg.background_display())
-    {
-        //Address of table of tile indexes that form the background
-        const uint16_t background_tile_addr_table = m_control_reg.get_bgrnd_tile_table_addr();
-        
-        //The point in the background at which pixel 0,0 on the screen is taken from.
-        const uint8_t start_x = get_scroll_x();
-        const uint8_t start_y = get_scroll_y();
-        
-        const uint8_t TILE_SIDE = 8;
-        const uint8_t TILE_BYTES = 16;
-        
-        //There is only one line of tiles we are interested in since we're only doing one scanline
-        //Note that Y wraps
-        const uint16_t tile_row = (uint8_t(curr_scanline + start_y) / TILE_SIDE);
-        
-        //Then we must start somewhere in that row
-        uint8_t tile_row_offset = (start_x / TILE_SIDE) % 32;
-        
-        //Which row of pixels within the tile
-        const uint8_t tile_pixel_row = (curr_scanline + start_y) % TILE_SIDE;
-        
-        for (uint8_t x=0; x<168; x+=TILE_SIDE, ++tile_row_offset)
-        {
-            if (tile_row_offset >= 32)
-            {
-                tile_row_offset %= 32;
-            }
-            
-            //Get actual value of index from the table
-            uint8_t tile_index = m_data[background_tile_addr_table+(32*tile_row)+tile_row_offset];
-            
-            if (signed_tile_nos)
-            {
-                tile_index += 128;
-            }
-            
-            //The final address to read pixel data from
-            uint16_t tile_addr = tile_index*TILE_BYTES;
-            
-            tile_row_to_pixels(m_data.begin() + tile_addr + background_tile_data_addr,
-                x - (start_x % TILE_SIDE), curr_scanline-tile_pixel_row,
-                0,//start_x % TILE_SIDE,
-                tile_pixel_row,
-                false,
-                false,
-                m_bgrd_pal);
-            
-            //The idea being that these pixels are always the full row, that's why we
-            //can incremement x by 8 each time. It gets the pixels before and ahead of x.
-        }
-    }
- 
-    //Sprites
-    /*if (m_control_reg.get_sprite_size() != 8)
-    {
-        throw std::runtime_error("Sprite size is 8x16!!");
-    }*/
-    
     const uint64_t SPRITE_INFO_BYTES = 4;
     const uint16_t oam_size = LCD_OAM_END-LCD_OAM_START;
     
     const int SPRITE_HEIGHT = m_control_reg.get_sprite_size();
     const int SPRITE_WIDTH  = 8;
     const int SPRITE_BYTES  = 2*SPRITE_HEIGHT;
-
+    
     for (uint16_t oam_addr=0; oam_addr < oam_size; oam_addr+=SPRITE_INFO_BYTES)
     {
         Sprite sprite(m_oam_data.begin()+oam_addr);
@@ -256,11 +197,11 @@ void LCD::draw_to_pixels()
         //Note that this is offset by 16 even when sprites are 8x8 pixels
         int sprite_y = sprite.get_y()-16;
         
-        int sprite_row_offset = int(curr_scanline) - sprite_y;
+        int sprite_row_offset = int(m_curr_scanline) - sprite_y;
         LCDPalette& palette = sprite.get_palette_number() ? m_obj_pal_1 : m_obj_pal_0;
         
-        if ((curr_scanline >= sprite_y) &&
-            (curr_scanline < (sprite_y+SPRITE_HEIGHT)) &&
+        if ((m_curr_scanline >= sprite_y) &&
+            (m_curr_scanline < (sprite_y+SPRITE_HEIGHT)) &&
             (sprite_x > -SPRITE_WIDTH)
             )
         {
@@ -306,114 +247,203 @@ void LCD::draw_to_pixels()
         }
     }
 
-    SDLDraw(curr_scanline);
+}
+
+void LCD::draw_window()
+{
+    if (m_control_reg.get_window_display())
+    {
+        printf("Skipping window display!\n");
+    }
+}
+
+void LCD::draw_background()
+{
+    if (m_control_reg.background_display())
+    {
+        //Data describing the tiles themselves
+        uint16_t background_tile_data_addr = m_control_reg.get_bgrnd_tile_data_addr();
+        bool signed_tile_nos = background_tile_data_addr == 0x0800;
+        
+        //Address of table of tile indexes that form the background
+        const uint16_t background_tile_addr_table = m_control_reg.get_bgrnd_tile_table_addr();
+        
+        //The point in the background at which pixel 0,0 on the screen is taken from.
+        const uint8_t start_x = get_scroll_x();
+        const uint8_t start_y = get_scroll_y();
+        
+        const uint8_t TILE_SIDE = 8;
+        const uint8_t TILE_BYTES = 16;
+        
+        //There is only one line of tiles we are interested in since we're only doing one scanline
+        //Note that Y wraps
+        const uint16_t tile_row = (uint8_t(m_curr_scanline + start_y) / TILE_SIDE);
+        
+        //Then we must start somewhere in that row
+        uint8_t tile_row_offset = (start_x / TILE_SIDE) % 32;
+        
+        //Which row of pixels within the tile
+        const uint8_t tile_pixel_row = (m_curr_scanline + start_y) % TILE_SIDE;
+        
+        for (uint8_t x=0; x<168; x+=TILE_SIDE, ++tile_row_offset)
+        {
+            if (tile_row_offset >= 32)
+            {
+                tile_row_offset %= 32;
+            }
+            
+            //Get actual value of index from the table
+            uint8_t tile_index = m_data[background_tile_addr_table+(32*tile_row)+tile_row_offset];
+            
+            if (signed_tile_nos)
+            {
+                tile_index += 128;
+            }
+            
+            //The final address to read pixel data from
+            uint16_t tile_addr = tile_index*TILE_BYTES;
+            
+            tile_row_to_pixels(m_data.begin() + tile_addr + background_tile_data_addr,
+                               x - (start_x % TILE_SIDE), m_curr_scanline-tile_pixel_row,
+                               0,//start_x % TILE_SIDE,
+                               tile_pixel_row,
+                               false,
+                               false,
+                               m_bgrd_pal);
+            
+            //The idea being that these pixels are always the full row, that's why we
+            //can incremement x by 8 each time. It gets the pixels before and ahead of x.
+        }
+    }
 }
 
 void LCD::tick(size_t curr_cycles)
 {
     /*
-    To explain the math for future reference:
-    0.954uS per instruction cycle
-    15.66m + 1.09m seconds to draw the whole frame (1.09m for vblank)
-    That makes it 0.1087mS per scan line.
-    Which is 113.941 instruction cycles, aka 114 cycles per scan line.
-    */
-    const size_t per_scan_line = 114;
-    uint8_t curr_scanline = get_curr_scanline();
-    size_t cycle_diff = curr_cycles - m_last_scan_change_cycles;
-
-    uint8_t old_mode = get_reg8(LCDSTAT) & 3;
-    
-    if (curr_scanline >= 144)
-    {
-        set_mode(LCD_MODE_VBLANK);
-    }
-    /*
-     Note: These numbers are total guesses. If a game
-     appears stuck it's probably waiting for one of these.
-     Tetris does ldh a, and 3, jr nz for example, which is 24 cycles.
+     See:
+     http://gameboy.mongenel.com/dmg/gbc_lcdc_timing.txt
+     http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-GPU-Timings
+     
+     4 clocks tick at 4MHz is one 'cycle'
+     
+     Mode 2 = 80  clocks = 20  cycles
+     Mode 3 = 172 clocks = 43  cycles
+     Mode 0 = 204 clocks = 51  cycles
+     Total  = 456 clocks = 114 cycles per line.
+     
+     Mode 1 = 10*456 = 4560 clocks = 1140 cycles
+     
      */
-    else if (cycle_diff < 40)
-    {
-        set_mode(LCD_MODE_OAM_ACCESS);
-    }
-    else if (cycle_diff < 80)
-    {
-        set_mode(LCD_MODE_BOTH_ACCESS);
-    }
-    else
-    {
-        set_mode(LCD_MODE_HBLANK);
-    }
+    const size_t CYCLES_PER_SCAN_LINE = 114;
     
-    if (cycle_diff > per_scan_line)
-    {
-        //154 scan lines, 144 + 10 vblank period
-        m_last_scan_change_cycles = curr_cycles;
-        uint8_t lcd_status = get_reg8(LCDSTAT);
+    const size_t CYCLES_MODE_2_OAM_ACCESS  = 20;
+    const size_t CYCLES_MODE_3_BOTH_ACCESS = 43 + CYCLES_MODE_2_OAM_ACCESS;
+    const size_t CYCLES_MODE_0_HBLANK      = 51 + CYCLES_MODE_3_BOTH_ACCESS;
     
-        //Note that everything apart from drawing still happens when the display is 'off'
-        if ((curr_scanline < 144) && m_control_reg.get_lcd_operation())
+    uint8_t lcd_stat = get_reg8(LCDSTAT);
+    uint8_t old_mode = lcd_stat & 3;
+    uint8_t new_mode = old_mode;
+    
+    size_t cycle_diff = curr_cycles - m_last_tick_cycles;
+    m_lcd_line_cycles += cycle_diff;
+    
+    //printf("Curr scanline %d\n", curr_scanline);
+    
+    switch (old_mode)
+    {
+        case LCD_MODE_OAM_ACCESS:
         {
-            draw_to_pixels();
+            if (m_lcd_line_cycles >= CYCLES_MODE_2_OAM_ACCESS)
+            {
+                new_mode = LCD_MODE_BOTH_ACCESS;
+                //No interrupt for entering both accessed mode
+            }
+            break;
         }
+        case LCD_MODE_BOTH_ACCESS:
+            if (m_lcd_line_cycles >= CYCLES_MODE_3_BOTH_ACCESS)
+            {
+                new_mode = LCD_MODE_HBLANK;
+                
+                draw_background();
+                draw_sprites();
+                draw_window();
+                
+                /*
+                 State machine continues if LCD is off, games like Dr. Mario
+                 disable it during transitions.
+                */
+                if (m_control_reg.get_lcd_operation())
+                {
+                    SDLDraw();
+                }
+            }
+            break;
+        case LCD_MODE_HBLANK:
+            if (m_lcd_line_cycles >= CYCLES_MODE_0_HBLANK)
+            {
+                m_curr_scanline++;
+                if (m_curr_scanline == 144)
+                {
+                    new_mode = LCD_MODE_VBLANK;
+                    /*This interrupt type has a higher priority so it's
+                     ok that the post_interrupt further down will be ignored.*/
+                    m_proc->post_interrupt(LCD_VBLANK_INT);
+                }
+                else
+                {
+                    new_mode = LCD_MODE_OAM_ACCESS;
+                    //Take away cycles per line so we don't loose any overflow cycles
+                    m_lcd_line_cycles = m_lcd_line_cycles-CYCLES_PER_SCAN_LINE;
+                }
+            }
+            break;
+        case LCD_MODE_VBLANK:
+            if (m_lcd_line_cycles >= CYCLES_PER_SCAN_LINE)
+            {
+                //Note that this is not 255! Backgrounds go to
+                //that but the LCD only has 10 lines of VBLANK.
+                if (m_curr_scanline == 153)
+                {
+                    new_mode = LCD_MODE_OAM_ACCESS;
+                    m_curr_scanline = 0;
+                }
+                else
+                {
+                    m_curr_scanline++;
+                }
+                m_lcd_line_cycles = m_lcd_line_cycles - CYCLES_PER_SCAN_LINE;
+            }
+            break;
+    }
     
-        if (curr_scanline != 153)
+    if (old_mode != new_mode)
+    {
+        set_mode(new_mode);
+        
+        if (new_mode != LCD_MODE_BOTH_ACCESS)
         {
-            curr_scanline = inc_curr_scanline();
-            uint8_t cmp_line = get_reg8(CMPLINE);
-        
-            //Occured bit is always set or cleared, interrupt is optional
-            const int cmpline_bit = 2;
-            if (curr_scanline == cmp_line)
+            int bit = 0;
+            switch (new_mode)
             {
-                set_reg8(LCDSTAT, lcd_status | (1<<cmpline_bit));
+                case LCD_MODE_OAM_ACCESS:
+                    bit = 5;
+                    break;
+                case LCD_MODE_HBLANK:
+                    bit = 3;
+                    break;
+                case LCD_MODE_VBLANK:
+                    bit = 4;
             }
-            else
-            {
-                set_reg8(LCDSTAT, lcd_status & ~(1<<cmpline_bit));
-            }
-        
-            //Note that inerrupt priority follows the bit pattern in the register
-            //VBLANK is highest then LCDSTAT and so on.
-            if (curr_scanline == LCD_HEIGHT)
-            {
-                m_proc->post_interrupt(VBLANK_INT);
-            }
-            else if ((lcd_status & (1<<6)) &&
-                     (curr_scanline == get_reg8(CMPLINE)))
+            
+            if (lcd_stat & (1<<bit))
             {
                 m_proc->post_interrupt(LCD_STAT_INT);
             }
-            else
-            {
-                uint8_t mode = lcd_status & 3;
-                
-                if (mode != old_mode)
-                {
-                    if ((mode == LCD_MODE_HBLANK) &&
-                        (lcd_status & (1<<3)))
-                    {
-                        m_proc->post_interrupt(LCD_STAT_INT);
-                    }
-                    else if ((mode == LCD_MODE_VBLANK) &&
-                             (lcd_status & (1<<4)))
-                    {
-                        m_proc->post_interrupt(LCD_STAT_INT);
-                    }
-                    else if ((mode == LCD_MODE_OAM_ACCESS) &&
-                             (lcd_status & (1<<5)))
-                    {
-                        m_proc->post_interrupt(LCD_STAT_INT);
-                    }
-                }
-            }
-        }
-        else
-        {
-            set_curr_scanline(0);
         }
     }
+    
+    m_last_tick_cycles = curr_cycles;
 }
 
 uint8_t LCD::read8(uint16_t addr)
@@ -426,7 +456,14 @@ uint8_t LCD::read8(uint16_t addr)
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
-        return get_reg8(get_regs_addr(addr));
+        if (addr == (CURLINE+LCD_REGS_START))
+        {
+            return m_curr_scanline;
+        }
+        else
+        {
+            return get_reg8(get_regs_addr(addr));
+        }
     }
     else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
     {
@@ -448,7 +485,15 @@ void LCD::write8(uint16_t addr, uint8_t value)
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
-        set_reg8(get_regs_addr(addr), value);
+        if (addr == (CURLINE+LCD_REGS_START))
+        {
+            m_curr_scanline = 0;
+            set_mode(LCD_MODE_OAM_ACCESS);
+        }
+        else
+        {
+            set_reg8(get_regs_addr(addr), value);
+        }
     }
     else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
     {
@@ -520,13 +565,12 @@ void LCD::do_after_reg_write(uint16_t addr)
             {
                 SDLInit();
             }
-            
+            else if (!m_control_reg.get_lcd_operation())
+            {
+                SDLClear();
+            }
             break;
         }
-        case CURLINE:
-            //Writing anything sets the register to 0
-            set_curr_scanline(0);
-            break;
         case BGRDPAL:
             m_bgrd_pal = get_palette(BGRDPAL);
             break;

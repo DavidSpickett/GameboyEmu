@@ -71,12 +71,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--scale=3"
+            argument = "--scale=2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;Tetris (world).gb&quot;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;Dr. Mario (World).gb&quot;"
@@ -85,6 +85,10 @@
          <CommandLineArgument
             argument = "--rom=&quot;Super Mario Land (world).gb&quot;"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--rom=&quot;opus5.gb&quot;"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>

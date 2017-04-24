@@ -102,7 +102,7 @@ private:
     void set_bit(uint8_t bit, bool val) { m_value &= ~(1<<bit); m_value |= uint8_t(val) << bit; }
 };
 
-#define VBLANK_INT         0
+#define LCD_VBLANK_INT     0
 #define LCD_STAT_INT       1
 #define TIMER_OVERFLOW_INT 2
 #define END_SERIAL_INT     3
