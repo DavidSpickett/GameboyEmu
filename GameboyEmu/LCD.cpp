@@ -132,9 +132,7 @@ void LCD::SDLInit()
     
     m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED);
     
-    SDL_SetRenderDrawColor(m_renderer, m_colours[0].r, m_colours[0].g, m_colours[0].b, m_colours[0].a);
-    SDL_RenderClear(m_renderer);
-    SDL_RenderPresent(m_renderer);
+    SDLClear();
 }
 
 //Note that tile also means sprite here, colour data is in the same format.
@@ -156,16 +154,6 @@ void LCD::tile_row_to_pixels(
     //Signed int!!
     for (int shift=7; shift>= 0; --shift)
     {
-        uint8_t lsb = (b1 >> shift) & 0x1;
-        uint8_t msb = (b2 >> shift) & 0x1;
-        uint8_t c = (msb << 1) | lsb;
-        
-        if (is_sprite && c==0)
-        {
-            //Colour 0 is always 'transparent' for sprites
-            continue;
-        }
-        
         int shift_diff = flip_x ? shift : (7-shift);
         int newx = startx + shift_diff - offsx;
         if ((newx >= LCD_WIDTH) || (newx < 0))
@@ -176,6 +164,16 @@ void LCD::tile_row_to_pixels(
         int newy = starty + offsy;
         if ((newy >= LCD_HEIGHT) || (newy < 0))
         {
+            continue;
+        }
+        
+        uint8_t lsb = (b1 >> shift) & 0x1;
+        uint8_t msb = (b2 >> shift) & 0x1;
+        uint8_t c = (msb << 1) | lsb;
+        
+        if (is_sprite && c==0)
+        {
+            //Colour 0 is always 'transparent' for sprites
             continue;
         }
         
