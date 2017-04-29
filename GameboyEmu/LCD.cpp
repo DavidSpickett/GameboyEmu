@@ -10,29 +10,35 @@
 #include "utils.hpp"
 #include "Z80.hpp"
 
-LCD::LCD(int scale_factor):
-m_proc(nullptr), m_last_tick_cycles(0),
-m_lcd_line_cycles(0), m_scale_factor(scale_factor),
-m_curr_scanline(145)
+namespace
 {
-    m_data.resize(LCD_MEM_END-LCD_MEM_START, 0);
-    m_oam_data.resize(LCD_OAM_END-LCD_OAM_START, 0);
-    m_registers.resize(LCD_REGS_END-LCD_REGS_START, 0);
-    m_pixel_data.resize(LCD_WIDTH*LCD_HEIGHT);
-    
+    template <typename T>
+    void zero_array(T& container)
+    {
+        std::fill(container.begin(), container.end(), 0);
+    }
+}
+
+LCD::LCD(int scale_factor):
+m_proc(nullptr),
+m_last_tick_cycles(0),
+m_lcd_line_cycles(0),
+m_scale_factor(scale_factor),
+m_curr_scanline(145),
+m_data(LCD_MEM_END-LCD_MEM_START, 0),
+m_oam_data(LCD_OAM_END-LCD_OAM_START, 0),
+m_registers(LCD_REGS_END-LCD_REGS_START, 0),
+m_pixel_data(LCD_WIDTH*LCD_HEIGHT),
+m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9), colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)}
+{
     m_control_reg = LCDControlReg(&m_registers[LCDCONTROL]);
-    
-    m_colours.push_back(colour(0xff, 0xff, 0xff));
-    m_colours.push_back(colour(0xb9, 0xb9, 0xb9));
-    m_colours.push_back(colour(0x6b, 0x6b, 0x6b));
-    m_colours.push_back(colour(0x00, 0x00, 0x00));
     
     m_sdl_width = LCD_WIDTH*m_scale_factor;
     m_sdl_height = LCD_HEIGHT*m_scale_factor;
     
-    m_bgrd_pal = LCDPalette(4, 0);
-    m_obj_pal_0 = LCDPalette(4, 0);
-    m_obj_pal_1 = LCDPalette(4, 0);
+    zero_array(m_bgrd_pal);
+    zero_array(m_obj_pal_0);
+    zero_array(m_obj_pal_1);
     
     set_mode(LCD_MODE_VBLANK);
 }
@@ -97,7 +103,7 @@ LCDPalette LCD::get_palette(uint16_t addr)
     uint8_t regval = m_registers[addr];
     for (int i=0; i<4; ++i)
     {
-        ret.push_back(regval & 0x3);
+        ret[i] = regval & 0x3;
         regval >>= 2;
     }
     

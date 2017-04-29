@@ -12,13 +12,14 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
+#include <array>
 #include <SDL2/SDL.h>
 #include "MemoryManager.hpp"
 
 const size_t LCD_WIDTH  = 160;
 const size_t LCD_HEIGHT = 144;
 
-typedef std::vector<uint8_t> LCDPalette;
+typedef std::array<uint8_t, 4> LCDPalette;
 
 class Sprite
 {
@@ -158,7 +159,7 @@ class LCD: public MemoryManager
     private:
         SDL_Renderer* m_renderer;
         SDL_Window* m_window;
-        std::vector<colour> m_colours;
+        std::array<colour, 4> m_colours;
         int m_scale_factor;
     
         int m_sdl_height;
