@@ -148,6 +148,7 @@ void LCD::tile_row_to_pixels(
     const LCDPalette& palette //Colour mapping
     )
 {
+    int newy = starty + offsy;
     uint8_t b1 = *(data_b + (offsy*2));
     uint8_t b2 = *(data_b + (offsy*2)+1);
     
@@ -157,12 +158,6 @@ void LCD::tile_row_to_pixels(
         int shift_diff = flip_x ? shift : (7-shift);
         int newx = startx + shift_diff - offsx;
         if ((newx >= LCD_WIDTH) || (newx < 0))
-        {
-            continue;
-        }
-        
-        int newy = starty + offsy;
-        if ((newy >= LCD_HEIGHT) || (newy < 0))
         {
             continue;
         }
