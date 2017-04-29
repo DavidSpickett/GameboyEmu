@@ -19,12 +19,13 @@
 const size_t LCD_WIDTH  = 160;
 const size_t LCD_HEIGHT = 144;
 
-typedef std::array<uint8_t, 4> LCDPalette;
+using LCDPalette = std::array<uint8_t, 4>;
+using OAMData = std::array<uint8_t, LCD_OAM_END-LCD_OAM_START>;
 
 class Sprite
 {
 public:
-    explicit Sprite(std::vector<uint8_t>::const_iterator start):
+    explicit Sprite(OAMData::const_iterator start):
         m_data(start)
     {}
     
@@ -46,7 +47,7 @@ public:
     
 private:
     uint8_t get_flag(uint8_t pos) { return (*(m_data+3)) & (1<<pos); }
-    std::vector<uint8_t>::const_iterator m_data;
+    OAMData::const_iterator m_data;
 };
 
 struct Pixel
@@ -167,8 +168,8 @@ class LCD: public MemoryManager
     
         LCDControlReg m_control_reg;
         std::vector<uint8_t> m_data;
-        std::vector<uint8_t> m_oam_data;
-        std::vector<uint8_t> m_registers;
+        OAMData m_oam_data;
+        std::array<uint8_t, LCD_REGS_END-LCD_REGS_START> m_registers;
         std::array<colour, LCD_HEIGHT*LCD_WIDTH> m_pixel_data;
         size_t m_last_tick_cycles;
         size_t m_lcd_line_cycles;

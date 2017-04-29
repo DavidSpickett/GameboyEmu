@@ -26,8 +26,6 @@ m_lcd_line_cycles(0),
 m_scale_factor(scale_factor),
 m_curr_scanline(145),
 m_data(LCD_MEM_END-LCD_MEM_START, 0),
-m_oam_data(LCD_OAM_END-LCD_OAM_START, 0),
-m_registers(LCD_REGS_END-LCD_REGS_START, 0),
 m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9), colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)}
 {
     m_control_reg = LCDControlReg(&m_registers[LCDCONTROL]);
@@ -39,6 +37,8 @@ m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9), colour(0x6b, 0x6b,
     init_array(m_obj_pal_0);
     init_array(m_obj_pal_1);
     init_array(m_pixel_data);
+    init_array(m_registers);
+    init_array(m_oam_data);
     
     set_mode(LCD_MODE_VBLANK);
 }
