@@ -193,9 +193,8 @@ class LCD: public MemoryManager
         void draw_sprites();
         void draw_window();
     
-        template <typename Iterator>
         void tile_row_to_pixels(
-            Iterator data_b,
+            LCDData::const_iterator data_b,
             int startx, int starty,
             int offsx, int offsy,
             bool is_sprite,

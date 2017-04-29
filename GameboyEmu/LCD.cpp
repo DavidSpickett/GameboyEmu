@@ -136,9 +136,8 @@ void LCD::SDLInit()
 }
 
 //Note that tile also means sprite here, colour data is in the same format.
-template <typename Iterator>
 void LCD::tile_row_to_pixels(
-    Iterator data_b, //Pointer to pixel data
+    LCDData::const_iterator data_b, //Pointer to pixel data (must already point to correct row)
     int startx, //Top left x co-ord of the tile.
     int starty, //Top left y co-ord of the tile.
     int offsx,  //Srolling window x offset
@@ -149,8 +148,8 @@ void LCD::tile_row_to_pixels(
     )
 {
     int newy = starty + offsy;
-    uint8_t b1 = *(data_b + (offsy*2));
-    uint8_t b2 = *(data_b + (offsy*2)+1);
+    uint8_t b1 = *data_b++;
+    uint8_t b2 = *data_b;
     
     //Signed int!!
     for (int shift=7; shift>= 0; --shift)
@@ -208,33 +207,20 @@ void LCD::draw_sprites()
             LCDData::const_iterator norm_sprite(m_data.begin()+tile_offset);
             if (sprite.get_y_flip())
             {
-                /*Because we give it a pointer to the last byte and go back
-                 the lines are reversed so colour 0b01 becomes 0b10.
-                 This is a temp fix for that until I can think of something more elegant.*/
-                std::swap(palette[1], palette[2]);
-                
-                //You'd think this would need a -1 but it doesn't.
-                LCDData::const_reverse_iterator inv_sprite(norm_sprite+sprite_bytes);
-                tile_row_to_pixels(inv_sprite,
-                                   sprite_x, sprite_y,
-                                   0,
-                                   sprite_row_offset,
-                                   true,
-                                   sprite.get_x_flip(),
-                                   palette);
-                
-                std::swap(palette[1], palette[2]);
+                norm_sprite += (sprite_height-sprite_row_offset-1)*2;
             }
             else
             {
-                tile_row_to_pixels(norm_sprite,
-                                   sprite_x, sprite_y,
-                                   0,
-                                   sprite_row_offset,
-                                   true,
-                                   sprite.get_x_flip(),
-                                   palette);
+                norm_sprite += sprite_row_offset*2;
             }
+            
+            tile_row_to_pixels(norm_sprite,
+                               sprite_x, sprite_y,
+                               0,
+                               sprite_row_offset,
+                               true,
+                               sprite.get_x_flip(),
+                               palette);
             
         }
     }
@@ -294,7 +280,7 @@ void LCD::draw_background()
             //The final address to read pixel data from
             uint16_t tile_addr = tile_index*TILE_BYTES;
             
-            tile_row_to_pixels(m_data.begin() + tile_addr + background_tile_data_addr,
+            tile_row_to_pixels(m_data.begin() + tile_addr + background_tile_data_addr + (tile_pixel_row*2),
                                x - (start_x % TILE_WIDTH), m_curr_scanline-tile_pixel_row,
                                0,//start_x % TILE_SIDE,
                                tile_pixel_row,
