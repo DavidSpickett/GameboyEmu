@@ -12,22 +12,7 @@
 
 std::string ROMHandler::get_string(const uint16_t start, size_t len)
 {
-    std::vector<char> temp_str;
-    temp_str.resize(len+1);
-    
-    for (uint16_t addr = start; addr < (start+len); ++addr)
-    {
-        uint8_t b = m_rom_contents[addr];
-        temp_str[addr-start] = b;
-        
-        //Assume unused are all on the end
-        if (b == 0)
-        {
-            break;
-        }
-    }
-    
-    return std::string(&temp_str[0]);
+    return std::string((char*)&m_rom_contents[start], len);
 }
 
 std::string ROMHandler::cgb_support_to_str(uint8_t code)
