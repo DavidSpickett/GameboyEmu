@@ -13,9 +13,9 @@
 namespace
 {
     template <typename T>
-    void zero_array(T& container)
+    void init_array(T& container)
     {
-        std::fill(container.begin(), container.end(), 0);
+        std::fill(container.begin(), container.end(), typename T::value_type());
     }
 }
 
@@ -28,7 +28,6 @@ m_curr_scanline(145),
 m_data(LCD_MEM_END-LCD_MEM_START, 0),
 m_oam_data(LCD_OAM_END-LCD_OAM_START, 0),
 m_registers(LCD_REGS_END-LCD_REGS_START, 0),
-m_pixel_data(LCD_WIDTH*LCD_HEIGHT),
 m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9), colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)}
 {
     m_control_reg = LCDControlReg(&m_registers[LCDCONTROL]);
@@ -36,9 +35,10 @@ m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9), colour(0x6b, 0x6b,
     m_sdl_width = LCD_WIDTH*m_scale_factor;
     m_sdl_height = LCD_HEIGHT*m_scale_factor;
     
-    zero_array(m_bgrd_pal);
-    zero_array(m_obj_pal_0);
-    zero_array(m_obj_pal_1);
+    init_array(m_bgrd_pal);
+    init_array(m_obj_pal_0);
+    init_array(m_obj_pal_1);
+    init_array(m_pixel_data);
     
     set_mode(LCD_MODE_VBLANK);
 }
@@ -69,18 +69,16 @@ void LCD::SDLClear()
 
 void LCD::SDLDraw()
 {
-    int start_index = m_curr_scanline*LCD_WIDTH;
-    for (int x=0; x != LCD_WIDTH; ++x)
+    SDL_Rect r;
+    r.h = m_scale_factor;
+    r.w = m_scale_factor;
+    r.x = 0;
+    r.y = m_curr_scanline*m_scale_factor;
+    
+    auto p_it(m_pixel_data.cbegin()+(m_curr_scanline*LCD_WIDTH));
+    for (auto x=0; x != LCD_WIDTH; ++x, r.x+=m_scale_factor, ++p_it)
     {
-        colour c = m_pixel_data[start_index+x];
-        SDL_SetRenderDrawColor(m_renderer, c.r, c.g, c.b, c.a);
-        
-        SDL_Rect r;
-        r.h = m_scale_factor;
-        r.w = m_scale_factor;
-        r.x = x*m_scale_factor;
-        r.y = m_curr_scanline*m_scale_factor;
-        
+        SDL_SetRenderDrawColor(m_renderer, p_it->r, p_it->g, p_it->b, p_it->a);
         SDL_RenderFillRect(m_renderer, &r);
     }
 

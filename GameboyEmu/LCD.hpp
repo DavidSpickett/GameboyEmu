@@ -169,7 +169,7 @@ class LCD: public MemoryManager
         std::vector<uint8_t> m_data;
         std::vector<uint8_t> m_oam_data;
         std::vector<uint8_t> m_registers;
-        std::vector<colour> m_pixel_data;
+        std::array<colour, LCD_HEIGHT*LCD_WIDTH> m_pixel_data;
         size_t m_last_tick_cycles;
         size_t m_lcd_line_cycles;
         uint8_t m_curr_scanline;
