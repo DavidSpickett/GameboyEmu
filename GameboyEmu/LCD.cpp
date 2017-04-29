@@ -25,7 +25,6 @@ m_last_tick_cycles(0),
 m_lcd_line_cycles(0),
 m_scale_factor(scale_factor),
 m_curr_scanline(145),
-m_data(LCD_MEM_END-LCD_MEM_START, 0),
 m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9), colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)}
 {
     m_control_reg = LCDControlReg(&m_registers[LCDCONTROL]);
@@ -39,6 +38,7 @@ m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9), colour(0x6b, 0x6b,
     init_array(m_pixel_data);
     init_array(m_registers);
     init_array(m_oam_data);
+    init_array(m_data);
     
     set_mode(LCD_MODE_VBLANK);
 }
@@ -185,19 +185,14 @@ void LCD::tile_row_to_pixels(
 
 void LCD::draw_sprites()
 {
-    const uint64_t SPRITE_INFO_BYTES = 4;
-    const uint16_t oam_size = LCD_OAM_END-LCD_OAM_START;
+    const int sprite_height = m_control_reg.get_sprite_size();
+    const int sprite_bytes  = 2*sprite_height;
     
-    const int SPRITE_HEIGHT = m_control_reg.get_sprite_size();
-    const int SPRITE_WIDTH  = 8;
-    const int SPRITE_BYTES  = 2*SPRITE_HEIGHT;
-    
-    for (uint16_t oam_addr=0; oam_addr < oam_size; oam_addr+=SPRITE_INFO_BYTES)
+    Sprite sprite(m_oam_data.begin());
+    for (auto oam_addr=0; oam_addr < LCD_OAM_SIZE; oam_addr+=SPRITE_INFO_BYTES, ++sprite)
     {
-        Sprite sprite(m_oam_data.begin()+oam_addr);
-        
         //Assume 8x8 mode for now
-        int sprite_x = sprite.get_x()-SPRITE_WIDTH;
+        int sprite_x = sprite.get_x()-TILE_WIDTH;
         //Note that this is offset by 16 even when sprites are 8x8 pixels
         int sprite_y = sprite.get_y()-16;
         
@@ -205,19 +200,19 @@ void LCD::draw_sprites()
         LCDPalette& palette = sprite.get_palette_number() ? m_obj_pal_1 : m_obj_pal_0;
         
         if ((m_curr_scanline >= sprite_y) &&
-            (m_curr_scanline < (sprite_y+SPRITE_HEIGHT)) &&
-            (sprite_x > -SPRITE_WIDTH)
+            (m_curr_scanline < (sprite_y+sprite_height)) &&
+            (sprite_x > - TILE_WIDTH)
             )
         {
             //Sprite pixels are stored in the same place as backgound tiles
             uint16_t tile_offset = sprite.get_pattern_number();
-            if (SPRITE_HEIGHT == 16)
+            if (sprite_height == 16)
             {
                 tile_offset &= ~1;
             }
-            tile_offset *= SPRITE_BYTES;
+            tile_offset *= sprite_bytes;
             
-            std::vector<uint8_t>::const_iterator norm_sprite(m_data.begin()+tile_offset);
+            LCDData::const_iterator norm_sprite(m_data.begin()+tile_offset);
             if (sprite.get_y_flip())
             {
                 /*Because we give it a pointer to the last byte and go back
@@ -226,7 +221,7 @@ void LCD::draw_sprites()
                 std::swap(palette[1], palette[2]);
                 
                 //You'd think this would need a -1 but it doesn't.
-                std::vector<uint8_t>::const_reverse_iterator inv_sprite(norm_sprite+SPRITE_BYTES);
+                LCDData::const_reverse_iterator inv_sprite(norm_sprite+sprite_bytes);
                 tile_row_to_pixels(inv_sprite,
                                    sprite_x, sprite_y,
                                    0,
@@ -276,20 +271,19 @@ void LCD::draw_background()
         const uint8_t start_x = get_scroll_x();
         const uint8_t start_y = get_scroll_y();
         
-        const uint8_t TILE_SIDE = 8;
         const uint8_t TILE_BYTES = 16;
         
         //There is only one line of tiles we are interested in since we're only doing one scanline
         //Note that Y wraps
-        const uint16_t tile_row = (uint8_t(m_curr_scanline + start_y) / TILE_SIDE);
+        const uint16_t tile_row = (uint8_t(m_curr_scanline + start_y) / TILE_WIDTH);
         
         //Then we must start somewhere in that row
-        uint8_t tile_row_offset = (start_x / TILE_SIDE) % 32;
+        uint8_t tile_row_offset = (start_x / TILE_WIDTH) % 32;
         
         //Which row of pixels within the tile
-        const uint8_t tile_pixel_row = (m_curr_scanline + start_y) % TILE_SIDE;
+        const uint8_t tile_pixel_row = (m_curr_scanline + start_y) % TILE_WIDTH;
         
-        for (uint8_t x=0; x<168; x+=TILE_SIDE, ++tile_row_offset)
+        for (uint8_t x=0; x<168; x+=TILE_WIDTH, ++tile_row_offset)
         {
             if (tile_row_offset >= 32)
             {
@@ -308,7 +302,7 @@ void LCD::draw_background()
             uint16_t tile_addr = tile_index*TILE_BYTES;
             
             tile_row_to_pixels(m_data.begin() + tile_addr + background_tile_data_addr,
-                               x - (start_x % TILE_SIDE), m_curr_scanline-tile_pixel_row,
+                               x - (start_x % TILE_WIDTH), m_curr_scanline-tile_pixel_row,
                                0,//start_x % TILE_SIDE,
                                tile_pixel_row,
                                false,
