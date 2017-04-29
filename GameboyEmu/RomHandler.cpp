@@ -32,7 +32,7 @@ std::string ROMHandler::cgb_support_to_str(uint8_t code)
 
 uint8_t ROMHandler::get_cgb_support()
 {
-    return get_byte(0x0143);
+    return m_rom_contents[0x0143];
 }
 
 std::string ROMHandler::sgb_support_to_str(uint8_t value)
@@ -50,7 +50,7 @@ std::string ROMHandler::sgb_support_to_str(uint8_t value)
 
 uint8_t ROMHandler::get_cartridge_type()
 {
-    return get_byte(0x0147);
+    return m_rom_contents[0x0147];
 }
 
 std::string ROMHandler::cartridge_type_to_str(uint8_t value)
@@ -161,7 +161,7 @@ std::string ROMHandler::cartridge_type_to_str(uint8_t value)
 
 uint8_t ROMHandler::get_rom_size()
 {
-    return get_byte(0x0148);
+    return m_rom_contents[0x0148];
 }
 
 std::string ROMHandler::rom_size_to_str(uint8_t value)
@@ -212,7 +212,7 @@ std::string ROMHandler::rom_size_to_str(uint8_t value)
 
 uint8_t ROMHandler::get_ram_size()
 {
-    return get_byte(0x0149);
+    return m_rom_contents[0x0149];
 }
 
 std::string ROMHandler::ram_size_to_str(uint8_t value)
@@ -249,7 +249,7 @@ std::string ROMHandler::ram_size_to_str(uint8_t value)
 
 uint8_t ROMHandler::get_dest_code()
 {
-    return get_byte(0x014a);
+    return m_rom_contents[0x014a];
 }
 
 std::string ROMHandler::dest_code_to_str(uint8_t value)
@@ -267,17 +267,18 @@ std::string ROMHandler::dest_code_to_str(uint8_t value)
 
 uint8_t ROMHandler::get_rom_version()
 {
-    return get_byte(0x014C);
+    return m_rom_contents[0x014C];
 }
 
 uint8_t ROMHandler::get_checksum()
 {
     //Sum of all header bytes, plus the number of header bytes, must equal 0.
     uint8_t chksum = 0;
+    auto addr = 0x0134;
     
-    for (uint16_t i=0; i<26; ++i)
+    for (auto i=0; i<26; ++i,++addr)
     {
-        chksum += get_byte(0x0134+i);;
+        chksum += m_rom_contents[addr];
     }
     
     return chksum+0x19;
@@ -294,7 +295,7 @@ std::string ROMHandler::get_info()
     std::string game_code = get_string(0x013f, 4);
     std::string cgb_supp = cgb_support_to_str(get_cgb_support());
     std::string maker_code = get_string(0x0144, 2);
-    std::string sgb_supp = sgb_support_to_str(get_byte(0x0146));
+    std::string sgb_supp = sgb_support_to_str(m_rom_contents[0x0146]);
     std::string cartridge_type = cartridge_type_to_str(get_cartridge_type());
     std::string rom_size = rom_size_to_str(get_rom_size());
     std::string ram_size = ram_size_to_str(get_ram_size());
@@ -341,7 +342,7 @@ uint8_t ROMHandler::read8(uint16_t addr)
         
         //-1 because switchable banks are 1 indexed, bank 0 is always mapped in the 16k before switchable
         size_t offset = 16*1024*(rom_bank-1);
-        return get_byte(addr+offset);
+        return m_rom_contents[addr+offset];
     }
     else if ((addr >= CART_RAM_START) && (addr < CART_RAM_END))
     {
@@ -353,7 +354,7 @@ uint8_t ROMHandler::read8(uint16_t addr)
         return m_ram_bank[addr-CART_RAM_START];
     }
     
-    uint8_t value = get_byte(addr);
+    uint8_t value = m_rom_contents[addr];
     //printf("Read addr: 0x%04x from ROM got 0x%02x\n", addr, value);
     return value;
 }
@@ -408,14 +409,9 @@ void ROMHandler::write8(uint16_t addr, uint8_t value)
     }
 }
 
-uint8_t ROMHandler::get_byte(uint16_t addr)
-{
-    return m_rom_contents[addr];
-}
-
 uint16_t ROMHandler::read16(uint16_t addr)
 {
-    return get_byte(addr) | (get_byte(addr) << 8);
+    return m_rom_contents[addr] | (m_rom_contents[addr+1] << 8);
 }
 
 void ROMHandler::write16(uint16_t addr, uint16_t value)

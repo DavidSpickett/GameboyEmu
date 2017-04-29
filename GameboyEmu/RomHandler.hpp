@@ -74,7 +74,6 @@ public:
 private:
     std::vector<uint8_t> m_rom_contents;
     std::string get_string(const uint16_t start, size_t len);
-    uint8_t get_byte(uint16_t addr);
     
     std::string cgb_support_to_str(uint8_t code);
     uint8_t get_cgb_support();
