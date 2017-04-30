@@ -158,7 +158,6 @@ void MemoryMap::tick(size_t curr_cycles)
             
             MemoryManager& source_m = get_mm(m_dma_transfer.source_addr);
             uint16_t read_addr = m_dma_transfer.source_addr;
-            //Hex 0x100!!
             for (uint16_t write_addr=LCD_OAM_START; write_addr<LCD_OAM_END; ++read_addr,++write_addr)
             {
                 m_lcd_handler.write8(write_addr, source_m.read8(read_addr));

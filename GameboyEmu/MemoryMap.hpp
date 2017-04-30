@@ -64,7 +64,7 @@ public:
     void write16(uint16_t addr, uint16_t value)
     {
         addr = normalise_addr(addr);
-        m_mem[addr] = uint8_t(value);
+        m_mem[addr] = value;
         m_mem[addr+1] = value >> 8;
     }
     
