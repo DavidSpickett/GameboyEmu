@@ -25,7 +25,8 @@ m_last_tick_cycles(0),
 m_lcd_line_cycles(0),
 m_scale_factor(scale_factor),
 m_curr_scanline(145),
-m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9), colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)}
+m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9),
+          colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)}
 {
     m_control_reg = LCDControlReg(&m_registers[LCDCONTROL]);
     
@@ -46,7 +47,8 @@ m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9), colour(0x6b, 0x6b,
 void LCD::SDLSaveImage(std::string filename)
 {
     SDL_Surface *temp_sur = SDL_CreateRGBSurface(0, m_sdl_width, m_sdl_height, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
-    SDL_RenderReadPixels(m_renderer, NULL, SDL_PIXELFORMAT_ARGB8888, temp_sur->pixels, temp_sur->pitch);
+    SDL_RenderReadPixels(m_renderer, NULL, SDL_PIXELFORMAT_ARGB8888,
+                         temp_sur->pixels, temp_sur->pitch);
     
     SDL_SaveBMP(temp_sur, filename.c_str());
     SDL_FreeSurface(temp_sur);
@@ -69,22 +71,26 @@ void LCD::SDLClear()
 
 void LCD::SDLDraw()
 {
+    //Note: we need to clear the screen here to remove the after
+    //effect of the previous render. (once we can run fast enough for that to work)
+    
     SDL_Rect r;
     r.h = m_scale_factor;
     r.w = m_scale_factor;
     r.x = 0;
     r.y = m_curr_scanline*m_scale_factor;
     
-    auto p_it(m_pixel_data.cbegin()+(m_curr_scanline*LCD_WIDTH));
-    for (auto x=0; x != LCD_WIDTH; ++x, r.x+=m_scale_factor, ++p_it)
+    auto p_start(m_pixel_data.cbegin()+(m_curr_scanline*LCD_WIDTH));
+    auto p_end(p_start+LCD_WIDTH);
+    for ( ; p_start != p_end; ++p_start, r.x+=m_scale_factor)
     {
-        SDL_SetRenderDrawColor(m_renderer, p_it->r, p_it->g, p_it->b, p_it->a);
+        SDL_SetRenderDrawColor(m_renderer, p_start->r, p_start->g, p_start->b, p_start->a);
         SDL_RenderFillRect(m_renderer, &r);
     }
-
+    
     //Draw
     //SDL_RenderPresent(m_renderer);
-    static int delay = 0;
+    static auto delay = 0;
     if (delay == 200)
     {
         SDL_RenderPresent(m_renderer);
@@ -183,10 +189,8 @@ void LCD::draw_sprites()
     Sprite sprite(m_oam_data.begin());
     for (auto oam_addr=0; oam_addr < LCD_OAM_SIZE; oam_addr+=SPRITE_INFO_BYTES, ++sprite)
     {
-        //Assume 8x8 mode for now
-        int sprite_x = sprite.get_x()-TILE_WIDTH;
-        //Note that this is offset by 16 even when sprites are 8x8 pixels
-        int sprite_y = sprite.get_y()-16;
+        auto sprite_x = sprite.get_x();
+        auto sprite_y = sprite.get_y();
         
         int sprite_row_offset = int(m_curr_scanline) - sprite_y;
         LCDPalette& palette = sprite.get_palette_number() ? m_obj_pal_1 : m_obj_pal_0;
