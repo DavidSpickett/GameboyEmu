@@ -234,15 +234,15 @@ void LCD::draw_window()
             auto winx = get_reg8(WINPOSX)-7;
             
             auto tile_data_addr = m_control_reg.get_bgrnd_tile_data_addr();
-            bool signed_tile_nos = tile_data_addr == 0x0800;
-            bool transparancy = m_control_reg.get_colour_0_transparent();
+            auto signed_tile_nos = tile_data_addr == 0x0800;
+            auto transparancy = m_control_reg.get_colour_0_transparent();
             
             auto tile_index_row = (m_curr_scanline-winy) / 8;
             auto tile_row_offset = (m_curr_scanline-winy) % 8;
             
             for (auto x=winx, tile_no=0; x<(LCD_WIDTH+8); x+=TILE_WIDTH, ++tile_no)
             {
-                auto tile_index = m_data[tile_table_address+(tile_index_row*32)+tile_no];
+                auto tile_index = m_data[tile_table_address+(tile_index_row*TILES_PER_LINE)+tile_no];
                 if (signed_tile_nos)
                 {
                     tile_index += 128;
@@ -281,20 +281,20 @@ void LCD::draw_background()
         const uint16_t tile_row = (uint8_t(m_curr_scanline + start_y) / TILE_WIDTH);
         
         //Then we must start somewhere in that row
-        uint8_t tile_row_offset = (start_x / TILE_WIDTH) % 32;
+        uint8_t tile_row_offset = (start_x / TILE_WIDTH) % TILES_PER_LINE;
         
         //Which row of pixels within the tile
         const uint8_t tile_pixel_row = (m_curr_scanline + start_y) % TILE_WIDTH;
         
         for (uint8_t x=0; x<(LCD_WIDTH+8); x+=TILE_WIDTH, ++tile_row_offset)
         {
-            if (tile_row_offset >= 32)
+            if (tile_row_offset >= TILES_PER_LINE)
             {
-                tile_row_offset %= 32;
+                tile_row_offset %= TILES_PER_LINE;
             }
             
             //Get actual value of index from the table
-            uint8_t tile_index = m_data[background_tile_addr_table+(32*tile_row)+tile_row_offset];
+            uint8_t tile_index = m_data[background_tile_addr_table+(TILES_PER_LINE*tile_row)+tile_row_offset];
             
             if (signed_tile_nos)
             {

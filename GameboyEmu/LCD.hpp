@@ -21,6 +21,7 @@ const size_t LCD_HEIGHT = 144;
 
 const int SPRITE_INFO_BYTES = 4;
 const int TILE_BYTES = 16;
+const int TILES_PER_LINE = 32;
 const int TILE_WIDTH  = 8;
 
 using LCDPalette = std::array<uint8_t, 4>;
