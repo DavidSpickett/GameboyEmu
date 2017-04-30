@@ -115,7 +115,6 @@ void MemoryMap::write8(uint16_t addr, uint8_t value)
     else if ((addr == 0xff50) && (value == 1))
     {
         m_bootstrap_in_mem = false;
-        return;
     }
     //Start a DMA transfer
     else if (addr == 0xff46)
@@ -125,9 +124,11 @@ void MemoryMap::write8(uint16_t addr, uint8_t value)
         m_dma_transfer = DMATransfer(uint16_t(value) << 8);
         //printf("Setup DMA transfer from 0x%04x\n", m_dma_transfer.source_addr);
     }
-    
-    MemoryManager& m = get_mm(addr);
-    m.write8(addr, value);
+    else
+    {
+        MemoryManager& m = get_mm(addr);
+        m.write8(addr, value);
+    }
 }
 
 //Check bounds!!
