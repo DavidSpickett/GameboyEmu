@@ -478,6 +478,10 @@ void LCD::write8(uint16_t addr, uint8_t value)
                     SDLClear();
                 }
                 break;
+            case LCDSTAT:
+                //Mode bits are read only
+                set_reg8(LCDSTAT, get_reg8(LCDSTAT) | (value & ~3));
+                break;
             case BGRDPAL:
                 m_bgrd_pal = get_palette(value);
             case OBJPAL0:
