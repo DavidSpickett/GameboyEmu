@@ -90,17 +90,17 @@ struct colour
     uint8_t a;
 };
 
-const uint16_t LCDCONTROL = 0xff40-LCD_REGS_START;
-const uint16_t LCDSTAT    = 0xff41-LCD_REGS_START;
-const uint16_t SCROLLY    = 0xff42-LCD_REGS_START;
-const uint16_t SCROLLX    = 0xff43-LCD_REGS_START;
-const uint16_t CURLINE    = 0xff44-LCD_REGS_START;
-const uint16_t CMPLINE    = 0xff45-LCD_REGS_START;
-const uint16_t BGRDPAL    = 0xff47-LCD_REGS_START;
-const uint16_t OBJPAL0    = 0xff48-LCD_REGS_START;
-const uint16_t OBJPAL1    = 0xff49-LCD_REGS_START;
-const uint16_t WINPOSY    = 0xff4a-LCD_REGS_START; //Yes, Y is first.
-const uint16_t WINPOSX    = 0xff4b-LCD_REGS_START;
+const uint16_t LCDCONTROL = 0xff40;
+const uint16_t LCDSTAT    = 0xff41;
+const uint16_t SCROLLY    = 0xff42;
+const uint16_t SCROLLX    = 0xff43;
+const uint16_t CURLINE    = 0xff44;
+const uint16_t CMPLINE    = 0xff45;
+const uint16_t BGRDPAL    = 0xff47;
+const uint16_t OBJPAL0    = 0xff48;
+const uint16_t OBJPAL1    = 0xff49;
+const uint16_t WINPOSY    = 0xff4a; //Yes, Y is first.
+const uint16_t WINPOSX    = 0xff4b;
 
 const uint8_t LCD_MODE_HBLANK      = 0;
 const uint8_t LCD_MODE_VBLANK      = 1;
@@ -193,45 +193,25 @@ class LCD: public MemoryManager
     
         void set_mode(uint8_t mode)
         {
-            m_registers[LCDSTAT] &= ~3;
-            m_registers[LCDSTAT] |= mode;
+            set_reg8(LCDSTAT, (get_reg8(LCDSTAT) & ~3) | mode);
             //printf("Set LCD mode to %d\n", mode);
         }
 
-        uint8_t get_scroll_x()
-        {
-            return m_registers[SCROLLX];
-        }
-    
-        uint8_t get_scroll_y()
-        {
-            return m_registers[SCROLLY];
-        }
-    
-        uint8_t get_winpos_x()
-        {
-            return m_registers[WINPOSX];
-        }
-    
-        uint8_t get_winpos_y()
-        {
-            return m_registers[WINPOSY];
-        }
-    
         LCDPalette get_palette(uint16_t addr);
         LCDPalette m_bgrd_pal;
         LCDPalette m_obj_pal_0;
         LCDPalette m_obj_pal_1;
     
         void do_after_reg_write(uint16_t addr);
-        void do_after_reg_write16(uint16_t addr);
     
-        uint16_t get_regs_addr(uint16_t addr) { return addr - LCD_REGS_START; }
+        uint8_t get_reg8(uint16_t addr)
+        {
+            return m_registers[addr-LCD_REGS_START];
+        }
     
-        uint8_t get_reg8(uint16_t addr) { return m_registers[addr]; }
         void set_reg8(uint16_t addr, uint8_t value)
         {
-            m_registers[addr] = value;
+            m_registers[addr-LCD_REGS_START] = value;
             do_after_reg_write(addr);
         }
     
@@ -241,9 +221,8 @@ class LCD: public MemoryManager
         }
         void set_reg16(uint16_t addr, uint16_t value)
         {
-            m_registers[addr] = value;
-            m_registers[addr+1] = value >> 8;
-            do_after_reg_write16(addr);
+            set_reg8(addr, value);
+            set_reg8(addr+1, value >> 8);
         }
 };
 

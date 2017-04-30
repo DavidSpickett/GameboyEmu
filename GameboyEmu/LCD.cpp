@@ -101,10 +101,8 @@ void LCD::SDLDraw()
 LCDPalette LCD::get_palette(uint16_t addr)
 {
     LCDPalette ret;
-    
-    //Lowest bits first
-    uint8_t regval = m_registers[addr];
-    for (int i=0; i<4; ++i)
+    auto regval = get_reg8(addr);
+    for (auto i=0; i<4; ++i)
     {
         ret[i] = regval & 0x3;
         regval >>= 2;
@@ -245,8 +243,8 @@ void LCD::draw_background()
         const uint16_t background_tile_addr_table = m_control_reg.get_bgrnd_tile_table_addr();
         
         //The point in the background at which pixel 0,0 on the screen is taken from.
-        const uint8_t start_x = get_scroll_x();
-        const uint8_t start_y = get_scroll_y();
+        const uint8_t start_x = get_reg8(SCROLLX);
+        const uint8_t start_y = get_reg8(SCROLLY);
         
         const uint8_t TILE_BYTES = 16;
         
@@ -430,17 +428,14 @@ uint8_t LCD::read8(uint16_t addr)
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
-        if (addr == (CURLINE+LCD_REGS_START))
+        switch (addr)
         {
-            return m_curr_scanline;
-        }
-        else if (addr == (LCDCONTROL+LCD_REGS_START))
-        {
-            return m_control_reg.read();
-        }
-        else
-        {
-            return get_reg8(get_regs_addr(addr));
+            case CURLINE:
+                return m_curr_scanline;
+            case LCDCONTROL:
+                return m_control_reg.read();
+            default:
+                return get_reg8(addr);
         }
     }
     else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
@@ -461,33 +456,33 @@ void LCD::write8(uint16_t addr, uint8_t value)
     {
         m_data[addr-LCD_MEM_START] = value;
     }
-    else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
-    {
-        if (addr == (CURLINE+LCD_REGS_START))
-        {
-            m_curr_scanline = 0;
-            set_mode(LCD_MODE_OAM_ACCESS);
-        }
-        else if (addr == (LCDCONTROL+LCD_REGS_START))
-        {
-            m_control_reg.write(value);
-            if (m_control_reg.get_lcd_operation() && (m_window == NULL))
-            {
-                SDLInit();
-            }
-            else if (!m_control_reg.get_lcd_operation())
-            {
-                SDLClear();
-            }
-        }
-        else
-        {
-            set_reg8(get_regs_addr(addr), value);
-        }
-    }
     else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
     {
         m_oam_data[addr-LCD_OAM_START] = value;
+    }
+    else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
+    {
+        switch (addr)
+        {
+            case CURLINE:
+                m_curr_scanline = 0;
+                set_mode(LCD_MODE_OAM_ACCESS);
+                break;
+            case LCDCONTROL:
+                m_control_reg.write(value);
+                if (m_control_reg.get_lcd_operation() && (m_window == NULL))
+                {
+                    SDLInit();
+                }
+                else if (!m_control_reg.get_lcd_operation())
+                {
+                    SDLClear();
+                }
+                break;
+            default:
+                set_reg8(addr, value);
+                break;
+        }
     }
     else
     {
@@ -511,7 +506,7 @@ uint16_t LCD::read16(uint16_t addr)
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
-        return get_reg16(get_regs_addr(addr));
+        return get_reg16(addr);
     }
     else
     {
@@ -526,7 +521,6 @@ void LCD::write16(uint16_t addr, uint16_t value)
         uint16_t offset = addr-LCD_MEM_START;
         m_data[offset] = value & 0xff;
         m_data[offset+1] = (value >> 8) & 0xff;
-        //printf("16 bit write to LCD addr 0x%04x of value 0x%04x\n", addr, value);
     }
     else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
     {
@@ -536,7 +530,7 @@ void LCD::write16(uint16_t addr, uint16_t value)
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
-        set_reg16(get_regs_addr(addr), value);
+        set_reg16(addr, value);
     }
     else
     {
@@ -559,10 +553,4 @@ void LCD::do_after_reg_write(uint16_t addr)
             m_obj_pal_1 = get_palette(OBJPAL1);
             break;
     }
-}
-
-void LCD::do_after_reg_write16(uint16_t addr)
-{
-    do_after_reg_write(addr);
-    do_after_reg_write(addr+1);
 }
