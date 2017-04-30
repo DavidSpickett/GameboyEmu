@@ -408,10 +408,15 @@ void LCD::tick(size_t curr_cycles)
             break;
     }
     
+    auto cmpline = get_reg8(CMPLINE);
+    if (m_curr_scanline == cmpline)
+    {
+        m_mem_bus.post_interrupt(LCD_STAT_INT);
+    }
+    
     if (old_mode != new_mode)
     {
         set_mode(new_mode);
-        
         if (new_mode != LCD_MODE_BOTH_ACCESS)
         {
             int bit = 0;
