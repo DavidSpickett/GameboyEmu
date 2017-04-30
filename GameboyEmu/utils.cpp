@@ -7,11 +7,10 @@
 //
 
 #include "utils.hpp"
-#include <stdlib.h>
 
-bool find_arg(std::string name, const char* arg)
+bool find_arg(std::string name, std::string arg)
 {
-    return strncmp(arg, name.c_str(), name.size()) == 0;
+    return arg.find(name) != std::string::npos;
 }
 
 emu_args process_args(int argc, const char* argv[])
@@ -20,31 +19,29 @@ emu_args process_args(int argc, const char* argv[])
     
     for (int i=1; i<argc; ++i)
     {
-        const char* arg_ptr = argv[i];
+        std::string arg(argv[i]);
         
-        if (find_arg("skipboot", arg_ptr))
+        if (find_arg("skipboot", arg))
         {
             a.skip_boot = true;
         }
         
         std::string scale_factor = "--scale=";
-        if (find_arg(scale_factor, arg_ptr))
+        if (find_arg(scale_factor, arg))
         {
-            const char* factor = argv[i]+scale_factor.size();
-            a.scale_factor = int(strtol(factor, NULL, 10));
+            a.scale_factor = std::stoi(arg.substr(scale_factor.size(), std::string::npos), NULL, 10);
         }
         
         std::string num_cycles_arg = "--numcycles=";
-        if (find_arg(num_cycles_arg, arg_ptr))
+        if (find_arg(num_cycles_arg, arg))
         {
-            const char* num = argv[i]+num_cycles_arg.size();
-            a.num_cycles = strtol(num, NULL, 10);
+            a.num_cycles = std::stol(arg.substr(num_cycles_arg.size(), std::string::npos), NULL, 10);
         }
         
         std::string rom_arg = "--rom=";
-        if (find_arg(rom_arg, arg_ptr))
+        if (find_arg(rom_arg, arg))
         {
-            a.rom_name = std::string(arg_ptr+rom_arg.size(), strlen(arg_ptr)-rom_arg.size());
+            a.rom_name = arg.substr(rom_arg.size(), std::string::npos);
         }
     }
     
