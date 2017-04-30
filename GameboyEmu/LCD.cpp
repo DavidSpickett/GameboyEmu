@@ -26,10 +26,9 @@ m_lcd_line_cycles(0),
 m_scale_factor(scale_factor),
 m_curr_scanline(145),
 m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9),
-          colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)}
+          colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)},
+m_control_reg(0)
 {
-    m_control_reg = LCDControlReg(&m_registers[LCDCONTROL]);
-    
     m_sdl_width = LCD_WIDTH*m_scale_factor;
     m_sdl_height = LCD_HEIGHT*m_scale_factor;
     
@@ -435,6 +434,10 @@ uint8_t LCD::read8(uint16_t addr)
         {
             return m_curr_scanline;
         }
+        else if (addr == (LCDCONTROL+LCD_REGS_START))
+        {
+            return m_control_reg.read();
+        }
         else
         {
             return get_reg8(get_regs_addr(addr));
@@ -464,6 +467,18 @@ void LCD::write8(uint16_t addr, uint8_t value)
         {
             m_curr_scanline = 0;
             set_mode(LCD_MODE_OAM_ACCESS);
+        }
+        else if (addr == (LCDCONTROL+LCD_REGS_START))
+        {
+            m_control_reg.write(value);
+            if (m_control_reg.get_lcd_operation() && (m_window == NULL))
+            {
+                SDLInit();
+            }
+            else if (!m_control_reg.get_lcd_operation())
+            {
+                SDLClear();
+            }
         }
         else
         {
@@ -534,18 +549,6 @@ void LCD::do_after_reg_write(uint16_t addr)
     //React to settings being changed.
     switch (addr)
     {
-        case LCDCONTROL:
-        {
-            if (m_control_reg.get_lcd_operation() && (m_window == NULL))
-            {
-                SDLInit();
-            }
-            else if (!m_control_reg.get_lcd_operation())
-            {
-                SDLClear();
-            }
-            break;
-        }
         case BGRDPAL:
             m_bgrd_pal = get_palette(BGRDPAL);
             break;
