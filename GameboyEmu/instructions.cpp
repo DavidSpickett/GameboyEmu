@@ -2471,9 +2471,20 @@ inline uint8_t srl_n(Z80& proc, uint8_t b1)
 
 inline uint8_t ldhl_sp_n(Z80& proc)
 {
-    uint8_t offs = proc.fetch_byte();
-    uint16_t addr = proc.sp.read() + offs;
-    proc.set_hl(proc.mem.read16(addr));
+    //Signed offset
+    uint16_t old_hl = proc.get_hl();
+    int8_t offs = proc.fetch_byte();
+    uint16_t new_hl = proc.sp.read() + offs;
+    
+    proc.f.set_z(false);
+    proc.f.set_n(false);
+    
+    proc.f.set_h(((old_hl & 0x10) == 0) &&
+                 ((new_hl & 0x10) == 1));
+    proc.f.set_c(((old_hl & 0x100) == 0) &&
+                 ((new_hl & 0x100) == 1));
+    
+    proc.set_hl(new_hl);
     
     debug_print("ldhl sp, 0x%02x\n", offs);
     return 12;
