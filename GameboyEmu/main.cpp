@@ -6,14 +6,9 @@
 //  Copyright © 2016 David Spickett. All rights reserved.
 //
 
-#include <iostream>
+#include <SDL2/SDL.h>
 #include "Z80.hpp"
 #include "instructions.hpp"
-#include "LCD.hpp"
-#include "HardwareIORegs.hpp"
-#include "RomHandler.hpp"
-#include <SDL2/SDL.h>
-#include "GDBHandler.hpp"
 #include "utils.hpp"
 
 void screenshot_and_exit(Z80& proc, const std::string& rom_name, bool& _continue)
