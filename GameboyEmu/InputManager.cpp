@@ -10,12 +10,8 @@
 #include <SDL2/SDL.h>
 #include "Z80.hpp"
 
-namespace {
-    uint8_t clear_bit(uint8_t val, int bit)
-    {
-        return val & ~(1<<bit);
-    }
-    
+namespace
+{
     const int joypad_keycodes[] = {SDL_SCANCODE_RIGHT, SDL_SCANCODE_LEFT, SDL_SCANCODE_UP, SDL_SCANCODE_DOWN};
     const int button_keycodes[] = {SDL_SCANCODE_X, SDL_SCANCODE_Z, SDL_SCANCODE_RSHIFT, SDL_SCANCODE_RETURN};
     
@@ -27,11 +23,11 @@ namespace {
         {
             const int* button_codes = mode == MODE_DIR ? joypad_keycodes : button_keycodes;
             
-            for (int i=0; i != 4; ++i)
+            for (auto i=0; i != 4; ++i)
             {
                 if (state[*(button_codes+i)])
                 {
-                    new_pad_value = clear_bit(new_pad_value, i);
+                    new_pad_value = new_pad_value & ~(1<<i);
                 }
             }
         }
