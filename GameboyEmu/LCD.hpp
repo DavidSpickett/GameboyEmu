@@ -214,7 +214,7 @@ class LCD: public MemoryManager
     
         uint16_t get_reg16(uint16_t addr)
         {
-            return m_registers[addr] | (m_registers[addr+1] << 8);
+            return get_reg8(addr) | (get_reg8(addr+1) << 8);
         }
         void set_reg16(uint16_t addr, uint16_t value)
         {
