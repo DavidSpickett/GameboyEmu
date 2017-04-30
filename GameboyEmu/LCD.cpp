@@ -385,7 +385,7 @@ void LCD::tick(size_t curr_cycles)
                 {
                     new_mode = LCD_MODE_OAM_ACCESS;
                     //Take away cycles per line so we don't loose any overflow cycles
-                    m_lcd_line_cycles = m_lcd_line_cycles-CYCLES_PER_SCAN_LINE;
+                    m_lcd_line_cycles = 0;
                 }
             }
             break;
@@ -403,7 +403,7 @@ void LCD::tick(size_t curr_cycles)
                 {
                     m_curr_scanline++;
                 }
-                m_lcd_line_cycles = m_lcd_line_cycles - CYCLES_PER_SCAN_LINE;
+                m_lcd_line_cycles = 0;
             }
             break;
     }
@@ -475,7 +475,7 @@ uint8_t LCD::read8(uint16_t addr)
 void LCD::write8(uint16_t addr, uint8_t value)
 {
     //printf("8 bit write to LCD addr: 0x%04x value: 0x%02x\n", addr, value);
-    
+
     if ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END))
     {
         m_data[addr-LCD_MEM_START] = value;
