@@ -197,12 +197,10 @@ class LCD: public MemoryManager
             //printf("Set LCD mode to %d\n", mode);
         }
 
-        LCDPalette get_palette(uint16_t addr);
+        LCDPalette get_palette(uint8_t addr);
         LCDPalette m_bgrd_pal;
         LCDPalette m_obj_pal_0;
         LCDPalette m_obj_pal_1;
-    
-        void do_after_reg_write(uint16_t addr);
     
         uint8_t get_reg8(uint16_t addr)
         {
@@ -212,7 +210,6 @@ class LCD: public MemoryManager
         void set_reg8(uint16_t addr, uint8_t value)
         {
             m_registers[addr-LCD_REGS_START] = value;
-            do_after_reg_write(addr);
         }
     
         uint16_t get_reg16(uint16_t addr)

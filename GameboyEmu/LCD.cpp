@@ -98,14 +98,13 @@ void LCD::SDLDraw()
     delay++;
 }
 
-LCDPalette LCD::get_palette(uint16_t addr)
+LCDPalette LCD::get_palette(uint8_t value)
 {
     LCDPalette ret;
-    auto regval = get_reg8(addr);
     for (auto i=0; i<4; ++i)
     {
-        ret[i] = regval & 0x3;
-        regval >>= 2;
+        ret[i] = value & 0x3;
+        value >>= 2;
     }
     
     return ret;
@@ -479,6 +478,12 @@ void LCD::write8(uint16_t addr, uint8_t value)
                     SDLClear();
                 }
                 break;
+            case BGRDPAL:
+                m_bgrd_pal = get_palette(value);
+            case OBJPAL0:
+                m_obj_pal_0 = get_palette(value);
+            case OBJPAL1:
+                m_obj_pal_1 = get_palette(value);
             default:
                 set_reg8(addr, value);
                 break;
@@ -535,22 +540,5 @@ void LCD::write16(uint16_t addr, uint16_t value)
     else
     {
         throw std::runtime_error(formatted_string("16 bit write to LCD addr 0x%04x of value 0x%04x", addr, value));
-    }
-}
-
-void LCD::do_after_reg_write(uint16_t addr)
-{
-    //React to settings being changed.
-    switch (addr)
-    {
-        case BGRDPAL:
-            m_bgrd_pal = get_palette(BGRDPAL);
-            break;
-        case OBJPAL0:
-            m_obj_pal_0 = get_palette(OBJPAL0);
-            break;
-        case OBJPAL1:
-            m_obj_pal_1 = get_palette(OBJPAL1);
-            break;
     }
 }
