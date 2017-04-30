@@ -16,18 +16,6 @@
 #include "GDBHandler.hpp"
 #include "utils.hpp"
 
-void skip_bootstrap(Z80& proc)
-{
-    //Start of cartridge
-    proc.pc.write(0x100);
-    //Setup stack
-    proc.sp.write(0xfffe);
-    //Turn of bootstrap program
-    proc.mem.write8(0xff50, 0x1);
-    //Turn on LCD
-    proc.mem.write8(0xff40, 0x91);
-}
-
 void screenshot_and_exit(Z80& proc, const std::string& rom_name, bool& _continue)
 {
     std::string file_name = rom_name;
@@ -49,7 +37,7 @@ int main(int argc, const char * argv[]) {
     
     if (a.skip_boot)
     {
-        skip_bootstrap(proc);
+        proc.skip_bootstrap();
     }
 
     SDL_Event event;

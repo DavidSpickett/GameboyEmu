@@ -126,14 +126,9 @@ public:
         m_total_cycles(0),
         interrupt_enable(false),
         halted(false),
-        stopped(false)
-    {
-        m_interrupt_addrs.push_back(0x0040);
-        m_interrupt_addrs.push_back(0x0048);
-        m_interrupt_addrs.push_back(0x0050);
-        m_interrupt_addrs.push_back(0x0058);
-        m_interrupt_addrs.push_back(0x0060);
-    }
+        stopped(false),
+        m_interrupt_addrs{0x0040, 0x0048, 0x0050, 0x0058, 0x0060}
+    {}
     
     Register <uint16_t> pc;
     Register <uint16_t> sp;
@@ -189,6 +184,7 @@ public:
     }
     
     void post_interrupt(uint8_t num);
+    void skip_bootstrap();
     
     bool interrupt_enable;
     bool halted;
@@ -197,7 +193,7 @@ public:
     size_t m_total_cycles;
     
 private:
-    std::vector<uint16_t> m_interrupt_addrs;
+    std::array<uint16_t, 5> m_interrupt_addrs;
     std::vector<std::string> m_callstack_frames;
     
     void print_callstack()

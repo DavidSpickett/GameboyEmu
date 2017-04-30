@@ -29,6 +29,18 @@ std::string Z80::status_string()
     return pc_+f.to_string()+sp_+_1+_2+_3+_4;
 }
 
+void Z80::skip_bootstrap()
+{
+    //Start of cartridge
+    pc.write(0x100);
+    //Setup stack
+    sp.write(0xfffe);
+    //Turn of bootstrap program
+    mem.write8(0xff50, 0x1);
+    //Turn on LCD
+    mem.write8(0xff40, 0x91);
+}
+
 void Z80::post_interrupt(uint8_t num)
 {
     //printf("Interrupt posted 0x%x\n", num);
