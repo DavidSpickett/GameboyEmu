@@ -146,14 +146,11 @@ void LCD::tile_row_to_pixels(
     LCDData::const_iterator data_b, //Pointer to pixel data (must already point to correct row)
     int startx, //Top left x co-ord of the tile.
     int starty, //Top left y co-ord of the tile.
-    int offsx,  //Srolling window x offset
-    int offsy,  //Index of row within tile to get pixels from
     bool is_sprite, //Set to handle transparancy of colour 0
     bool flip_x, //Mirror X co-ords
     const LCDPalette& palette //Colour mapping
     )
 {
-    int newy = starty + offsy;
     uint8_t b1 = *data_b++;
     uint8_t b2 = *data_b;
     
@@ -161,7 +158,7 @@ void LCD::tile_row_to_pixels(
     for (int shift=7; shift>= 0; --shift)
     {
         int shift_diff = flip_x ? shift : (7-shift);
-        int newx = startx + shift_diff - offsx;
+        int newx = startx + shift_diff;
         if ((newx >= LCD_WIDTH) || (newx < 0))
         {
             continue;
@@ -177,7 +174,7 @@ void LCD::tile_row_to_pixels(
             continue;
         }
         
-        m_pixel_data[(newy*LCD_WIDTH)+newx] = m_colours[palette[c]];
+        m_pixel_data[(starty*LCD_WIDTH)+newx] = m_colours[palette[c]];
     }
 }
 
@@ -219,9 +216,7 @@ void LCD::draw_sprites()
             }
             
             tile_row_to_pixels(norm_sprite,
-                               sprite_x, sprite_y,
-                               0,
-                               sprite_row_offset,
+                               sprite_x, sprite_y+sprite_row_offset,
                                true,
                                sprite.get_x_flip(),
                                palette);
@@ -284,13 +279,12 @@ void LCD::draw_background()
             //The final address to read pixel data from
             uint16_t tile_addr = tile_index*TILE_BYTES;
             
-            tile_row_to_pixels(m_data.begin() + tile_addr + background_tile_data_addr + (tile_pixel_row*2),
-                               x - (start_x % TILE_WIDTH), m_curr_scanline-tile_pixel_row,
-                               0,//start_x % TILE_SIDE,
-                               tile_pixel_row,
-                               false,
-                               false,
-                               m_bgrd_pal);
+            tile_row_to_pixels(
+               m_data.begin() + tile_addr + background_tile_data_addr + (tile_pixel_row*2),
+               x - (start_x % TILE_WIDTH), m_curr_scanline,
+               false,
+               false,
+               m_bgrd_pal);
             
             //The idea being that these pixels are always the full row, that's why we
             //can incremement x by 8 each time. It gets the pixels before and ahead of x.

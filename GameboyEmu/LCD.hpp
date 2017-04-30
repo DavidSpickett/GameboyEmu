@@ -196,7 +196,6 @@ class LCD: public MemoryManager
         void tile_row_to_pixels(
             LCDData::const_iterator data_b,
             int startx, int starty,
-            int offsx, int offsy,
             bool is_sprite,
             bool flip_x,
             const LCDPalette& palette);
