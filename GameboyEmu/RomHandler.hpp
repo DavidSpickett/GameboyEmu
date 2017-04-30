@@ -22,7 +22,8 @@ const uint16_t ROM_FIXED_BLOCK_SIZE = 0x4000;
 class ROMHandler: public MemoryManager
 {
 public:
-    explicit ROMHandler(std::string file_path):
+    explicit ROMHandler(MemoryMap& map, std::string file_path):
+        MemoryManager(map),
         m_file_path(file_path),
         m_rom_bank_no(1), //Starts at 1 because bank 0 is permemnantley mapped
         m_ram_bank_no(0),

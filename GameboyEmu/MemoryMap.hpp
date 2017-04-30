@@ -14,7 +14,6 @@
 #include <vector>
 #include <string>
 #include "utils.hpp"
-#include "MemoryManager.hpp"
 #include "RomHandler.hpp"
 #include "LCD.hpp"
 #include "HardwareIORegs.hpp"
@@ -35,62 +34,19 @@ struct DMATransfer
     uint16_t source_addr;
 };
 
-class DefaultMemoryManager: public MemoryManager
-{
-public:
-    DefaultMemoryManager()
-    {
-        m_mem.resize(0x10000);
-    }
-    
-    uint8_t read8(uint16_t addr)
-    {
-        addr = normalise_addr(addr);
-        return m_mem[addr];
-    }
-    
-    void write8(uint16_t addr, uint8_t value)
-    {
-        addr = normalise_addr(addr);
-        m_mem[addr] = value;
-    }
-    
-    uint16_t read16(uint16_t addr)
-    {
-        addr = normalise_addr(addr);
-        return m_mem[addr] | (m_mem[addr+1] << 8);
-    }
-    
-    void write16(uint16_t addr, uint16_t value)
-    {
-        addr = normalise_addr(addr);
-        m_mem[addr] = value;
-        m_mem[addr+1] = value >> 8;
-    }
-    
-    void tick(size_t curr_cycles) {}
-    
-    void AddFile(std::string path);
-    
-private:
-    std::vector<uint8_t> m_mem;
-    
-    uint16_t normalise_addr(uint16_t addr)
-    {
-        if ((addr >= ECHO_RAM_START) && (addr < ECHO_RAM_END))
-        {
-            addr -= 0x2000;
-        }
-        return addr;
-    }
-};
-
 class MemoryMap
 {
 public:
     MemoryMap(std::string& cartridge_name, bool bootstrap_skipped, int scale_factor):
-    m_bootstrap_in_mem(true), m_rom_handler(cartridge_name), m_dma_transfer(),
-    m_lcd_handler(scale_factor)
+    m_bootstrap_in_mem(true),
+    m_rom_handler(*this, cartridge_name),
+    m_lcd_handler(*this, scale_factor),
+    m_hardware_regs_handler(*this),
+    m_interrupt_handler(*this),
+    m_input_handler(*this),
+    m_default_handler(*this),
+    m_null_handler(*this),
+    m_sound_handler(*this)
     {
         if (!bootstrap_skipped)
         {
@@ -108,14 +64,13 @@ public:
     
     InputManager m_input_handler;
     
-    void set_proc_pointers(Z80* proc)
+    void post_interrupt(uint8_t num)
     {
-        m_input_handler.m_proc = proc;
-        m_interrupt_handler.m_proc = proc;
-        m_lcd_handler.m_proc = proc;
+        m_post_int(num);
     }
     
     LCD m_lcd_handler; //public for screenshots
+    std::function<void(uint8_t)> m_post_int;
     
 private:
     DMATransfer m_dma_transfer;

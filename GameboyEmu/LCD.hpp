@@ -137,7 +137,7 @@ class Z80;
 class LCD: public MemoryManager
 {
     public:
-        explicit LCD(int scale_factor);
+        LCD(MemoryMap& map, int scale_factor);
         ~LCD()
         {
             if (m_window != NULL)
@@ -157,8 +157,6 @@ class LCD: public MemoryManager
         void SDLSaveImage(std::string filename);
     
         void tick(size_t curr_cycles);
-    
-        Z80* m_proc; //Probably not ideal
     
     private:
         SDL_Renderer* m_renderer;

@@ -12,6 +12,12 @@
 #include <stdio.h>
 #include <string>
 
+template <typename T>
+void init_array(T& container)
+{
+    std::fill(container.begin(), container.end(), typename T::value_type());
+}
+
 //For reasons unknown to me, if this is in a cpp file, the linker complains.
 template< typename... Args >
 std::string formatted_string(const char* format, Args... args)

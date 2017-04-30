@@ -21,8 +21,8 @@ class Z80;
 class InputManager: public MemoryManager
 {
 public:
-    InputManager():
-        m_proc(NULL), m_joypad(0xff), m_mode(MODE_INVALID)
+    InputManager(MemoryMap& map):
+        MemoryManager(map), m_joypad(0xff), m_mode(MODE_INVALID)
     {}
     
     uint8_t read8(uint16_t addr);
@@ -34,7 +34,6 @@ public:
     bool read_inputs();
     
     void tick(size_t curr_cycles);
-    Z80* m_proc;
     
 private:
     uint8_t m_joypad;

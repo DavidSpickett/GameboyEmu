@@ -115,6 +115,8 @@ void HardwareIORegs::tick(size_t curr_cycles)
         {
             m_time_cnt = 0;
         }
+        
+     //   m_mem_bus.post_interrupt(1);
     }
 }
 

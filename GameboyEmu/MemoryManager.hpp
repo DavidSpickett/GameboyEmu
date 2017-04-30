@@ -11,9 +11,8 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <array>
 #include "utils.hpp"
-
-class Z80;
 
 const uint16_t LCD_MEM_START  = 0x8000;
 const uint16_t LCD_MEM_END    = 0xa000;
@@ -60,12 +59,14 @@ const uint16_t UNUSED_IO_REGS_END   = 0xffff;
 const uint16_t SOUND_BEGIN = 0xff10;
 const uint16_t SOUND_END   = 0xff40;
 
+class MemoryMap;
+
 class MemoryManager
 {
 public:
-    MemoryManager()
-    {
-    }
+    MemoryManager(MemoryMap& map):
+        m_mem_bus(map)
+    {}
     
     virtual uint8_t read8(uint16_t addr) = 0;
     virtual void write8(uint16_t addr, uint8_t value) = 0;
@@ -74,10 +75,14 @@ public:
     virtual void write16(uint16_t addr, uint16_t value) = 0;
     
     virtual void tick(size_t curr_cycles) = 0;
+    
+    MemoryMap& m_mem_bus;
 };
 
 class NullMemoryManager: public MemoryManager
 {
+    using MemoryManager::MemoryManager;
+    
     uint8_t read8(uint16_t addr) { return 0; }
     void write8(uint16_t addr, uint8_t value) {}
     uint16_t read16(uint16_t addr) { return 0; };
@@ -85,11 +90,62 @@ class NullMemoryManager: public MemoryManager
     void tick(size_t curr_cycles) {}
 };
 
+class DefaultMemoryManager: public MemoryManager
+{
+public:
+    DefaultMemoryManager(MemoryMap& map):
+    MemoryManager(map)
+    {
+        init_array(m_mem);
+    }
+    
+    uint8_t read8(uint16_t addr)
+    {
+        addr = normalise_addr(addr);
+        return m_mem[addr];
+    }
+    
+    void write8(uint16_t addr, uint8_t value)
+    {
+        addr = normalise_addr(addr);
+        m_mem[addr] = value;
+    }
+    
+    uint16_t read16(uint16_t addr)
+    {
+        addr = normalise_addr(addr);
+        return m_mem[addr] | (m_mem[addr+1] << 8);
+    }
+    
+    void write16(uint16_t addr, uint16_t value)
+    {
+        addr = normalise_addr(addr);
+        m_mem[addr] = value;
+        m_mem[addr+1] = value >> 8;
+    }
+    
+    void tick(size_t curr_cycles) {}
+    
+    void AddFile(std::string path);
+    
+private:
+    std::array<uint8_t, 0x10000> m_mem;
+    
+    uint16_t normalise_addr(uint16_t addr)
+    {
+        if ((addr >= ECHO_RAM_START) && (addr < ECHO_RAM_END))
+        {
+            addr -= 0x2000;
+        }
+        return addr;
+    }
+};
+
 class InterruptManager: public MemoryManager
 {
 public:
-    InterruptManager():
-    m_proc(nullptr), m_interrupt_flags(0), m_interrupt_switch(0)
+    InterruptManager(MemoryMap& map):
+        MemoryManager(map), m_interrupt_flags(0), m_interrupt_switch(0)
     {}
     
     uint8_t read8(uint16_t addr)
@@ -121,9 +177,7 @@ public:
     uint16_t read16(uint16_t addr) { throw std::runtime_error("Read 16 from interrupt handler!"); }
     void write16(uint16_t addr, uint16_t value) { throw std::runtime_error("Write 16 to interrupt handler!"); }
         
-    void tick(size_t curr_cylces) {} //TOOD: actually generate the interrupts
-    
-    Z80* m_proc; //Could be reduced to a callback function, to be neater.
+    void tick(size_t curr_cylces) {}
 
 private:
     uint8_t m_interrupt_flags;

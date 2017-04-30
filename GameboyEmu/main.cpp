@@ -44,7 +44,8 @@ int main(int argc, const char * argv[]) {
     
     MemoryMap map(a.rom_name, a.skip_boot, a.scale_factor);
     Z80 proc(map);
-    map.set_proc_pointers(&proc);
+    auto callback = [&proc](uint8_t num) { proc.post_interrupt(num); };
+    map.m_post_int = callback;
     
     if (a.skip_boot)
     {

@@ -10,17 +10,8 @@
 #include "utils.hpp"
 #include "Z80.hpp"
 
-namespace
-{
-    template <typename T>
-    void init_array(T& container)
-    {
-        std::fill(container.begin(), container.end(), typename T::value_type());
-    }
-}
-
-LCD::LCD(int scale_factor):
-m_proc(nullptr),
+LCD::LCD(MemoryMap& map, int scale_factor):
+MemoryManager(map),
 m_last_tick_cycles(0),
 m_lcd_line_cycles(0),
 m_scale_factor(scale_factor),
@@ -388,7 +379,7 @@ void LCD::tick(size_t curr_cycles)
                     new_mode = LCD_MODE_VBLANK;
                     /*This interrupt type has a higher priority so it's
                      ok that the post_interrupt further down will be ignored.*/
-                    m_proc->post_interrupt(LCD_VBLANK_INT);
+                    m_mem_bus.post_interrupt(LCD_VBLANK_INT);
                 }
                 else
                 {
@@ -438,7 +429,7 @@ void LCD::tick(size_t curr_cycles)
             
             if (lcd_stat & (1<<bit))
             {
-                m_proc->post_interrupt(LCD_STAT_INT);
+                m_mem_bus.post_interrupt(LCD_STAT_INT);
             }
         }
     }
