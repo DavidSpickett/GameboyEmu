@@ -148,7 +148,7 @@ void MemoryMap::tick(size_t curr_cycles)
 {
     if (m_dma_transfer.cycles_remaining > 0)
     {
-        m_dma_transfer.cycles_remaining -= curr_cycles;
+        m_dma_transfer.cycles_remaining -= (curr_cycles-m_last_tick_cycles);
         
         if (m_dma_transfer.cycles_remaining <= 0)
         {
@@ -168,4 +168,6 @@ void MemoryMap::tick(size_t curr_cycles)
     m_input_handler.tick(curr_cycles);
     m_lcd_handler.tick(curr_cycles);
     m_hardware_regs_handler.tick(curr_cycles);
+    
+    m_last_tick_cycles = curr_cycles;
 }

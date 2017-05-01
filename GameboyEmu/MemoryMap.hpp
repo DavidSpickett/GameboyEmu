@@ -46,7 +46,8 @@ public:
     m_input_handler(),
     m_default_handler(),
     m_null_handler(),
-    m_sound_handler()
+    m_sound_handler(),
+    m_last_tick_cycles(0)
     {
         if (!bootstrap_skipped)
         {
@@ -89,6 +90,7 @@ private:
     DefaultMemoryManager m_default_handler;
     NullMemoryManager m_null_handler;
     SoundHandler m_sound_handler;
+    size_t m_last_tick_cycles;
 };
 
 
