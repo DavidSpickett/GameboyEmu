@@ -50,6 +50,10 @@ void Z80::post_interrupt(uint8_t num)
         throw std::runtime_error("Can't raise interrupt > 5!");
     }
     
+    //We leave halted even if we don't jump to the addr.
+    //May also wait some number of cycles before doing so, not sure.
+    halted = false;
+    
     if (interrupt_enable)
     {
         bool enabled = mem.read8(INTERRUPT_SWITCH) & (1<<num);
@@ -67,9 +71,6 @@ void Z80::post_interrupt(uint8_t num)
             /*Disable ints until the program enables them again (and make sure
              we don't push to the stack twice in one step.*/
             interrupt_enable = false;
-            
-            //Unhalt if need be
-            halted = false;
         }
     }
     
