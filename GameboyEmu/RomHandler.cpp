@@ -346,12 +346,19 @@ uint8_t ROMHandler::read8(uint16_t addr)
     }
     else if ((addr >= CART_RAM_START) && (addr < CART_RAM_END))
     {
-        if ((!m_ram_enable) || (m_rom_ram_mode == ROM_MODE))
+       /* if ((!m_ram_enable) || (m_rom_ram_mode == ROM_MODE))
         {
             throw std::runtime_error(formatted_string("Attempted to read from RAM address 0x%04x when RAM was disabled.", addr));
-        }
+        }*/
         
-        return m_ram_bank[addr-CART_RAM_START];
+        if (m_ram_bank.size())
+        {
+            return m_ram_bank[addr-CART_RAM_START];
+        }
+        else
+        {
+            return 0xff;
+        }
     }
     
     uint8_t value = m_rom_contents[addr];

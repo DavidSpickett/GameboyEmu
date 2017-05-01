@@ -88,7 +88,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;Super Mario Land (world).gb&quot;"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;opus5.gb&quot;"
@@ -100,7 +100,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;testgb/SPRITE.GB&quot;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>
