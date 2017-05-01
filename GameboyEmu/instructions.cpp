@@ -2381,6 +2381,8 @@ inline uint8_t ld_a_c(Z80& proc)
 inline uint8_t scf(Z80& proc)
 {
     proc.f.set_c(true);
+    proc.f.set_n(false);
+    proc.f.set_h(false);
     
     debug_print("%s\n", "scf");
     return 4;
