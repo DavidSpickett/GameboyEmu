@@ -39,6 +39,8 @@ void HardwareIORegs::write8(uint16_t addr, uint8_t value)
         case TIMECONT:
             m_time_cont = value;
             
+            m_clock_enable = value & 2;
+            
             /*Based on clock speed of 4194304Hz / frequency setting to give no. of
             clock cycles.*/
             switch (m_time_cont & 3)
@@ -78,7 +80,6 @@ void HardwareIORegs::tick(size_t curr_cycles)
     size_t cycles_passed = curr_cycles - m_cycles;
     m_cycles = curr_cycles;
     
-    
     //Divider register
     if (m_divider_countdown > cycles_passed)
     {
@@ -92,7 +93,7 @@ void HardwareIORegs::tick(size_t curr_cycles)
     }
     
     //Timer
-    if (m_time_cont & 1)
+    if (m_clock_enable)
     {
         //Note that we're assuming nothing is going to take more than 16 cycles!
         if (m_timer_countdown > cycles_passed)
@@ -104,20 +105,22 @@ void HardwareIORegs::tick(size_t curr_cycles)
             //We would overflow if we tried to deduct the cycles
             uint32_t spare_cycles = uint32_t(cycles_passed) - m_timer_countdown;
             
-            //Inc the actual timer
-            m_time_cnt += 1;
+            //Inc the actual timer register
+            if (m_time_cnt == 0xff)
+            {
+                //When it overflows at 255 we set it back to the time mod value.
+                //time mod is NOT a limit, it's a starting point.
+                m_time_cnt = m_time_mod;
+                post_int(TIMER_OVERFLOW_INT);
+            }
+            else
+            {
+                m_time_cnt += 1;
+            }
             
             //Apply the remainder to the new value, setting it to the start count first
             m_timer_countdown = m_timer_countdown_start - spare_cycles;
         }
-        
-        //Timer register resets when we hit the
-        if (m_time_cnt >= m_time_mod)
-        {
-            m_time_cnt = 0;
-        }
-        
-        post_int(TIMER_OVERFLOW_INT);
     }
 }
 
