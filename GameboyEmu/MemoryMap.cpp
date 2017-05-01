@@ -62,12 +62,9 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
     }
     else if (
         ((addr >= GB_RAM_START) && (addr < GB_RAM_END)) ||
-        ((addr >= ECHO_RAM_START) && (addr < ECHO_RAM_END))
+        ((addr >= ECHO_RAM_START) && (addr < ECHO_RAM_END)) ||
+        ((addr >= GB_HIGH_RAM_START) && (addr < GB_HIGH_RAM_END))
         )
-    {
-        return m_default_handler;
-    }
-    else if ((addr >= GB_HIGH_RAM_START) && (addr < GB_HIGH_RAM_END))
     {
         return m_default_handler;
     }
