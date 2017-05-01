@@ -39,14 +39,14 @@ class MemoryMap
 public:
     MemoryMap(std::string& cartridge_name, bool bootstrap_skipped, int scale_factor):
     m_bootstrap_in_mem(true),
-    m_rom_handler(*this, cartridge_name),
-    m_lcd_handler(*this, scale_factor),
-    m_hardware_regs_handler(*this),
-    m_interrupt_handler(*this),
-    m_input_handler(*this),
-    m_default_handler(*this),
-    m_null_handler(*this),
-    m_sound_handler(*this)
+    m_rom_handler(cartridge_name),
+    m_lcd_handler(scale_factor),
+    m_hardware_regs_handler(),
+    m_interrupt_handler(),
+    m_input_handler(),
+    m_default_handler(),
+    m_null_handler(),
+    m_sound_handler()
     {
         if (!bootstrap_skipped)
         {
@@ -64,13 +64,20 @@ public:
     
     InputManager m_input_handler;
     
-    void post_interrupt(uint8_t num)
-    {
-        m_post_int(num);
-    }
-    
     LCD m_lcd_handler; //public for screenshots
-    std::function<void(uint8_t)> m_post_int;
+    
+    void set_int_callback(InterruptCallback callback)
+    {
+        m_rom_handler.post_int = callback;
+        m_interrupt_handler.post_int = callback;
+        m_lcd_handler.post_int = callback;
+        m_input_handler.post_int = callback;
+        m_sound_handler.post_int = callback;
+        m_rom_handler.post_int = callback;
+        m_null_handler.post_int = callback;
+        m_default_handler.post_int = callback;
+        m_hardware_regs_handler.post_int = callback;
+    }
     
 private:
     DMATransfer m_dma_transfer;

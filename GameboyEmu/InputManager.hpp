@@ -21,8 +21,8 @@ class Z80;
 class InputManager: public MemoryManager
 {
 public:
-    InputManager(MemoryMap& map):
-        MemoryManager(map), m_joypad(0xff), m_mode(MODE_INVALID)
+    InputManager():
+        m_joypad(0xff), m_mode(MODE_INVALID)
     {}
     
     uint8_t read8(uint16_t addr);

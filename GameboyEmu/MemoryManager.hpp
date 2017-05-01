@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <array>
+#include <functional>
 #include "utils.hpp"
 
 const uint16_t LCD_MEM_START  = 0x8000;
@@ -59,13 +60,15 @@ const uint16_t UNUSED_IO_REGS_END   = 0xffff;
 const uint16_t SOUND_BEGIN = 0xff10;
 const uint16_t SOUND_END   = 0xff40;
 
+using InterruptCallback = std::function<void(uint8_t)>;
+
 class MemoryMap;
 
 class MemoryManager
 {
 public:
-    MemoryManager(MemoryMap& map):
-        m_mem_bus(map)
+    MemoryManager():
+        post_int([](uint8_t num){})
     {}
     
     virtual uint8_t read8(uint16_t addr) = 0;
@@ -76,7 +79,7 @@ public:
     
     virtual void tick(size_t curr_cycles) = 0;
     
-    MemoryMap& m_mem_bus;
+    InterruptCallback post_int;
 };
 
 class NullMemoryManager: public MemoryManager
@@ -93,8 +96,7 @@ class NullMemoryManager: public MemoryManager
 class DefaultMemoryManager: public MemoryManager
 {
 public:
-    DefaultMemoryManager(MemoryMap& map):
-    MemoryManager(map)
+    DefaultMemoryManager()
     {
         init_array(m_mem);
     }
@@ -144,8 +146,8 @@ private:
 class InterruptManager: public MemoryManager
 {
 public:
-    InterruptManager(MemoryMap& map):
-        MemoryManager(map), m_interrupt_flags(0), m_interrupt_switch(0)
+    InterruptManager():
+        m_interrupt_flags(0), m_interrupt_switch(0)
     {}
     
     uint8_t read8(uint16_t addr)

@@ -10,8 +10,7 @@
 #include "utils.hpp"
 #include "Z80.hpp"
 
-LCD::LCD(MemoryMap& map, int scale_factor):
-MemoryManager(map),
+LCD::LCD(int scale_factor):
 m_last_tick_cycles(0),
 m_lcd_line_cycles(0),
 m_scale_factor(scale_factor),
@@ -267,6 +266,8 @@ void LCD::draw_background()
         const uint8_t start_x = get_reg8(SCROLLX);
         const uint8_t start_y = get_reg8(SCROLLY);
         
+        //printf("scanline %d scrollx %d\n", m_curr_scanline, get_reg8(SCROLLX));
+        
         //There is only one line of tiles we are interested in since we're only doing one scanline
         //Note that Y wraps
         const uint16_t tile_row = (uint8_t(m_curr_scanline + start_y) / TILE_WIDTH);
@@ -338,8 +339,6 @@ void LCD::tick(size_t curr_cycles)
     size_t cycle_diff = curr_cycles - m_last_tick_cycles;
     m_lcd_line_cycles += cycle_diff;
     
-    //printf("Curr scanline %d\n", curr_scanline);
-    
     switch (old_mode)
     {
         case LCD_MODE_OAM_ACCESS:
@@ -355,7 +354,6 @@ void LCD::tick(size_t curr_cycles)
             if (m_lcd_line_cycles >= CYCLES_MODE_3_BOTH_ACCESS)
             {
                 new_mode = LCD_MODE_HBLANK;
-                
                 draw_background();
                 draw_sprites();
                 draw_window();
@@ -379,7 +377,7 @@ void LCD::tick(size_t curr_cycles)
                     new_mode = LCD_MODE_VBLANK;
                     /*This interrupt type has a higher priority so it's
                      ok that the post_interrupt further down will be ignored.*/
-                    m_mem_bus.post_interrupt(LCD_VBLANK_INT);
+                    post_int(LCD_VBLANK_INT);
                 }
                 else
                 {
@@ -411,7 +409,7 @@ void LCD::tick(size_t curr_cycles)
     auto cmpline = get_reg8(CMPLINE);
     if (m_curr_scanline == cmpline)
     {
-        m_mem_bus.post_interrupt(LCD_STAT_INT);
+        post_int(LCD_STAT_INT);
     }
     
     if (old_mode != new_mode)
@@ -434,7 +432,7 @@ void LCD::tick(size_t curr_cycles)
             
             if (lcd_stat & (1<<bit))
             {
-                m_mem_bus.post_interrupt(LCD_STAT_INT);
+                post_int(LCD_STAT_INT);
             }
         }
     }

@@ -20,8 +20,7 @@ const uint16_t TIMECONT = 0xff07;
 class HardwareIORegs: public MemoryManager
 {
 public:
-    HardwareIORegs(MemoryMap& map):
-        MemoryManager(map),
+    HardwareIORegs():
         m_clock_enable(false), m_timer_countdown_start(1024),
         m_timer_countdown(1024), m_divider_countdown(256), m_cycles(0),
         m_divider_cnt(0), m_time_cont(0), m_time_mod(0), m_time_cnt(0)

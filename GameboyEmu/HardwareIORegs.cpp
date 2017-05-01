@@ -7,6 +7,7 @@
 //
 
 #include "HardwareIORegs.hpp"
+#include "Z80.hpp"
 
 uint8_t HardwareIORegs::read8(uint16_t addr)
 {
@@ -116,7 +117,7 @@ void HardwareIORegs::tick(size_t curr_cycles)
             m_time_cnt = 0;
         }
         
-     //   m_mem_bus.post_interrupt(1);
+        post_int(TIMER_OVERFLOW_INT);
     }
 }
 

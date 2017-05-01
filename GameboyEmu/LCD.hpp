@@ -137,7 +137,7 @@ class Z80;
 class LCD: public MemoryManager
 {
     public:
-        LCD(MemoryMap& map, int scale_factor);
+        LCD(int scale_factor);
         ~LCD()
         {
             if (m_window != NULL)

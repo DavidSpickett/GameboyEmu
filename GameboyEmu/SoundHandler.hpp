@@ -14,8 +14,7 @@
 class SoundHandler : public MemoryManager
 {
 public:
-    SoundHandler(MemoryMap& map):
-        MemoryManager(map)
+    SoundHandler()
     {}
     
     uint8_t read8(uint16_t addr) { return 0; }
