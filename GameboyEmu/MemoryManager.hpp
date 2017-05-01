@@ -131,6 +131,8 @@ public:
     void AddFile(std::string path);
     
 private:
+    //Note that this is a full 16 bits of memory, so we don't
+    //have to offset it in any way.
     std::array<uint8_t, 0x10000> m_mem;
     
     uint16_t normalise_addr(uint16_t addr)
