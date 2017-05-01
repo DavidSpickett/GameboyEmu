@@ -1120,7 +1120,7 @@ inline uint8_t bit_b_r(Z80& proc, uint8_t b1)
 
 inline uint8_t xor_n(Z80& proc, uint8_t b1)
 {
-    uint8_t cycles;
+    uint8_t cycles = 4;
     std::string prt = "xor %s";
     
     proc.f.set_n(false);
@@ -1134,37 +1134,30 @@ inline uint8_t xor_n(Z80& proc, uint8_t b1)
         case 0xAF:
             prt = formatted_string(prt.c_str(), "a");
             temp8 = proc.a.read();
-            cycles = 4;
             break;
         case 0xA8:
             prt = formatted_string(prt.c_str(), "b");
             temp8 = proc.b.read();
-            cycles = 4;
             break;
         case 0xA9:
             prt = formatted_string(prt.c_str(), "c");
             temp8 = proc.c.read();
-            cycles = 4;
             break;
         case 0xAA:
             prt = formatted_string(prt.c_str(), "d");
             temp8 = proc.d.read();
-            cycles = 4;
             break;
         case 0xAB:
             prt = formatted_string(prt.c_str(), "e");
             temp8 = proc.e.read();
-            cycles = 4;
             break;
         case 0xAC:
             prt = formatted_string(prt.c_str(), "h");
             temp8 = proc.h.read();
-            cycles = 4;
             break;
         case 0xAD:
             prt = formatted_string(prt.c_str(), "l");
             temp8 = proc.l.read();
-            cycles = 4;
             break;
         case 0xAE:
             //Use value of HL as an address
@@ -2498,10 +2491,23 @@ inline uint8_t rcca(Z80& proc)
     proc.f.set_c(a & 0x1);
     
     a = a >> 1;
-    proc.f.set_z(a==0);
+    //proc.f.set_z(a==0); //Not sure, unofficial manual says one thing, Z80 manual says preserved
     proc.a.write(a);
     
     debug_print("rcca\n");
+    return 4;
+}
+
+inline uint8_t rra(Z80& proc)
+{
+    uint8_t a = proc.a.read();
+    proc.a.write(a >> 1);
+    
+    proc.f.set_n(false);
+    proc.f.set_h(false);
+    proc.f.set_c(a & 1);
+    
+    debug_print("rra\n");
     return 4;
 }
 
@@ -2864,7 +2870,7 @@ void Step(Z80& proc)
     
     if (proc.halted)
     {
-        printf("halted!\n");
+        //printf("halted!\n");
         //Need to send some cycles otherwise we won't fire interrupts to bring us back from halt
         cycles = 8;
     }
@@ -3234,8 +3240,10 @@ void Step(Z80& proc)
                 cycles = ld_a_hl_minus(proc);
                 break;
             case 0x0f:
-            case 0x1f: //rra appears to be the same thing
                 cycles = rcca(proc);
+                break;
+            case 0x1f:
+                cycles = rra(proc);
                 break;
             case 0xf8:
                 cycles = ldhl_sp_n(proc);
