@@ -132,8 +132,6 @@ private:
     uint8_t m_value;
 };
 
-class Z80;
-
 class LCD: public MemoryManager
 {
     public:

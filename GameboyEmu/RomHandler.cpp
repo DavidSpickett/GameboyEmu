@@ -383,7 +383,11 @@ void ROMHandler::write8(uint16_t addr, uint8_t value)
     else if ((addr >= 0x2000) && (addr < 0x4000))
     {
         //This is a ROM bank switch for 0x4000-7FFF
-        m_rom_bank_no = value & 0x1f;;
+        m_rom_bank_no = value & 0x1f;
+        if (m_rom_bank_no == 0)
+        {
+            m_rom_bank_no = 1;
+        }
     }
     else if ((addr >= CART_RAM_START) && (addr < CART_RAM_END))
     {

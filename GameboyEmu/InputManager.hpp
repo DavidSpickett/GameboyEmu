@@ -16,8 +16,6 @@ const uint8_t MODE_DIR = 0;
 const uint8_t MODE_BUTTON = 1;
 const uint8_t MODE_INVALID = 2;
 
-class Z80;
-
 class InputManager: public MemoryManager
 {
 public:
