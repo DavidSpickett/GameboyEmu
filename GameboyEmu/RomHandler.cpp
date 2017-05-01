@@ -380,14 +380,13 @@ void ROMHandler::write8(uint16_t addr, uint8_t value)
     }
     else if ((addr >= CART_RAM_START) && (addr < CART_RAM_END))
     {
-        if ((!m_ram_enable) || (m_rom_ram_mode == ROM_MODE))
+        /*if ((!m_ram_enable) || (m_rom_ram_mode == ROM_MODE))
         {
-            //Super Mario Land appears to 0 out all RAM, despite the cart having none of its own.
-            return;
-            /*throw std::runtime_error(formatted_string("Attempted to write to RAM address 0x%04x, value 0x%02x when RAM was disabled.", addr, value));*/
+            throw std::runtime_error(formatted_string("Attempted to write to RAM address 0x%04x, value 0x%02x when RAM was disabled.", addr, value));
         }
         
-        m_ram_bank[addr-CART_RAM_START] = value;
+        m_ram_bank[addr-CART_RAM_START] = value;*/
+        return;
     }
     else if ((addr >= 0x6000) && (addr < 0x8000))
     {

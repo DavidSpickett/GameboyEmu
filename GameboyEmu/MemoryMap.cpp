@@ -134,15 +134,14 @@ void MemoryMap::write8(uint16_t addr, uint8_t value)
 //Check bounds!!
 uint16_t MemoryMap::read16(uint16_t addr)
 {
-    MemoryManager& m = get_mm(addr);
-    return m.read16(addr);
+    return read8(addr) | (read8(addr+1) << 8);
 }
 
 //Check bounds!
 void MemoryMap::write16(uint16_t addr, uint16_t value)
 {
-    MemoryManager& m = get_mm(addr);
-    m.write16(addr, value);
+    write8(addr, value);
+    write8(addr+1, value >> 8);
 }
 
 void MemoryMap::tick(size_t curr_cycles)

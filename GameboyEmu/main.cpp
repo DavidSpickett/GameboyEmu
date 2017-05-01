@@ -61,12 +61,12 @@ int main(int argc, const char * argv[]) {
             }
         }
         
-        if ((a.rom_name == "ttt.gb") && (proc.pc.read() == 0x03f2))
+        /*if ((a.rom_name == "ttt.gb") && (proc.pc.read() == 0x03f2))
         {
             //Bodge to speed up tic tac toe rom when it's playing sound
             //printf("Skipped sound loop.\n");
             proc.f.set_z(true);
-        }
+        }*/
         
         Step(proc);
         

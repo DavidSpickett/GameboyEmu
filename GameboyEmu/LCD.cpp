@@ -334,7 +334,8 @@ void LCD::tick(size_t curr_cycles)
     
     uint8_t lcd_stat = get_reg8(LCDSTAT);
     uint8_t old_mode = lcd_stat & 3;
-    uint8_t new_mode = old_mode;
+    auto new_mode = old_mode;
+    auto old_scanline = m_curr_scanline;
     
     size_t cycle_diff = curr_cycles - m_last_tick_cycles;
     m_lcd_line_cycles += cycle_diff;
@@ -355,8 +356,9 @@ void LCD::tick(size_t curr_cycles)
             {
                 new_mode = LCD_MODE_HBLANK;
                 draw_background();
-                draw_sprites();
                 draw_window();
+                //TOOD: sprite priority
+                draw_sprites();
                 
                 /*
                  State machine continues if LCD is off, games like Dr. Mario
@@ -407,7 +409,9 @@ void LCD::tick(size_t curr_cycles)
     }
     
     auto cmpline = get_reg8(CMPLINE);
-    if (m_curr_scanline == cmpline)
+    if ((m_curr_scanline != old_scanline) &&
+        (m_curr_scanline == cmpline) &&
+        (lcd_stat & (1<<6)))
     {
         post_int(LCD_STAT_INT);
     }

@@ -67,12 +67,16 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--numcycles=11273160"
+            argument = "--numcycles=1300000"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--scale=3"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--rom=&quot;Race Drivin&apos; (USA, Europe).gb&quot;"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;Tetris (world).gb&quot;"
@@ -88,6 +92,14 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;opus5.gb&quot;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--rom=&quot;gb-test-roms-master/cpu_instrs/individual/10-bit ops.gb&quot;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--rom=&quot;testgb/SPRITE.GB&quot;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
