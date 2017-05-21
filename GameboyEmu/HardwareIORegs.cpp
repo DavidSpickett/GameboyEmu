@@ -39,7 +39,7 @@ void HardwareIORegs::write8(uint16_t addr, uint8_t value)
         case TIMECONT:
             m_time_cont = value;
             
-            m_clock_enable = value & 2;
+            m_clock_enable = value & (1 << 2);
             
             /*Based on clock speed of 4194304Hz / frequency setting to give no. of
             clock cycles.*/
@@ -63,6 +63,7 @@ void HardwareIORegs::write8(uint16_t addr, uint8_t value)
             
             break;
         case DIVCOUNT:
+            m_divider_cnt = 0;
             break;
         default:
             return;

@@ -67,6 +67,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--rom=&quot;Baseball (World).gb&quot;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--numcycles=1300000"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -88,7 +92,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;Super Mario Land (world).gb&quot;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;opus5.gb&quot;"
@@ -96,6 +100,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;gb-test-roms-master/cpu_instrs/individual/10-bit ops.gb&quot;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--rom=&quot;Metroid II - Return of Samus (World).gb&quot;"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
