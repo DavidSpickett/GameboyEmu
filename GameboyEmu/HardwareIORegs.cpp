@@ -143,7 +143,7 @@ void HardwareIORegs::tick(size_t curr_cycles)
                 //When it overflows at 255 we set it back to the time mod value.
                 //time mod is NOT a limit, it's a starting point.
                 m_time_cnt = m_time_mod;
-                post_int(TIMER_OVERFLOW_INT);
+                post_int(TIMER_OVERFLOW);
             }
             else
             {
@@ -163,7 +163,7 @@ void HardwareIORegs::tick(size_t curr_cycles)
         {
             m_serial_transfer.cycles = -1;
             m_serial_data_recieved = m_serial_transfer.value;
-            post_int(END_SERIAL_INT);
+            post_int(END_SERIAL);
         }
     }
 }

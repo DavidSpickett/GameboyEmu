@@ -457,7 +457,7 @@ void LCD::tick(size_t curr_cycles)
                     new_mode = LCD_MODE_VBLANK;
                     /*This interrupt type has a higher priority so it's
                      ok that the post_interrupt further down will be ignored.*/
-                    post_int(LCD_VBLANK_INT);
+                    post_int(LCD_VBLANK);
                 }
                 else
                 {
@@ -491,7 +491,7 @@ void LCD::tick(size_t curr_cycles)
         (m_curr_scanline == cmpline) &&
         (lcd_stat & (1<<6)))
     {
-        post_int(LCD_STAT_INT);
+        post_int(LCD_STAT);
     }
     
     if (old_mode != new_mode)
@@ -514,7 +514,7 @@ void LCD::tick(size_t curr_cycles)
             
             if (lcd_stat & (1<<bit))
             {
-                post_int(LCD_STAT_INT);
+                post_int(LCD_STAT);
             }
         }
     }
