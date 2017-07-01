@@ -9,7 +9,6 @@
 #ifndef utils_hpp
 #define utils_hpp
 
-#include <stdio.h>
 #include <string>
 
 template <typename T>

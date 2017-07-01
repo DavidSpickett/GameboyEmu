@@ -9,7 +9,6 @@
 #ifndef InputManager_hpp
 #define InputManager_hpp
 
-#include <stdio.h>
 #include "MemoryManager.hpp"
 
 class InputManager: public MemoryManager

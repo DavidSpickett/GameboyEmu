@@ -9,7 +9,6 @@
 #ifndef MemoryManager_hpp
 #define MemoryManager_hpp
 
-#include <stdio.h>
 #include <stdint.h>
 #include <array>
 #include <functional>

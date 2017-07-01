@@ -9,8 +9,6 @@
 #ifndef RomHandler_hpp
 #define RomHandler_hpp
 
-#include <stdio.h>
-#include <string>
 #include <fstream>
 #include <vector>
 #include "MemoryManager.hpp"

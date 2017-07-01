@@ -9,10 +9,6 @@
 #ifndef LCD_hpp
 #define LCD_hpp
 
-#include <stdio.h>
-#include <vector>
-#include <string>
-#include <array>
 #include <SDL2/SDL.h>
 #include "MemoryManager.hpp"
 

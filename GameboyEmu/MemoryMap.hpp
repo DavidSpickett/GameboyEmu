@@ -9,10 +9,7 @@
 #ifndef MemoryMap_hpp
 #define MemoryMap_hpp
 
-#include <stdio.h>
 #include <stdint.h>
-#include <vector>
-#include <string>
 #include "utils.hpp"
 #include "RomHandler.hpp"
 #include "LCD.hpp"

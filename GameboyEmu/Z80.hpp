@@ -9,9 +9,6 @@
 #ifndef Z80_hpp
 #define Z80_hpp
 
-#include <stdio.h>
-#include <stdint.h>
-#include <vector>
 #include "MemoryMap.hpp"
 
 template <class int_type> class Register

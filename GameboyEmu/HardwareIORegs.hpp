@@ -9,7 +9,6 @@
 #ifndef HardwareIORegs_hpp
 #define HardwareIORegs_hpp
 
-#include <stdio.h>
 #include "MemoryManager.hpp"
 
 class HardwareIORegs: public MemoryManager
