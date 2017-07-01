@@ -9,7 +9,6 @@
 #ifndef instructions_hpp
 #define instructions_hpp
 
-#include <stdio.h>
 #include "Z80.hpp"
 
 void Step(Z80& proc);
