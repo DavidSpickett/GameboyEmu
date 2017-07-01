@@ -8,7 +8,54 @@
 
 #include "RomHandler.hpp"
 #include <vector>
+#include <numeric>
 #include "utils.hpp"
+
+namespace
+{
+    const uint16_t ROM_MODE = 0;
+    const uint16_t RAM_MODE = 1;
+    
+    const int HEADER_BYTES = 25;
+}
+
+ROMHandler::ROMHandler(std::string file_path):
+    m_file_path(file_path),
+    m_rom_bank_no(1), //Starts at 1 because bank 0 is permemnantley mapped
+    m_ram_bank_no(0),
+    m_ram_enable(false),
+    m_rom_ram_mode(RAM_MODE) //Zelda seems to expect RAM mode to start with
+{
+    //std::streampos file_size = 0;
+    std::ifstream file_str = std::ifstream(file_path.c_str(), std::ifstream::binary);
+    if (!file_str.is_open())
+    {
+        throw std::runtime_error(formatted_string("File %s does not exist.", file_path.c_str()));
+    }
+    
+    m_rom_contents = std::vector<uint8_t>(std::istreambuf_iterator<char>(file_str), std::istreambuf_iterator<char>());
+    
+    printf("%s\n", get_info().c_str());
+    if (is_cgb_only())
+    {
+        throw std::runtime_error("ROM is CGB only.");
+    }
+    
+    switch (get_ram_size())
+    {
+        case 0x00:
+            break;
+        case 0x01: //2K
+            m_ram_bank = std::vector<uint8_t>(2*1024, 0);
+            break;
+        case 0x02: //8k
+            m_ram_bank = std::vector<uint8_t>(8*1024, 0);
+            break;
+        default:
+            throw std::runtime_error("Unsupported RAM size!!!");
+            break;
+    }
+}
 
 std::string ROMHandler::get_string(const uint16_t start, size_t len)
 {
@@ -273,15 +320,9 @@ uint8_t ROMHandler::get_rom_version()
 uint8_t ROMHandler::get_checksum()
 {
     //Sum of all header bytes, plus the number of header bytes, must equal 0.
-    uint8_t chksum = 0;
     auto addr = 0x0134;
-    
-    for (auto i=0; i<26; ++i,++addr)
-    {
-        chksum += m_rom_contents[addr];
-    }
-    
-    return chksum+0x19;
+    uint8_t chksum = std::accumulate(&m_rom_contents[addr], &m_rom_contents[addr+HEADER_BYTES+1], 0);
+    return chksum+HEADER_BYTES;
 }
 
 bool ROMHandler::is_cgb_only()

@@ -15,50 +15,10 @@
 #include <vector>
 #include "MemoryManager.hpp"
 
-const uint16_t ROM_MODE = 0;
-const uint16_t RAM_MODE = 1;
-const uint16_t ROM_FIXED_BLOCK_SIZE = 0x4000;
-
 class ROMHandler: public MemoryManager
 {
 public:
-    explicit ROMHandler(std::string file_path):
-        m_file_path(file_path),
-        m_rom_bank_no(1), //Starts at 1 because bank 0 is permemnantley mapped
-        m_ram_bank_no(0),
-        m_ram_enable(false),
-        m_rom_ram_mode(RAM_MODE) //Zelda seems to expect RAM mode to start with
-    {
-        //std::streampos file_size = 0;
-        std::ifstream file_str = std::ifstream(file_path.c_str(), std::ifstream::binary);
-        if (!file_str.is_open())
-        {
-            throw std::runtime_error(formatted_string("File %s does not exist.", file_path.c_str()));
-        }
-        
-        m_rom_contents = std::vector<uint8_t>(std::istreambuf_iterator<char>(file_str), std::istreambuf_iterator<char>());
-        
-        printf("%s\n", get_info().c_str());
-        if (is_cgb_only())
-        {
-            throw std::runtime_error("ROM is CGB only.");
-        }
-        
-        switch (get_ram_size())
-        {
-            case 0x00:
-                break;
-            case 0x01: //2K
-                m_ram_bank = std::vector<uint8_t>(2*1024, 0);
-                break;
-            case 0x02: //8k
-                m_ram_bank = std::vector<uint8_t>(8*1024, 0);
-                break;
-            default:
-                throw std::runtime_error("Unsupported RAM size!!!");
-                break;
-        }
-    }
+    explicit ROMHandler(std::string file_path);
     
     void write8(uint16_t addr, uint8_t value);
     uint8_t read8(uint16_t addr);

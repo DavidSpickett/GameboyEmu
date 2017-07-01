@@ -8,9 +8,12 @@
 
 #include "utils.hpp"
 
-bool find_arg(std::string name, std::string arg)
+namespace
 {
-    return arg.find(name) != std::string::npos;
+    bool find_arg(std::string name, std::string arg)
+    {
+        return arg.find(name) != std::string::npos;
+    }
 }
 
 emu_args process_args(int argc, const char* argv[])

@@ -9,6 +9,14 @@
 #include "HardwareIORegs.hpp"
 #include "Z80.hpp"
 
+namespace
+{
+    const uint16_t DIVCOUNT = 0xff04;
+    const uint16_t TIMECNT  = 0xff05;
+    const uint16_t TIMEMOD  = 0xff06;
+    const uint16_t TIMECONT = 0xff07;
+}
+
 uint8_t HardwareIORegs::read8(uint16_t addr)
 {
     switch (addr)
