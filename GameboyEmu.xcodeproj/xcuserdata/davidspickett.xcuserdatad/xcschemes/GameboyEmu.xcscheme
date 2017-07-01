@@ -67,10 +67,6 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--rom=&quot;Baseball (World).gb&quot;"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "--numcycles=1300000"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -79,12 +75,20 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--rom=&quot;Alleyway (World).gb&quot;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--rom=&quot;Baseball (World).gb&quot;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--rom=&quot;Race Drivin&apos; (USA, Europe).gb&quot;"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;Tetris (world).gb&quot;"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;Dr. Mario (World).gb&quot;"

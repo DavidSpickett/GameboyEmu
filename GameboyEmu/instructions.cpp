@@ -2475,9 +2475,9 @@ inline uint8_t ldhl_sp_n(Z80& proc)
     proc.f.set_n(false);
     
     proc.f.set_h(((old_hl & 0x10) == 0) &&
-                 ((new_hl & 0x10) == 1));
+                 ((new_hl & 0x10) == 0x10));
     proc.f.set_c(((old_hl & 0x100) == 0) &&
-                 ((new_hl & 0x100) == 1));
+                 ((new_hl & 0x100) == 0x100));
     
     proc.set_hl(new_hl);
     
