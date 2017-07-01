@@ -112,7 +112,7 @@ const uint8_t LCD_MODE_BOTH_ACCESS = 3;
 class LCDControlReg
 {
 public:
-    LCDControlReg(uint8_t value):
+    explicit LCDControlReg(uint8_t value):
         m_value(value)
     {}
     
@@ -135,7 +135,7 @@ private:
 class LCD: public MemoryManager
 {
     public:
-        LCD(int scale_factor);
+        explicit LCD(int scale_factor);
         ~LCD()
         {
             if (m_window != NULL)
