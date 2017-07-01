@@ -215,22 +215,22 @@ void LCD::tile_row_to_pixels(
     const LCDPalette& palette //Colour mapping
     )
 {
-    uint8_t b1 = *data_b++;
-    uint8_t b2 = *data_b;
+    auto b1 = *data_b++;
+    auto b2 = *data_b;
+    auto row_start = starty*LCD_WIDTH;
     
-    //Signed int!!
-    for (int shift=7; shift>= 0; --shift)
+    for (auto shift=7; shift>= 0; --shift)
     {
-        int shift_diff = flip_x ? shift : (7-shift);
-        int newx = startx + shift_diff;
+        auto shift_diff = flip_x ? shift : (7-shift);
+        auto newx = startx + shift_diff;
         if ((newx >= LCD_WIDTH) || (newx < 0))
         {
             continue;
         }
         
-        uint8_t lsb = (b1 >> shift) & 0x1;
-        uint8_t msb = (b2 >> shift) & 0x1;
-        uint8_t c = (msb << 1) | lsb;
+        auto lsb = (b1 >> shift) & 1;
+        auto msb = (b2 >> shift) & 1;
+        auto c = (msb << 1) | lsb;
         
         if (is_sprite && c==0)
         {
@@ -238,7 +238,7 @@ void LCD::tile_row_to_pixels(
             continue;
         }
         
-        m_pixel_data[(starty*LCD_WIDTH)+newx] = m_colours[palette[c]];
+        m_pixel_data[row_start+newx] = m_colours[palette[c]];
     }
 }
 
