@@ -195,7 +195,7 @@ class LCD: public MemoryManager
             //printf("Set LCD mode to %d\n", mode);
         }
 
-        LCDPalette get_palette(uint8_t addr);
+        LCDPalette make_palette(uint8_t addr);
         LCDPalette m_bgrd_pal;
         LCDPalette m_obj_pal_0;
         LCDPalette m_obj_pal_1;

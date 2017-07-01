@@ -88,7 +88,7 @@ void LCD::SDLDraw()
     delay++;
 }
 
-LCDPalette LCD::get_palette(uint8_t value)
+LCDPalette LCD::make_palette(uint8_t value)
 {
     LCDPalette ret;
     for (auto i=0; i<4; ++i)
@@ -510,11 +510,11 @@ void LCD::write8(uint16_t addr, uint8_t value)
                 set_reg8(LCDSTAT, get_reg8(LCDSTAT) | (value & ~3));
                 break;
             case BGRDPAL:
-                m_bgrd_pal = get_palette(value);
+                m_bgrd_pal = make_palette(value);
             case OBJPAL0:
-                m_obj_pal_0 = get_palette(value);
+                m_obj_pal_0 = make_palette(value);
             case OBJPAL1:
-                m_obj_pal_1 = get_palette(value);
+                m_obj_pal_1 = make_palette(value);
             default:
                 set_reg8(addr, value);
                 break;
