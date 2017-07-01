@@ -10,6 +10,18 @@
 #include "utils.hpp"
 #include "Z80.hpp"
 
+const uint16_t LCDCONTROL = 0xff40;
+const uint16_t LCDSTAT    = 0xff41;
+const uint16_t SCROLLY    = 0xff42;
+const uint16_t SCROLLX    = 0xff43;
+const uint16_t CURLINE    = 0xff44;
+const uint16_t CMPLINE    = 0xff45;
+const uint16_t BGRDPAL    = 0xff47;
+const uint16_t OBJPAL0    = 0xff48;
+const uint16_t OBJPAL1    = 0xff49;
+const uint16_t WINPOSY    = 0xff4a; //Yes, Y is first.
+const uint16_t WINPOSX    = 0xff4b;
+
 const uint8_t LCD_MODE_HBLANK      = 0;
 const uint8_t LCD_MODE_VBLANK      = 1;
 const uint8_t LCD_MODE_OAM_ACCESS  = 2;
@@ -38,6 +50,11 @@ m_control_reg(0)
     init_array(m_data);
     
     set_mode(LCD_MODE_VBLANK);
+}
+
+void LCD::set_mode(uint8_t mode)
+{
+    set_reg8(LCDSTAT, (get_reg8(LCDSTAT) & ~3) | mode);
 }
 
 void LCD::SDLSaveImage(std::string filename)

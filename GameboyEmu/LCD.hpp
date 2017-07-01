@@ -92,18 +92,6 @@ struct colour
     uint8_t a;
 };
 
-const uint16_t LCDCONTROL = 0xff40;
-const uint16_t LCDSTAT    = 0xff41;
-const uint16_t SCROLLY    = 0xff42;
-const uint16_t SCROLLX    = 0xff43;
-const uint16_t CURLINE    = 0xff44;
-const uint16_t CMPLINE    = 0xff45;
-const uint16_t BGRDPAL    = 0xff47;
-const uint16_t OBJPAL0    = 0xff48;
-const uint16_t OBJPAL1    = 0xff49;
-const uint16_t WINPOSY    = 0xff4a; //Yes, Y is first.
-const uint16_t WINPOSX    = 0xff4b;
-
 class LCDControlReg
 {
 public:
@@ -184,11 +172,7 @@ class LCD: public MemoryManager
             bool flip_x,
             const LCDPalette& palette);
     
-        void set_mode(uint8_t mode)
-        {
-            set_reg8(LCDSTAT, (get_reg8(LCDSTAT) & ~3) | mode);
-            //printf("Set LCD mode to %d\n", mode);
-        }
+        void set_mode(uint8_t mode);
 
         LCDPalette make_palette(uint8_t addr);
         LCDPalette m_bgrd_pal;
