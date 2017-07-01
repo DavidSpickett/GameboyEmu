@@ -46,13 +46,10 @@ press 'esc' to quit directly.
 To Do and Known Issues
 ----------------------
 - Upon loosing a round of Tetris the screen fills with blocks apart from the last row.
-- Window display is not working (pause menu in Super Mario Land).
 - Sound is completely non functional.
-- LCD doesn't report modes, so Super Mario Land's scrolling doesn't work.
+- Super Mario Land's X scroll value gets reset randomly, causing visual glitches.
 - 2 player serial over a socket (Tetris).
 - Test framework, which is what the screenshot functions are for eventually.
-- Background scrolling has some corruption (opus5<i></i>.gb).
-- Get the GDB Handler working with the GDB Z80 port.
 - ROM and RAM bank controller support.
 
 Resources
