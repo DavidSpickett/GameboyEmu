@@ -29,6 +29,58 @@ const uint8_t LCD_MODE_BOTH_ACCESS = 3;
 
 const uint8_t VBLANK_SCANLINE = 144;
 
+const int SPRITE_INFO_BYTES = 4;
+const int TILE_BYTES        = 16;
+const int TILES_PER_LINE    = 32;
+const int TILE_WIDTH        = 8;
+
+struct Pixel
+{
+    Pixel(int x, int y, uint8_t c):
+    x(x), y(y), c(c)
+    {
+    }
+    
+    int x;
+    int y;
+    uint8_t c;
+};
+
+class Sprite
+{
+public:
+    explicit Sprite(OAMData::const_iterator start):
+    m_data(start)
+    {}
+    
+    Sprite& operator++()
+    {
+        m_data += SPRITE_INFO_BYTES;
+        return *this;
+    }
+    
+    int get_y() { return int(*m_data) - 16; }
+    int get_x() { return int(*(m_data+1)) - TILE_WIDTH; }
+    uint8_t get_pattern_number() { return *(m_data+2); }
+    
+    bool get_priority() { return get_flag(7); }
+    bool get_y_flip() { return get_flag(6); }
+    bool get_x_flip() { return get_flag(5); }
+    bool get_palette_number() { return get_flag(4); }
+    
+    std::string to_str()
+    {
+        return formatted_string("Sprite at X:%d Y:%x priority:%d xflip:%d yflip:%d palettenum:%d",
+                                get_x(), get_y(), get_priority(), get_x_flip(),
+                                get_y_flip(), get_palette_number());
+    }
+    
+private:
+    bool get_flag(uint8_t pos) { return *(m_data+3) & (1<<pos); }
+    OAMData::const_iterator m_data;
+};
+
+
 LCD::LCD(int scale_factor):
 m_last_tick_cycles(0),
 m_lcd_line_cycles(0),
