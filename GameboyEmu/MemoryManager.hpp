@@ -34,6 +34,9 @@ const uint16_t CART_RAM_END   = 0xc000;
 const uint16_t HARDWARE_REGS_START = 0xff00;
 const uint16_t HARDWARE_REGS_END   = 0xff10;
 
+const uint16_t SERIAL_DATA    = 0xff01;
+const uint16_t SERIAL_CONTROL = 0xff02;
+
 const uint16_t JOYPAD_REG = 0xff00;
 
 const uint16_t GB_RAM_START = 0xc000;

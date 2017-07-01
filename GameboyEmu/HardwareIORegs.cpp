@@ -13,6 +13,11 @@ uint8_t HardwareIORegs::read8(uint16_t addr)
 {
     switch (addr)
     {
+        case SERIAL_CONTROL:
+            //Not sure if we need to remove the transfer bit, probably won't get read anyway
+            return m_serial_control;
+        case SERIAL_DATA:
+            return m_serial_data_recieved;
         case TIMEMOD:
             return m_time_mod;
         case TIMECNT:
@@ -30,6 +35,32 @@ void HardwareIORegs::write8(uint16_t addr, uint8_t value)
 {
     switch (addr)
     {
+        case SERIAL_CONTROL:
+            //Starting a transfer
+            if (value & (1<<7))
+            {
+                //With internal clock
+                if (value & 1)
+                {
+                    if (m_serial_transfer.valid())
+                    {
+                        throw std::runtime_error("Tried to start a serial transfer with one already in progress!");
+                    }
+                    
+                    //Nothing connected returns 0xff
+                    m_serial_transfer = SerialTransfer(0xff);
+                }
+                else
+                {
+                    m_serial_data_recieved = 0x0;
+                }
+            }
+            m_serial_control = value;
+            break;
+        case SERIAL_DATA:
+            //Print for instruction tests
+            printf("%c", value);
+            break;
         case TIMEMOD:
             m_time_mod = value;
             break;
@@ -121,6 +152,18 @@ void HardwareIORegs::tick(size_t curr_cycles)
             
             //Apply the remainder to the new value, setting it to the start count first
             m_timer_countdown = m_timer_countdown_start - spare_cycles;
+        }
+    }
+    
+    //Serial is lowest priority int so it's at the end
+    if (m_serial_transfer.valid())
+    {
+        m_serial_transfer.cycles -= cycles_passed;
+        if (m_serial_transfer.cycles <= 0)
+        {
+            m_serial_transfer.cycles = -1;
+            m_serial_data_recieved = m_serial_transfer.value;
+            post_int(END_SERIAL_INT);
         }
     }
 }

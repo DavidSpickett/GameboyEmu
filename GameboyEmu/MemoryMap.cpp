@@ -55,8 +55,11 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
     {
         return m_lcd_handler;
     }
-    else if (((addr >= HARDWARE_REGS_START) && (addr < HARDWARE_REGS_END)) &&
-             (addr != JOYPAD_REG))
+    else if (
+             (((addr >= HARDWARE_REGS_START) && (addr < HARDWARE_REGS_END)) &&
+             (addr != JOYPAD_REG)) ||
+             (addr == SERIAL_CONTROL) || (addr == SERIAL_DATA)
+             )
     {
         return m_hardware_regs_handler;
     }
@@ -103,13 +106,8 @@ uint8_t MemoryMap::read8(uint16_t addr)
 
 void MemoryMap::write8(uint16_t addr, uint8_t value)
 {
-    //Output for instruction tests
-    if (addr == 0xff01)
-    {
-        printf("%c", value);
-    }
     //Bodge to get the bootstrap out of memory
-    else if ((addr == 0xff50) && (value == 1))
+    if ((addr == 0xff50) && (value == 1))
     {
         m_bootstrap_in_mem = false;
     }
