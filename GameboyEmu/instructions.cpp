@@ -10,8 +10,8 @@
 #include <iostream>
 #include "utils.hpp"
 
-#define DEBUG_INSTR 1
-int print = 1;
+#define DEBUG_INSTR 0
+int print = 0;
 
 namespace
 {
@@ -716,32 +716,24 @@ inline uint8_t ld_a_n(Z80& proc, uint8_t b1)
     return cycles;
 }
 
+namespace
+{
+    bool get_jump_condition(Z80& proc, uint8_t b1, std::string& type)
+    {
+        //Using carry if bit 4 is set
+        auto jump = b1 & 0x10 ? proc.f.get_c() : proc.f.get_z();
+        
+        //Invert if bit 3 is not set
+        return b1 & 0x8 ? jump : !jump;
+    }
+}
+
 inline uint8_t jr_cc_n(Z80& proc, uint8_t b1)
 {
     uint8_t cycles = 8;
     int8_t offset = proc.fetch_byte();
-    bool jump = false;
     std::string type = "?";
-    
-    switch (b1)
-    {
-        case 0x20:
-            jump = !proc.f.get_z();
-            type = "nz";
-            break;
-        case 0x28:
-            jump = proc.f.get_z();
-            type = "z";
-            break;
-        case 0x30:
-            jump = !proc.f.get_c();
-            type = "nc";
-            break;
-        case 0x38:
-            jump = proc.f.get_c();
-            type = "c";
-            break;
-    }
+    auto jump = get_jump_condition(proc, b1, type);
     
     //Always calculate it so we can show it in the dasm
     uint16_t new_pc = proc.pc.read();
@@ -2016,62 +2008,22 @@ inline uint8_t res_b_n(Z80& proc, uint8_t b1)
 inline uint8_t jp_cc_nn(Z80& proc, uint8_t b1)
 {
     uint16_t jump_addr = proc.fetch_short();
-    bool jump = false;
-    std::string jtype;
-    
-    switch (b1)
-    {
-        case 0xc2:
-            jtype = "nz";
-            jump = !proc.f.get_z();
-            break;
-        case 0xca:
-            jtype = "z";
-            jump = proc.f.get_z();
-            break;
-        case 0xd2:
-            jtype = "nc";
-            jump = !proc.f.get_c();
-            break;
-        case 0xda:
-            jtype = "c";
-            jump = proc.f.get_c();
-            break;
-    }
+    std::string type = "?";
+    auto jump = get_jump_condition(proc, b1, type);
     
     if (jump)
     {
         proc.pc.write(jump_addr);
     }
     
-    debug_print("jp %s, 0x%02x\n", jtype.c_str(), jump_addr);
+    debug_print("jp %s, 0x%02x\n", type.c_str(), jump_addr);
     return 12;
 }
 
 inline uint8_t ret_cc(Z80& proc, uint8_t b1)
 {
-    bool jump = false;
-    std::string ret_type;
-    
-    switch (b1)
-    {
-        case 0xc0:
-            ret_type = "nz";
-            jump = !proc.f.get_z();
-            break;
-        case 0xc8:
-            ret_type = "z";
-            jump = proc.f.get_z();
-            break;
-        case 0xd0:
-            ret_type = "nc";
-            jump = !proc.f.get_c();
-            break;
-        case 0xd8:
-            ret_type = "c";
-            jump = proc.f.get_c();
-            break;
-    }
+    std::string type = "?";
+    auto jump = get_jump_condition(proc, b1, type);
     
     uint16_t new_addr = proc.mem.read16(proc.sp.read());
     if (jump)
@@ -2080,7 +2032,7 @@ inline uint8_t ret_cc(Z80& proc, uint8_t b1)
         proc.sp.inc(2);
     }
     
-    debug_print("ret %s\n", ret_type.c_str());
+    debug_print("ret %s\n", type.c_str());
     if (jump)
     {
         proc.add_ret(new_addr, false);
@@ -2147,29 +2099,10 @@ inline uint8_t sla_n(Z80& proc, uint8_t b1)
 
 inline uint8_t call_cc_nn(Z80& proc, uint8_t b1)
 {
-    std::string ctype;
-    bool jump = false;
     uint16_t addr = proc.fetch_short();
     
-    switch (b1)
-    {
-        case 0xc4:
-            ctype = "nz";
-            jump = !proc.f.get_z();
-            break;
-        case 0xcc:
-            ctype = "z";
-            jump = proc.f.get_z();
-            break;
-        case 0xd4:
-            ctype = "nc";
-            jump = !proc.f.get_n();
-            break;
-        case 0xdc:
-            ctype = "c";
-            jump = proc.f.get_c();
-            break;
-    }
+    std::string type = "?";
+    auto jump = get_jump_condition(proc, b1, type);
     
     uint16_t old_pc = proc.pc.read();
     if (jump)
