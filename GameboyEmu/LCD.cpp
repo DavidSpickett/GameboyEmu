@@ -10,6 +10,13 @@
 #include "utils.hpp"
 #include "Z80.hpp"
 
+const uint8_t LCD_MODE_HBLANK      = 0;
+const uint8_t LCD_MODE_VBLANK      = 1;
+const uint8_t LCD_MODE_OAM_ACCESS  = 2;
+const uint8_t LCD_MODE_BOTH_ACCESS = 3;
+
+const uint8_t VBLANK_SCANLINE = 144;
+
 LCD::LCD(int scale_factor):
 m_last_tick_cycles(0),
 m_lcd_line_cycles(0),
@@ -374,7 +381,7 @@ void LCD::tick(size_t curr_cycles)
             if (m_lcd_line_cycles >= CYCLES_MODE_0_HBLANK)
             {
                 m_curr_scanline++;
-                if (m_curr_scanline == 144)
+                if (m_curr_scanline == VBLANK_SCANLINE)
                 {
                     new_mode = LCD_MODE_VBLANK;
                     /*This interrupt type has a higher priority so it's

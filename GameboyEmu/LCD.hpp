@@ -104,11 +104,6 @@ const uint16_t OBJPAL1    = 0xff49;
 const uint16_t WINPOSY    = 0xff4a; //Yes, Y is first.
 const uint16_t WINPOSX    = 0xff4b;
 
-const uint8_t LCD_MODE_HBLANK      = 0;
-const uint8_t LCD_MODE_VBLANK      = 1;
-const uint8_t LCD_MODE_OAM_ACCESS  = 2;
-const uint8_t LCD_MODE_BOTH_ACCESS = 3;
-
 class LCDControlReg
 {
 public:
