@@ -20,20 +20,6 @@
 #include "InputManager.hpp"
 #include "SoundHandler.hpp"
 
-struct DMATransfer
-{
-    explicit DMATransfer(uint16_t source_addr):
-        cycles_remaining(640), source_addr(source_addr)
-    {}
-    
-    DMATransfer():
-        cycles_remaining(-1), source_addr(0)
-    {}
-    
-    int cycles_remaining;
-    uint16_t source_addr;
-};
-
 class MemoryMap
 {
 public:
@@ -81,7 +67,20 @@ public:
     }
     
 private:
-    DMATransfer m_dma_transfer;
+    struct DMATransfer
+    {
+        explicit DMATransfer(uint16_t source_addr):
+        cycles_remaining(640), source_addr(source_addr)
+        {}
+        
+        DMATransfer():
+        cycles_remaining(-1), source_addr(0)
+        {}
+        
+        int cycles_remaining;
+        uint16_t source_addr;
+    } m_dma_transfer;
+    
     bool m_bootstrap_in_mem;
     MemoryManager& get_mm(uint16_t addr);
     InterruptManager m_interrupt_handler;
