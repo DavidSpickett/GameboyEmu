@@ -158,27 +158,6 @@ public:
     
     void tick(uint8_t cycles);
     
-    void add_call(uint16_t from, uint16_t to, uint16_t sp)
-    {
-        return;
-        /*m_callstack_frames.push_back(
-            formatted_string("calling 0x%04x from 0x%04x sp is 0x%04x", to, from, sp));
-        print_callstack();*/
-    }
-    
-    void add_ret(uint16_t to, bool is_reti)
-    {
-        return;
-        /*m_callstack_frames.push_back(formatted_string("return to 0x%04x", to));
-        print_callstack();
-        m_callstack_frames.pop_back(); //Remove call/ret pair
-        
-        if (!is_reti && m_callstack_frames.size())
-        {
-            m_callstack_frames.pop_back();
-        }*/
-    }
-    
     void post_interrupt(uint8_t num);
     void skip_bootstrap();
     
@@ -190,20 +169,6 @@ public:
     
 private:
     std::array<uint16_t, 5> m_interrupt_addrs;
-    std::vector<std::string> m_callstack_frames;
-    
-    void print_callstack()
-    {
-        return;
-        
-        printf("\n------Callstack------\n");
-        std::vector<std::string>::iterator it=m_callstack_frames.begin();
-        for (; it != m_callstack_frames.end(); ++it)
-        {
-            printf("%s\n", it->c_str());
-        }
-        printf("-----------------\n\n");
-    }
     
     uint16_t get_pair(Register<uint8_t> high, Register<uint8_t> low)
     {

@@ -261,7 +261,6 @@ inline uint8_t ret(Z80& proc)
     proc.pc.write(new_addr);
     
     debug_print("%s", "ret\n");
-    proc.add_ret(new_addr, false);
     return 8;
 }
 
@@ -465,11 +464,9 @@ inline uint8_t call_nn(Z80& proc)
     proc.sp.dec(2);
     proc.mem.write16(proc.sp.read(), proc.pc.read());
     
-    uint16_t old_pc = proc.pc.read();
     proc.pc.write(j_addr);
     
     debug_print("call 0x%02x\n", j_addr);
-    proc.add_call(old_pc, j_addr, proc.sp.read());
     return 12;
 }
 
@@ -2033,10 +2030,6 @@ inline uint8_t ret_cc(Z80& proc, uint8_t b1)
     }
     
     debug_print("ret %s\n", type.c_str());
-    if (jump)
-    {
-        proc.add_ret(new_addr, false);
-    }
     return 8;
 }
 
@@ -2104,7 +2097,6 @@ inline uint8_t call_cc_nn(Z80& proc, uint8_t b1)
     std::string type = "?";
     auto jump = get_jump_condition(proc, b1, type);
     
-    uint16_t old_pc = proc.pc.read();
     if (jump)
     {
         proc.sp.dec(2);
@@ -2113,10 +2105,6 @@ inline uint8_t call_cc_nn(Z80& proc, uint8_t b1)
     }
     
     debug_print("call %s, 0x%04x\n", ctype.c_str(), addr);
-    if (jump)
-    {
-        proc.add_call(old_pc, addr, proc.sp.read());
-    }
     return 12;
 }
 
@@ -2227,7 +2215,6 @@ inline uint8_t reti(Z80& proc)
     proc.interrupt_enable = true;
     
     debug_print("%s\n", "reti");
-    proc.add_ret(addr, true);
     return 16;
 }
 
