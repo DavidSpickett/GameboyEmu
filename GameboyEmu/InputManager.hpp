@@ -12,16 +12,10 @@
 #include <stdio.h>
 #include "MemoryManager.hpp"
 
-const uint8_t MODE_DIR = 0;
-const uint8_t MODE_BUTTON = 1;
-const uint8_t MODE_INVALID = 2;
-
 class InputManager: public MemoryManager
 {
 public:
-    InputManager():
-        m_joypad(0xff), m_mode(MODE_INVALID)
-    {}
+    InputManager();
     
     uint8_t read8(uint16_t addr);
     void write8(uint16_t addr, uint8_t value);
@@ -31,7 +25,7 @@ public:
     
     bool read_inputs();
     
-    void tick(size_t curr_cycles);
+    void tick(size_t curr_cycles) {}
     
 private:
     uint8_t m_joypad;

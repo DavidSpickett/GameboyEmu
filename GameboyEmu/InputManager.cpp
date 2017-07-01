@@ -12,6 +12,10 @@
 
 namespace
 {
+    const uint8_t MODE_DIR     = 0;
+    const uint8_t MODE_BUTTON  = 1;
+    const uint8_t MODE_INVALID = 2;
+    
     const int joypad_keycodes[] = {SDL_SCANCODE_RIGHT, SDL_SCANCODE_LEFT, SDL_SCANCODE_UP, SDL_SCANCODE_DOWN};
     const int button_keycodes[] = {SDL_SCANCODE_X, SDL_SCANCODE_Z, SDL_SCANCODE_RSHIFT, SDL_SCANCODE_RETURN};
     
@@ -34,6 +38,11 @@ namespace
         
         return new_pad_value;
     }
+}
+
+InputManager::InputManager():
+    m_joypad(0xff), m_mode(MODE_INVALID)
+{
 }
 
 bool InputManager::read_inputs()
@@ -72,8 +81,4 @@ void InputManager::write8(uint16_t addr, uint8_t value)
     {
         m_mode = MODE_BUTTON;
     }
-}
-
-void InputManager::tick(size_t curr_cycles)
-{
 }
