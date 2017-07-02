@@ -111,12 +111,6 @@ void HardwareIORegs::write8(uint16_t addr, uint8_t value)
 
 void HardwareIORegs::tick(size_t curr_cycles)
 {
-    //Don't currently look for more than one timer change per tick
-    if ((curr_cycles - m_cycles) > 31)
-    {
-        throw std::runtime_error("Timers will not be correct!");
-    }
-    
     size_t cycles_passed = curr_cycles - m_cycles;
     m_cycles = curr_cycles;
     

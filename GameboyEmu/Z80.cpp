@@ -78,9 +78,7 @@ void Z80::post_interrupt(uint8_t num)
 
 void Z80::tick(uint8_t cycles)
 {
-    //In future, expand 'tick' concept to other peripherals
     m_total_cycles += cycles;
-    
     mem.tick(m_total_cycles);
 }
 
