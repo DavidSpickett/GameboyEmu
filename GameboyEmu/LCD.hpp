@@ -14,10 +14,7 @@
 
 const size_t LCD_WIDTH  = 160;
 const size_t LCD_HEIGHT = 144;
-
-using LCDPalette = std::array<uint8_t, 4>;
-using OAMData = std::array<uint8_t, LCD_OAM_END-LCD_OAM_START>;
-using LCDData = std::array<uint8_t, LCD_MEM_END-LCD_MEM_START>;
+const int TILE_WIDTH    = 8;
 
 struct colour
 {
@@ -36,6 +33,48 @@ struct colour
     uint8_t b;
     uint8_t a;
 };
+
+using LCDPalette = std::array<uint8_t, 4>;
+using OAMData = std::array<uint8_t, LCD_OAM_END-LCD_OAM_START>;
+using LCDData = std::array<uint8_t, LCD_MEM_END-LCD_MEM_START>;
+
+struct Sprite
+{
+    explicit Sprite(OAMData::const_iterator start)
+    {
+        y = int(*start++) - 16;
+        x = int(*start++) - TILE_WIDTH;
+        pattern_number = *start++;
+        
+        auto flags = *start;
+        priority       = flags & (1<<7);
+        y_flip         = flags & (1<<6);
+        x_flip         = flags & (1<<5);
+        pallete_number = flags & (1<<4);
+    }
+    
+    Sprite():
+        x(0), y(0), pattern_number(0), priority(false),
+        y_flip(false), x_flip(false), pallete_number(false)
+    {}
+    
+    int x;
+    int y;
+    uint8_t pattern_number;
+    bool priority;
+    bool y_flip;
+    bool x_flip;
+    bool pallete_number;
+    
+    std::string to_str()
+    {
+        return formatted_string("Sprite at X:%d Y:%x priority:%d xflip:%d yflip:%d palettenum:%d",
+                                x, y, priority, x_flip,
+                                y_flip, pallete_number);
+    }
+};
+
+using LCDSprites = std::array<Sprite, 40>;
 
 class LCDControlReg
 {
@@ -96,6 +135,7 @@ class LCD: public MemoryManager
         LCDControlReg m_control_reg;
         LCDData m_data;
         OAMData m_oam_data;
+        LCDSprites m_sprites;
         std::array<uint8_t, LCD_REGS_END-LCD_REGS_START> m_registers;
         std::array<colour, LCD_HEIGHT*LCD_WIDTH> m_pixel_data;
         size_t m_last_tick_cycles;
@@ -116,6 +156,8 @@ class LCD: public MemoryManager
             bool is_sprite,
             bool flip_x,
             const LCDPalette& palette);
+    
+        void update_sprite(uint16_t addr);
     
         void set_mode(uint8_t mode);
 

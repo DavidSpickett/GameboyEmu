@@ -34,7 +34,6 @@ namespace
     const int SPRITE_INFO_BYTES = 4;
     const int TILE_BYTES        = 16;
     const int TILES_PER_LINE    = 32;
-    const int TILE_WIDTH        = 8;
 
     struct Pixel
     {
@@ -46,37 +45,6 @@ namespace
         int x;
         int y;
         uint8_t c;
-    };
-    
-    struct Sprite
-    {
-        explicit Sprite(OAMData::const_iterator start)
-        {
-            y = int(*start++) - 16;
-            x = int(*start++) - TILE_WIDTH;
-            pattern_number = *start++;
-            
-            auto flags = *start;
-            priority       = flags & (1<<7);
-            y_flip         = flags & (1<<6);
-            x_flip         = flags & (1<<5);
-            pallete_number = flags & (1<<4);
-        }
-        
-        int x;
-        int y;
-        uint8_t pattern_number;
-        bool priority;
-        bool y_flip;
-        bool x_flip;
-        bool pallete_number;
-        
-        std::string to_str()
-        {
-            return formatted_string("Sprite at X:%d Y:%x priority:%d xflip:%d yflip:%d palettenum:%d",
-                                    x, y, priority, x_flip,
-                                    y_flip, pallete_number);
-        }
     };
 }
 
@@ -101,6 +69,11 @@ m_control_reg(0)
     init_array(m_data);
     
     set_mode(LCD_MODE_VBLANK);
+    
+    for (auto addr=LCD_OAM_START; addr != LCD_OAM_END; addr+=SPRITE_INFO_BYTES)
+    {
+        update_sprite(addr);
+    }
 }
 
 void LCD::set_mode(uint8_t mode)
@@ -202,6 +175,14 @@ void LCD::SDLInit()
     SDLClear();
 }
 
+void LCD::update_sprite(uint16_t addr)
+{
+    addr -= LCD_OAM_START;
+    auto index = addr / SPRITE_INFO_BYTES;
+    addr -= addr % SPRITE_INFO_BYTES;
+    m_sprites[index] = Sprite(m_oam_data.begin()+addr);
+}
+
 //Note that tile also means sprite here, colour data is in the same format.
 void LCD::tile_row_to_pixels(
     LCDData::const_iterator data_b, //Pointer to pixel data (must already point to correct row)
@@ -244,10 +225,8 @@ void LCD::draw_sprites()
     const int sprite_height = m_control_reg.get_sprite_size();
     const int sprite_bytes  = 2*sprite_height;
     
-    for (auto oam_addr=0; oam_addr < LCD_OAM_SIZE; oam_addr+=SPRITE_INFO_BYTES)
+    std::for_each(m_sprites.begin(), m_sprites.end(), [=](const Sprite& sprite)
     {
-        const Sprite sprite(m_oam_data.begin()+oam_addr);
-        
         int sprite_row_offset = int(m_curr_scanline) - sprite.y;
         LCDPalette& palette = sprite.pallete_number ? m_obj_pal_1 : m_obj_pal_0;
         
@@ -280,8 +259,7 @@ void LCD::draw_sprites()
                                sprite.x_flip,
                                palette);
         }
-    }
-
+    });
 }
 
 void LCD::draw_window()
@@ -557,6 +535,7 @@ void LCD::write8(uint16_t addr, uint8_t value)
     else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
     {
         m_oam_data[addr-LCD_OAM_START] = value;
+        update_sprite(addr);
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
@@ -635,6 +614,7 @@ void LCD::write16(uint16_t addr, uint16_t value)
         uint16_t offset = addr-LCD_OAM_START;
         m_oam_data[offset] = value & 0xff;
         m_oam_data[offset+1] = (value >> 8) & 0xff;
+        update_sprite(addr);
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
