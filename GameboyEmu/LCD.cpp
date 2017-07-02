@@ -213,19 +213,18 @@ void LCD::tile_row_to_pixels(
 
 void LCD::draw_sprites()
 {
-    const int sprite_height = m_control_reg.get_sprite_size();
-    const int sprite_bytes  = 2*sprite_height;
+    const int sprite_bytes  = 2*m_control_reg.sprite_size;
     
     std::for_each(m_sprites.begin(), m_sprites.end(), [=](const Sprite& sprite)
     {
         int sprite_row_offset = int(m_curr_scanline) - sprite.y;
         LCDPalette& palette = sprite.pallete_number ? m_obj_pal_1 : m_obj_pal_0;
         
-        if (sprite.on_screen(m_curr_scanline, sprite_height))
+        if (sprite.on_screen(m_curr_scanline, m_control_reg.sprite_size))
         {
             //Sprite pixels are stored in the same place as backgound tiles
             uint16_t tile_offset = sprite.pattern_number;
-            if (sprite_height == 16)
+            if (m_control_reg.sprite_size == 16)
             {
                 tile_offset &= ~1;
             }
@@ -234,7 +233,7 @@ void LCD::draw_sprites()
             LCDData::const_iterator norm_sprite(m_data.begin()+tile_offset);
             if (sprite.y_flip)
             {
-                norm_sprite += (sprite_height-sprite_row_offset-1)*2;
+                norm_sprite += (m_control_reg.sprite_size-sprite_row_offset-1)*2;
             }
             else
             {
@@ -252,18 +251,18 @@ void LCD::draw_sprites()
 
 void LCD::draw_window()
 {
-    if (m_control_reg.get_window_display())
+    if (m_control_reg.window_display)
     {
         auto winy = get_reg8(WINPOSY);
         
         if (m_curr_scanline >= winy)
         {
-            auto tile_table_address = m_control_reg.get_window_tile_table_addr();
+            auto tile_table_address = m_control_reg.window_tile_table_addr;
             auto winx = get_reg8(WINPOSX)-7;
             
-            auto tile_data_addr = m_control_reg.get_bgrnd_tile_data_addr();
+            auto tile_data_addr = m_control_reg.bgrnd_tile_data_addr;
             auto signed_tile_nos = tile_data_addr == 0x0800;
-            auto transparancy = m_control_reg.get_colour_0_transparent();
+            auto transparancy = m_control_reg.colour_0_transparent;
             
             auto tile_index_row = (m_curr_scanline-winy) / 8;
             auto tile_row_offset = (m_curr_scanline-winy) % 8;
@@ -291,14 +290,14 @@ void LCD::draw_window()
 
 void LCD::draw_background()
 {
-    if (m_control_reg.background_display())
+    if (m_control_reg.background_display)
     {
         //Data describing the tiles themselves
-        uint16_t background_tile_data_addr = m_control_reg.get_bgrnd_tile_data_addr();
+        uint16_t background_tile_data_addr = m_control_reg.bgrnd_tile_data_addr;
         bool signed_tile_nos = background_tile_data_addr == 0x0800;
         
         //Address of table of tile indexes that form the background
-        const uint16_t background_tile_addr_table = m_control_reg.get_bgrnd_tile_table_addr();
+        const uint16_t background_tile_addr_table = m_control_reg.bgrnd_tile_table_addr;
         
         //The point in the background at which pixel 0,0 on the screen is taken from.
         const uint8_t start_x = get_reg8(SCROLLX);
@@ -402,7 +401,7 @@ void LCD::tick(size_t curr_cycles)
                  State machine continues if LCD is off, games like Dr. Mario
                  disable it during transitions.
                 */
-                if (m_control_reg.get_lcd_operation())
+                if (m_control_reg.lcd_operation)
                 {
                     SDLDraw();
                 }
@@ -530,11 +529,11 @@ void LCD::write8(uint16_t addr, uint8_t value)
                 break;
             case LCDCONTROL:
                 m_control_reg.write(value);
-                if (m_control_reg.get_lcd_operation() && (m_window == NULL))
+                if (m_control_reg.lcd_operation && (m_window == NULL))
                 {
                     SDLInit();
                 }
-                else if (!m_control_reg.get_lcd_operation())
+                else if (!m_control_reg.lcd_operation)
                 {
                     SDLClear();
                 }

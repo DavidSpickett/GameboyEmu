@@ -92,24 +92,39 @@ struct Sprite
 
 using LCDSprites = std::array<Sprite, 40>;
 
-class LCDControlReg
+struct LCDControlReg
 {
-public:
     explicit LCDControlReg(uint8_t value):
         m_value(value)
     {}
     
-    void write(uint8_t value) { m_value=value; }
-    uint8_t read()            { return m_value; }
+    uint8_t read()
+    {
+        return m_value;
+    }
     
-    bool get_lcd_operation()              { return m_value & (1<<7); }
-    uint16_t get_window_tile_table_addr() { return (m_value & (1<<6)) ? 0x9C00-LCD_MEM_START : 0x9800-LCD_MEM_START; }
-    bool get_window_display()             { return m_value & (1<<5); }
-    uint16_t get_bgrnd_tile_data_addr()   { return (m_value & (1<<4)) ? 0x8000-LCD_MEM_START : 0x8800-LCD_MEM_START; }
-    uint16_t get_bgrnd_tile_table_addr()  { return (m_value & (1<<3)) ? 0x9c00-LCD_MEM_START : 0x9800-LCD_MEM_START; }
-    uint8_t get_sprite_size()             { return (m_value & (1<<2)) ? 16 : 8; }
-    bool get_colour_0_transparent()       { return (m_value & (1<<1)) == 0; }
-    bool background_display()             { return (m_value) & 1; }
+    void write(uint8_t value)
+    {
+        m_value=value;
+        
+        lcd_operation = m_value & (1<<7);
+        window_tile_table_addr = (m_value & (1<<6)) ? 0x9C00-LCD_MEM_START : 0x9800-LCD_MEM_START;
+        window_display = m_value & (1<<5);
+        bgrnd_tile_data_addr = (m_value & (1<<4)) ? 0x8000-LCD_MEM_START : 0x8800-LCD_MEM_START;
+        bgrnd_tile_table_addr = (m_value & (1<<3)) ? 0x9c00-LCD_MEM_START : 0x9800-LCD_MEM_START;
+        sprite_size = (m_value & (1<<2)) ? 16 : 8;
+        colour_0_transparent = (m_value & (1<<1)) == 0;
+        background_display = (m_value) & 1;
+    }
+    
+    bool lcd_operation;
+    uint16_t window_tile_table_addr;
+    bool window_display;
+    uint16_t bgrnd_tile_data_addr;
+    uint16_t bgrnd_tile_table_addr;
+    uint8_t sprite_size;
+    bool colour_0_transparent;
+    bool background_display;
     
 private:
     uint8_t m_value;
