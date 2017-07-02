@@ -101,9 +101,6 @@ void LCD::SDLClear()
 
 void LCD::SDLDraw()
 {
-    //Note: we need to clear the screen here to remove the after
-    //effect of the previous render. (once we can run fast enough for that to work)
-    
     SDL_Rect r;
     r.h = m_scale_factor;
     r.w = m_scale_factor;
