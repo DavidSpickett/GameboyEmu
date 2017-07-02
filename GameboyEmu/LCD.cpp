@@ -230,10 +230,7 @@ void LCD::draw_sprites()
         int sprite_row_offset = int(m_curr_scanline) - sprite.y;
         LCDPalette& palette = sprite.pallete_number ? m_obj_pal_1 : m_obj_pal_0;
         
-        if ((m_curr_scanline >= sprite.y) &&
-            (m_curr_scanline < (sprite.y+sprite_height)) &&
-            (sprite.x > - TILE_WIDTH)
-            )
+        if (sprite.on_screen(m_curr_scanline, sprite_height))
         {
             //Sprite pixels are stored in the same place as backgound tiles
             uint16_t tile_offset = sprite.pattern_number;

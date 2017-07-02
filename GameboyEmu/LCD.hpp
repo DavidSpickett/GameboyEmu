@@ -58,6 +58,12 @@ struct Sprite
         y_flip(false), x_flip(false), pallete_number(false)
     {}
     
+    bool on_screen(uint8_t curr_scanline, int sprite_height) const
+    {
+        return (curr_scanline >= y) &&
+            (curr_scanline < (y+sprite_height)) && (x > -TILE_WIDTH);
+    }
+    
     int x;
     int y;
     uint8_t pattern_number;
