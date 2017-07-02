@@ -33,18 +33,6 @@ namespace
 
     const int TILE_BYTES        = 16;
     const int TILES_PER_LINE    = 32;
-
-    struct Pixel
-    {
-        Pixel(int x, int y, uint8_t c):
-        x(x), y(y), c(c)
-        {
-        }
-        
-        int x;
-        int y;
-        uint8_t c;
-    };
 }
 
 LCD::LCD(int scale_factor):
