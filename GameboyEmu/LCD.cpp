@@ -202,7 +202,7 @@ void LCD::tile_row_to_pixels(
 
 void LCD::draw_sprites()
 {
-    const int sprite_bytes  = 2*m_control_reg.sprite_size;
+    const int sprite_bytes = 2*m_control_reg.sprite_size;
     
     std::for_each(m_sprites.begin(), m_sprites.end(), [=](const Sprite& sprite)
     {
@@ -219,17 +219,17 @@ void LCD::draw_sprites()
             }
             tile_offset *= sprite_bytes;
             
-            LCDData::const_iterator norm_sprite(m_data.begin()+tile_offset);
+            LCDData::const_iterator sprite_data(m_data.begin()+tile_offset);
             if (sprite.y_flip)
             {
-                norm_sprite += (m_control_reg.sprite_size-sprite_row_offset-1)*2;
+                sprite_data += (m_control_reg.sprite_size-sprite_row_offset-1)*2;
             }
             else
             {
-                norm_sprite += sprite_row_offset*2;
+                sprite_data += sprite_row_offset*2;
             }
             
-            tile_row_to_pixels(norm_sprite,
+            tile_row_to_pixels(sprite_data,
                                sprite.x, sprite.y + sprite_row_offset,
                                true,
                                sprite.x_flip,
