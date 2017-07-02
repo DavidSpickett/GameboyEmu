@@ -249,7 +249,6 @@ void LCD::draw_window()
             
             auto tile_data_addr = m_control_reg.bgrnd_tile_data_addr;
             auto signed_tile_nos = tile_data_addr == 0x0800;
-            auto transparancy = m_control_reg.colour_0_transparent;
             
             auto tile_index_row = (m_curr_scanline-m_winposy) / 8;
             auto tile_row_offset = (m_curr_scanline-m_winposy) % 8;
@@ -267,7 +266,7 @@ void LCD::draw_window()
                 tile_row_to_pixels(
                    m_data.begin() + tile_addr + tile_data_addr + (tile_row_offset*2),
                    x, m_curr_scanline,
-                   transparancy,
+                   m_control_reg.colour_0_transparent,
                    false,
                    m_bgrd_pal);
             }
