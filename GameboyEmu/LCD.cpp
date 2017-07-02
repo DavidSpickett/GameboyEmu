@@ -244,18 +244,15 @@ void LCD::draw_window()
     {
         if (m_curr_scanline >= m_winposy)
         {
-            auto tile_table_address = m_control_reg.window_tile_table_addr;
-            auto winx = m_winposx-7;
-            
-            auto tile_data_addr = m_control_reg.bgrnd_tile_data_addr;
-            auto signed_tile_nos = tile_data_addr == 0x0800;
-            
+            auto x = m_winposx-7;
+            auto signed_tile_nos = m_control_reg.bgrnd_tile_data_addr == 0x0800;
             auto tile_index_row = (m_curr_scanline-m_winposy) / 8;
             auto tile_row_offset = (m_curr_scanline-m_winposy) % 8;
             
-            for (auto x=winx, tile_no=0; x<(LCD_WIDTH+8); x+=TILE_WIDTH, ++tile_no)
+            for (auto tile_no=0; x<(LCD_WIDTH+8); x+=TILE_WIDTH, ++tile_no)
             {
-                auto tile_index = m_data[tile_table_address+(tile_index_row*TILES_PER_LINE)+tile_no];
+                auto offset = m_control_reg.window_tile_table_addr+(tile_index_row*TILES_PER_LINE)+tile_no;
+                auto tile_index = m_data[offset];
                 if (signed_tile_nos)
                 {
                     tile_index += 128;
@@ -264,7 +261,7 @@ void LCD::draw_window()
                 uint16_t tile_addr = (tile_index*TILE_BYTES);
                 
                 tile_row_to_pixels(
-                   m_data.begin() + tile_addr + tile_data_addr + (tile_row_offset*2),
+                   m_data.begin() + tile_addr + m_control_reg.bgrnd_tile_data_addr + (tile_row_offset*2),
                    x, m_curr_scanline,
                    m_control_reg.colour_0_transparent,
                    false,
@@ -278,14 +275,7 @@ void LCD::draw_background()
 {
     if (m_control_reg.background_display)
     {
-        //Data describing the tiles themselves
-        uint16_t background_tile_data_addr = m_control_reg.bgrnd_tile_data_addr;
-        bool signed_tile_nos = background_tile_data_addr == 0x0800;
-        
-        //Address of table of tile indexes that form the background
-        const uint16_t background_tile_addr_table = m_control_reg.bgrnd_tile_table_addr;
-        
-        //printf("scanline %d scrollx %d\n", m_curr_scanline, get_reg8(SCROLLX));
+        bool signed_tile_nos = m_control_reg.bgrnd_tile_data_addr == 0x0800;
         
         //There is only one line of tiles we are interested in since we're only doing one scanline
         //Note that Y wraps
@@ -305,7 +295,7 @@ void LCD::draw_background()
             }
             
             //Get actual value of index from the table
-            uint8_t tile_index = m_data[background_tile_addr_table+(TILES_PER_LINE*tile_row)+tile_row_offset];
+            uint8_t tile_index = m_data[m_control_reg.bgrnd_tile_table_addr+(TILES_PER_LINE*tile_row)+tile_row_offset];
             
             if (signed_tile_nos)
             {
@@ -316,7 +306,7 @@ void LCD::draw_background()
             uint16_t tile_addr = tile_index*TILE_BYTES;
             
             tile_row_to_pixels(
-               m_data.begin() + tile_addr + background_tile_data_addr + (tile_pixel_row*2),
+               m_data.begin() + tile_addr + m_control_reg.bgrnd_tile_data_addr + (tile_pixel_row*2),
                x - (m_scroll_x % TILE_WIDTH), m_curr_scanline,
                false,
                false,
