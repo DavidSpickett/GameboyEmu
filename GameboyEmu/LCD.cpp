@@ -41,8 +41,7 @@ m_lcd_line_cycles(0),
 m_scale_factor(scale_factor),
 m_curr_scanline(145),
 m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9),
-          colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)},
-m_control_reg(0)
+          colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)}
 {
     m_sdl_width = LCD_WIDTH*m_scale_factor;
     m_sdl_height = LCD_HEIGHT*m_scale_factor;

@@ -94,8 +94,8 @@ using LCDSprites = std::array<Sprite, 40>;
 
 struct LCDControlReg
 {
-    explicit LCDControlReg(uint8_t value):
-        m_value(value)
+    LCDControlReg():
+        m_value(0)
     {}
     
     uint8_t read()
