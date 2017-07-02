@@ -47,39 +47,36 @@ namespace
         int y;
         uint8_t c;
     };
-
-    class Sprite
+    
+    struct Sprite
     {
-    public:
-        explicit Sprite(OAMData::const_iterator start):
-        m_data(start)
-        {}
-        
-        Sprite& operator++()
+        explicit Sprite(OAMData::const_iterator start)
         {
-            m_data += SPRITE_INFO_BYTES;
-            return *this;
+            y = int(*start++) - 16;
+            x = int(*start++) - TILE_WIDTH;
+            pattern_number = *start++;
+            
+            auto flags = *start;
+            priority       = flags & (1<<7);
+            y_flip         = flags & (1<<6);
+            x_flip         = flags & (1<<5);
+            pallete_number = flags & (1<<4);
         }
         
-        int get_y() { return int(*m_data) - 16; }
-        int get_x() { return int(*(m_data+1)) - TILE_WIDTH; }
-        uint8_t get_pattern_number() { return *(m_data+2); }
-        
-        bool get_priority() { return get_flag(7); }
-        bool get_y_flip() { return get_flag(6); }
-        bool get_x_flip() { return get_flag(5); }
-        bool get_palette_number() { return get_flag(4); }
+        int x;
+        int y;
+        uint8_t pattern_number;
+        bool priority;
+        bool y_flip;
+        bool x_flip;
+        bool pallete_number;
         
         std::string to_str()
         {
             return formatted_string("Sprite at X:%d Y:%x priority:%d xflip:%d yflip:%d palettenum:%d",
-                                    get_x(), get_y(), get_priority(), get_x_flip(),
-                                    get_y_flip(), get_palette_number());
+                                    x, y, priority, x_flip,
+                                    y_flip, pallete_number);
         }
-        
-    private:
-        bool get_flag(uint8_t pos) { return *(m_data+3) & (1<<pos); }
-        OAMData::const_iterator m_data;
     };
 }
 
@@ -247,22 +244,20 @@ void LCD::draw_sprites()
     const int sprite_height = m_control_reg.get_sprite_size();
     const int sprite_bytes  = 2*sprite_height;
     
-    Sprite sprite(m_oam_data.begin());
-    for (auto oam_addr=0; oam_addr < LCD_OAM_SIZE; oam_addr+=SPRITE_INFO_BYTES, ++sprite)
+    for (auto oam_addr=0; oam_addr < LCD_OAM_SIZE; oam_addr+=SPRITE_INFO_BYTES)
     {
-        auto sprite_x = sprite.get_x();
-        auto sprite_y = sprite.get_y();
+        const Sprite sprite(m_oam_data.begin()+oam_addr);
         
-        int sprite_row_offset = int(m_curr_scanline) - sprite_y;
-        LCDPalette& palette = sprite.get_palette_number() ? m_obj_pal_1 : m_obj_pal_0;
+        int sprite_row_offset = int(m_curr_scanline) - sprite.y;
+        LCDPalette& palette = sprite.pallete_number ? m_obj_pal_1 : m_obj_pal_0;
         
-        if ((m_curr_scanline >= sprite_y) &&
-            (m_curr_scanline < (sprite_y+sprite_height)) &&
-            (sprite_x > - TILE_WIDTH)
+        if ((m_curr_scanline >= sprite.y) &&
+            (m_curr_scanline < (sprite.y+sprite_height)) &&
+            (sprite.x > - TILE_WIDTH)
             )
         {
             //Sprite pixels are stored in the same place as backgound tiles
-            uint16_t tile_offset = sprite.get_pattern_number();
+            uint16_t tile_offset = sprite.pattern_number;
             if (sprite_height == 16)
             {
                 tile_offset &= ~1;
@@ -270,7 +265,7 @@ void LCD::draw_sprites()
             tile_offset *= sprite_bytes;
             
             LCDData::const_iterator norm_sprite(m_data.begin()+tile_offset);
-            if (sprite.get_y_flip())
+            if (sprite.y_flip)
             {
                 norm_sprite += (sprite_height-sprite_row_offset-1)*2;
             }
@@ -280,11 +275,10 @@ void LCD::draw_sprites()
             }
             
             tile_row_to_pixels(norm_sprite,
-                               sprite_x, sprite_y+sprite_row_offset,
+                               sprite.x, sprite.y + sprite_row_offset,
                                true,
-                               sprite.get_x_flip(),
+                               sprite.x_flip,
                                palette);
-            
         }
     }
 
