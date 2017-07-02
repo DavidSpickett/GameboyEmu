@@ -359,8 +359,7 @@ void LCD::tick(size_t curr_cycles)
     auto new_mode = old_mode;
     auto old_scanline = m_curr_scanline;
     
-    size_t cycle_diff = curr_cycles - m_last_tick_cycles;
-    m_lcd_line_cycles += cycle_diff;
+    m_lcd_line_cycles += curr_cycles - m_last_tick_cycles;
     
     switch (old_mode)
     {
@@ -430,12 +429,14 @@ void LCD::tick(size_t curr_cycles)
             break;
     }
     
-    auto cmpline = get_reg8(CMPLINE);
     if ((m_curr_scanline != old_scanline) &&
-        (m_curr_scanline == cmpline) &&
         (lcd_stat & (1<<6)))
     {
-        post_int(LCD_STAT);
+        auto cmpline = get_reg8(CMPLINE);
+        if (m_curr_scanline == cmpline)
+        {
+            post_int(LCD_STAT);
+        }
     }
     
     if (old_mode != new_mode)
