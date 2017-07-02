@@ -12,9 +12,10 @@
 #include <SDL2/SDL.h>
 #include "MemoryManager.hpp"
 
-const size_t LCD_WIDTH  = 160;
-const size_t LCD_HEIGHT = 144;
-const int TILE_WIDTH    = 8;
+const size_t LCD_WIDTH      = 160;
+const size_t LCD_HEIGHT     = 144;
+const int TILE_WIDTH        = 8;
+const int SPRITE_INFO_BYTES = 4;
 
 struct colour
 {
@@ -40,23 +41,32 @@ using LCDData = std::array<uint8_t, LCD_MEM_END-LCD_MEM_START>;
 
 struct Sprite
 {
-    explicit Sprite(OAMData::const_iterator start)
-    {
-        y = int(*start++) - 16;
-        x = int(*start++) - TILE_WIDTH;
-        pattern_number = *start++;
-        
-        auto flags = *start;
-        priority       = flags & (1<<7);
-        y_flip         = flags & (1<<6);
-        x_flip         = flags & (1<<5);
-        pallete_number = flags & (1<<4);
-    }
-    
     Sprite():
-        x(0), y(0), pattern_number(0), priority(false),
+        x(-999), y(-999), pattern_number(0), priority(false),
         y_flip(false), x_flip(false), pallete_number(false)
     {}
+    
+    void update(uint16_t addr, uint8_t value)
+    {
+        switch (addr % SPRITE_INFO_BYTES)
+        {
+            case 0:
+                y = int(value) - 16;
+                break;
+            case 1:
+                x = int(value) - TILE_WIDTH;
+                break;
+            case 2:
+                pattern_number = value;
+                break;
+            case 3:
+                priority       = value & (1<<7);
+                y_flip         = value & (1<<6);
+                x_flip         = value & (1<<5);
+                pallete_number = value & (1<<4);
+                break;
+        }
+    }
     
     bool on_screen(uint8_t curr_scanline, int sprite_height) const
     {
@@ -140,7 +150,6 @@ class LCD: public MemoryManager
     
         LCDControlReg m_control_reg;
         LCDData m_data;
-        OAMData m_oam_data;
         LCDSprites m_sprites;
         std::array<uint8_t, LCD_REGS_END-LCD_REGS_START> m_registers;
         std::array<colour, LCD_HEIGHT*LCD_WIDTH> m_pixel_data;
@@ -163,8 +172,7 @@ class LCD: public MemoryManager
             bool flip_x,
             const LCDPalette& palette);
     
-        void update_sprite(uint16_t addr);
-    
+        void update_sprite(uint16_t addr, uint8_t value);
         void set_mode(uint8_t mode);
 
         LCDPalette make_palette(uint8_t addr);

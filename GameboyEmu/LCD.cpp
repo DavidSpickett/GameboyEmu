@@ -31,7 +31,6 @@ namespace
 
     const uint8_t VBLANK_SCANLINE = 144;
 
-    const int SPRITE_INFO_BYTES = 4;
     const int TILE_BYTES        = 16;
     const int TILES_PER_LINE    = 32;
 
@@ -65,15 +64,9 @@ m_control_reg(0)
     init_array(m_obj_pal_1);
     init_array(m_pixel_data);
     init_array(m_registers);
-    init_array(m_oam_data);
     init_array(m_data);
     
     set_mode(LCD_MODE_VBLANK);
-    
-    for (auto addr=LCD_OAM_START; addr != LCD_OAM_END; addr+=SPRITE_INFO_BYTES)
-    {
-        update_sprite(addr);
-    }
 }
 
 void LCD::set_mode(uint8_t mode)
@@ -175,12 +168,10 @@ void LCD::SDLInit()
     SDLClear();
 }
 
-void LCD::update_sprite(uint16_t addr)
+void LCD::update_sprite(uint16_t addr, uint8_t value)
 {
-    addr -= LCD_OAM_START;
-    auto index = addr / SPRITE_INFO_BYTES;
-    addr -= addr % SPRITE_INFO_BYTES;
-    m_sprites[index] = Sprite(m_oam_data.begin()+addr);
+    auto index = (addr-LCD_OAM_START) / SPRITE_INFO_BYTES;
+    m_sprites[index].update(addr, value);
 }
 
 //Note that tile also means sprite here, colour data is in the same format.
@@ -511,10 +502,6 @@ uint8_t LCD::read8(uint16_t addr)
                 return get_reg8(addr);
         }
     }
-    else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
-    {
-        return m_oam_data[addr-LCD_OAM_START];
-    }
     else
     {
         throw std::runtime_error(formatted_string("8 bit read of LCD addr 0x%04x", addr));
@@ -531,8 +518,7 @@ void LCD::write8(uint16_t addr, uint8_t value)
     }
     else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
     {
-        m_oam_data[addr-LCD_OAM_START] = value;
-        update_sprite(addr);
+        update_sprite(addr, value);
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
@@ -582,12 +568,6 @@ uint16_t LCD::read16(uint16_t addr)
         uint16_t ret = (uint16_t(m_data[offset+1]) << 8) | uint16_t(m_data[offset]);
         return ret;
     }
-    else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
-    {
-        uint16_t offset = addr-LCD_OAM_START;
-        uint16_t ret = (uint16_t(m_oam_data[offset+1]) << 8) | uint16_t(m_oam_data[offset]);
-        return ret;
-    }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
         return get_reg16(addr);
@@ -608,10 +588,8 @@ void LCD::write16(uint16_t addr, uint16_t value)
     }
     else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
     {
-        uint16_t offset = addr-LCD_OAM_START;
-        m_oam_data[offset] = value & 0xff;
-        m_oam_data[offset+1] = (value >> 8) & 0xff;
-        update_sprite(addr);
+        update_sprite(addr, value & 0xff);
+        update_sprite(addr+1, (value >> 8) & 0xff);
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
