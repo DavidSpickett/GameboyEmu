@@ -41,7 +41,13 @@ m_lcd_line_cycles(0),
 m_scale_factor(scale_factor),
 m_curr_scanline(145),
 m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9),
-          colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)}
+          colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)},
+m_lcd_stat(0),
+m_scroll_y(0),
+m_scroll_x(0),
+m_cmpline(0),
+m_winposy(0),
+m_winposx(0)
 {
     m_sdl_width = LCD_WIDTH*m_scale_factor;
     m_sdl_height = LCD_HEIGHT*m_scale_factor;
@@ -50,7 +56,6 @@ m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9),
     init_array(m_obj_pal_0);
     init_array(m_obj_pal_1);
     init_array(m_pixel_data);
-    init_array(m_registers);
     init_array(m_data);
     
     set_mode(LCD_MODE_VBLANK);
@@ -58,7 +63,7 @@ m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9),
 
 void LCD::set_mode(uint8_t mode)
 {
-    set_reg8(LCDSTAT, (get_reg8(LCDSTAT) & ~3) | mode);
+    m_lcd_stat = (m_lcd_stat & ~3) | mode;
 }
 
 void LCD::SDLSaveImage(std::string filename)
@@ -237,19 +242,17 @@ void LCD::draw_window()
 {
     if (m_control_reg.window_display)
     {
-        auto winy = get_reg8(WINPOSY);
-        
-        if (m_curr_scanline >= winy)
+        if (m_curr_scanline >= m_winposy)
         {
             auto tile_table_address = m_control_reg.window_tile_table_addr;
-            auto winx = get_reg8(WINPOSX)-7;
+            auto winx = m_winposx-7;
             
             auto tile_data_addr = m_control_reg.bgrnd_tile_data_addr;
             auto signed_tile_nos = tile_data_addr == 0x0800;
             auto transparancy = m_control_reg.colour_0_transparent;
             
-            auto tile_index_row = (m_curr_scanline-winy) / 8;
-            auto tile_row_offset = (m_curr_scanline-winy) % 8;
+            auto tile_index_row = (m_curr_scanline-m_winposy) / 8;
+            auto tile_row_offset = (m_curr_scanline-m_winposy) % 8;
             
             for (auto x=winx, tile_no=0; x<(LCD_WIDTH+8); x+=TILE_WIDTH, ++tile_no)
             {
@@ -283,21 +286,17 @@ void LCD::draw_background()
         //Address of table of tile indexes that form the background
         const uint16_t background_tile_addr_table = m_control_reg.bgrnd_tile_table_addr;
         
-        //The point in the background at which pixel 0,0 on the screen is taken from.
-        const uint8_t start_x = get_reg8(SCROLLX);
-        const uint8_t start_y = get_reg8(SCROLLY);
-        
         //printf("scanline %d scrollx %d\n", m_curr_scanline, get_reg8(SCROLLX));
         
         //There is only one line of tiles we are interested in since we're only doing one scanline
         //Note that Y wraps
-        const uint16_t tile_row = (uint8_t(m_curr_scanline + start_y) / TILE_WIDTH);
+        const uint16_t tile_row = (uint8_t(m_curr_scanline + m_scroll_y) / TILE_WIDTH);
         
         //Then we must start somewhere in that row
-        uint8_t tile_row_offset = (start_x / TILE_WIDTH) % TILES_PER_LINE;
+        uint8_t tile_row_offset = (m_scroll_x / TILE_WIDTH) % TILES_PER_LINE;
         
         //Which row of pixels within the tile
-        const uint8_t tile_pixel_row = (m_curr_scanline + start_y) % TILE_WIDTH;
+        const uint8_t tile_pixel_row = (m_curr_scanline + m_scroll_y) % TILE_WIDTH;
         
         for (uint8_t x=0; x<(LCD_WIDTH+8); x+=TILE_WIDTH, ++tile_row_offset)
         {
@@ -319,7 +318,7 @@ void LCD::draw_background()
             
             tile_row_to_pixels(
                m_data.begin() + tile_addr + background_tile_data_addr + (tile_pixel_row*2),
-               x - (start_x % TILE_WIDTH), m_curr_scanline,
+               x - (m_scroll_x % TILE_WIDTH), m_curr_scanline,
                false,
                false,
                m_bgrd_pal);
@@ -353,8 +352,7 @@ void LCD::tick(size_t curr_cycles)
     const size_t CYCLES_MODE_3_BOTH_ACCESS = 43 + CYCLES_MODE_2_OAM_ACCESS;
     const size_t CYCLES_MODE_0_HBLANK      = 51 + CYCLES_MODE_3_BOTH_ACCESS;
     
-    uint8_t lcd_stat = get_reg8(LCDSTAT);
-    uint8_t old_mode = lcd_stat & 3;
+    uint8_t old_mode = m_lcd_stat & 3;
     auto new_mode = old_mode;
     auto old_scanline = m_curr_scanline;
     
@@ -429,10 +427,9 @@ void LCD::tick(size_t curr_cycles)
     }
     
     if ((m_curr_scanline != old_scanline) &&
-        (lcd_stat & (1<<6)))
+        (m_lcd_stat & (1<<6)))
     {
-        auto cmpline = get_reg8(CMPLINE);
-        if (m_curr_scanline == cmpline)
+        if (m_curr_scanline == m_cmpline)
         {
             post_int(LCD_STAT);
         }
@@ -456,7 +453,7 @@ void LCD::tick(size_t curr_cycles)
                     bit = 4;
             }
             
-            if (lcd_stat & (1<<bit))
+            if (m_lcd_stat & (1<<bit))
             {
                 post_int(LCD_STAT);
             }
@@ -482,8 +479,20 @@ uint8_t LCD::read8(uint16_t addr)
                 return m_curr_scanline;
             case LCDCONTROL:
                 return m_control_reg.read();
+            case LCDSTAT:
+                return m_lcd_stat;
+            case SCROLLY:
+                return m_scroll_y;
+            case SCROLLX:
+                return m_scroll_x;
+            case CMPLINE:
+                return m_cmpline;
+            case WINPOSY:
+                return m_winposy;
+            case WINPOSX:
+                return m_winposx;
             default:
-                return get_reg8(addr);
+                throw std::runtime_error("Unknown LCD register read!");
         }
     }
     else
@@ -525,7 +534,7 @@ void LCD::write8(uint16_t addr, uint8_t value)
                 break;
             case LCDSTAT:
                 //Mode bits are read only
-                set_reg8(LCDSTAT, get_reg8(LCDSTAT) | (value & ~3));
+                m_lcd_stat = m_lcd_stat | (value & ~3);
                 break;
             case BGRDPAL:
                 m_bgrd_pal = make_palette(value);
@@ -533,9 +542,23 @@ void LCD::write8(uint16_t addr, uint8_t value)
                 m_obj_pal_0 = make_palette(value);
             case OBJPAL1:
                 m_obj_pal_1 = make_palette(value);
-            default:
-                set_reg8(addr, value);
+            case SCROLLY:
+                m_scroll_y = value;
                 break;
+            case SCROLLX:
+                m_scroll_x = value;
+                break;
+            case CMPLINE:
+                m_cmpline = value;
+                break;
+            case WINPOSY:
+                m_winposy = value;
+                break;
+            case WINPOSX:
+                m_winposx = value;
+                break;
+            default:
+                throw std::runtime_error("Unknown LCD register write!");
         }
     }
     else
@@ -551,10 +574,6 @@ uint16_t LCD::read16(uint16_t addr)
         uint16_t offset = addr-LCD_MEM_START;
         uint16_t ret = (uint16_t(m_data[offset+1]) << 8) | uint16_t(m_data[offset]);
         return ret;
-    }
-    else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
-    {
-        return get_reg16(addr);
     }
     else
     {
@@ -574,10 +593,6 @@ void LCD::write16(uint16_t addr, uint16_t value)
     {
         update_sprite(addr, value & 0xff);
         update_sprite(addr+1, (value >> 8) & 0xff);
-    }
-    else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
-    {
-        set_reg16(addr, value);
     }
     else
     {

@@ -166,11 +166,17 @@ class LCD: public MemoryManager
         LCDControlReg m_control_reg;
         LCDData m_data;
         LCDSprites m_sprites;
-        std::array<uint8_t, LCD_REGS_END-LCD_REGS_START> m_registers;
         std::array<colour, LCD_HEIGHT*LCD_WIDTH> m_pixel_data;
         size_t m_last_tick_cycles;
         size_t m_lcd_line_cycles;
         uint8_t m_curr_scanline;
+    
+        uint8_t m_lcd_stat;
+        uint8_t m_scroll_y;
+        uint8_t m_scroll_x;
+        uint8_t m_cmpline;
+        uint8_t m_winposy;
+        uint8_t m_winposx;
     
         void SDLInit();
         void SDLDraw();
@@ -194,26 +200,6 @@ class LCD: public MemoryManager
         LCDPalette m_bgrd_pal;
         LCDPalette m_obj_pal_0;
         LCDPalette m_obj_pal_1;
-    
-        uint8_t get_reg8(uint16_t addr)
-        {
-            return m_registers[addr-LCD_REGS_START];
-        }
-    
-        void set_reg8(uint16_t addr, uint8_t value)
-        {
-            m_registers[addr-LCD_REGS_START] = value;
-        }
-    
-        uint16_t get_reg16(uint16_t addr)
-        {
-            return get_reg8(addr) | (get_reg8(addr+1) << 8);
-        }
-        void set_reg16(uint16_t addr, uint16_t value)
-        {
-            set_reg8(addr, value);
-            set_reg8(addr+1, value >> 8);
-        }
 };
 
 #endif /* LCD_hpp */
