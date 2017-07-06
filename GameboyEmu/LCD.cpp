@@ -163,7 +163,8 @@ void LCD::update_sprite(uint16_t addr, uint8_t value)
     m_sprites[index].update(addr, value);
 }
 
-void LCD::update_tile_row(uint16_t addr, uint8_t value)
+template <typename T>
+void LCD::update_tile_row(uint16_t addr, T value)
 {
     auto index = (addr-LCD_MEM_START) / 2;
     m_tile_rows[index].update(addr, value);
@@ -580,8 +581,7 @@ void LCD::write16(uint16_t addr, uint16_t value)
 {
     if ((addr >= LCD_MEM_START) && (addr < LCD_BGRND_DATA))
     {
-        update_tile_row(addr, value & 0xff);
-        update_tile_row(addr+1, (value >> 8) & 0xff);
+        update_tile_row(addr, value);
     }
     else if ((addr >= LCD_BGRND_DATA) && (addr < LCD_MEM_END))
     {

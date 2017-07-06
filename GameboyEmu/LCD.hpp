@@ -101,6 +101,13 @@ struct TileRow
     {}
     std::array<uint8_t, 8> m_colours;
     
+    void update(uint16_t addr, uint16_t value)
+    {
+        m_lsbs = value;
+        m_msbs = value >> 8;
+        _update();
+    }
+    
     void update(uint16_t addr, uint8_t value)
     {
         if (addr & 1)
@@ -111,7 +118,11 @@ struct TileRow
         {
             m_lsbs = value;
         }
-        
+        _update();
+    }
+private:
+    void _update()
+    {
         for (auto shift=0; shift<8; ++shift)
         {
             auto lsb = (m_lsbs >> shift) & 1;
@@ -232,7 +243,8 @@ class LCD: public MemoryManager
             const LCDPalette& palette);
     
         void update_sprite(uint16_t addr, uint8_t value);
-        void update_tile_row(uint16_t addr, uint8_t value);
+        template <typename T>
+        void update_tile_row(uint16_t addr, T value);
         void set_mode(uint8_t mode);
 
         LCDPalette make_palette(uint8_t addr);
