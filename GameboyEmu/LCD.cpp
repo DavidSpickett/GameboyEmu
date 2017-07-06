@@ -527,10 +527,13 @@ void LCD::write8(uint16_t addr, uint8_t value)
                 break;
             case BGRDPAL:
                 m_bgrd_pal = make_palette(value);
+                break;
             case OBJPAL0:
                 m_obj_pal_0 = make_palette(value);
+                break;
             case OBJPAL1:
                 m_obj_pal_1 = make_palette(value);
+                break;
             case SCROLLY:
                 m_scroll_y = value;
                 break;
