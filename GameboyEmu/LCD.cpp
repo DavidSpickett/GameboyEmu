@@ -163,9 +163,15 @@ void LCD::update_sprite(uint16_t addr, uint8_t value)
     m_sprites[index].update(addr, value);
 }
 
+void LCD::update_tile_row(uint16_t addr, uint8_t value)
+{
+    auto index = (addr-LCD_MEM_START) / 2;
+    m_tile_rows[index].update(addr, value);
+}
+
 //Note that tile also means sprite here, colour data is in the same format.
 void LCD::tile_row_to_pixels(
-    LCDData::const_iterator data_b, //Pointer to pixel data (must already point to correct row)
+    TileRow& tile_row, //Precalculated pixel unmapped colour values
     int startx, //Top left x co-ord of the tile.
     int starty, //Top left y co-ord of the tile.
     bool is_sprite, //Set to handle transparancy of colour 0
@@ -173,8 +179,6 @@ void LCD::tile_row_to_pixels(
     const LCDPalette& palette //Colour mapping
     )
 {
-    auto b1 = *data_b++;
-    auto b2 = *data_b;
     auto row_start = starty*LCD_WIDTH;
     
     for (auto shift=7; shift>= 0; --shift)
@@ -186,9 +190,7 @@ void LCD::tile_row_to_pixels(
             continue;
         }
         
-        auto lsb = (b1 >> shift) & 1;
-        auto msb = (b2 >> shift) & 1;
-        auto c = (msb << 1) | lsb;
+        auto c = tile_row.m_colours[shift];
         
         if (is_sprite && c==0)
         {
@@ -219,17 +221,17 @@ void LCD::draw_sprites()
             }
             tile_offset *= sprite_bytes;
             
-            LCDData::const_iterator sprite_data(m_data.begin()+tile_offset);
+            auto sprite_offset = tile_offset;
             if (sprite.y_flip)
             {
-                sprite_data += (m_control_reg.sprite_size-sprite_row_offset-1)*2;
+                sprite_offset += (m_control_reg.sprite_size-sprite_row_offset-1)*2;
             }
             else
             {
-                sprite_data += sprite_row_offset*2;
+                sprite_offset += sprite_row_offset*2;
             }
             
-            tile_row_to_pixels(sprite_data,
+            tile_row_to_pixels(m_tile_rows[sprite_offset/2],
                                sprite.x, sprite.y + sprite_row_offset,
                                true,
                                sprite.x_flip,
@@ -245,7 +247,6 @@ void LCD::draw_window()
         if (m_curr_scanline >= m_winposy)
         {
             auto x = m_winposx-7;
-            auto signed_tile_nos = m_control_reg.bgrnd_tile_data_addr == 0x0800;
             auto tile_index_row = (m_curr_scanline-m_winposy) / 8;
             auto tile_row_offset = (m_curr_scanline-m_winposy) % 8;
             
@@ -253,15 +254,16 @@ void LCD::draw_window()
             {
                 auto offset = m_control_reg.window_tile_table_addr+(tile_index_row*TILES_PER_LINE)+tile_no;
                 auto tile_index = m_data[offset];
-                if (signed_tile_nos)
+                
+                if (m_control_reg.signed_tile_nos)
                 {
                     tile_index += 128;
                 }
                 
-                uint16_t tile_addr = (tile_index*TILE_BYTES);
+                uint16_t tile_addr = tile_index*TILE_BYTES;
                 
                 tile_row_to_pixels(
-                   m_data.begin() + tile_addr + m_control_reg.bgrnd_tile_data_addr + (tile_row_offset*2),
+                   m_tile_rows[(tile_addr + m_control_reg.bgrnd_tile_data_addr + (tile_row_offset*2))/2],
                    x, m_curr_scanline,
                    m_control_reg.colour_0_transparent,
                    false,
@@ -275,8 +277,6 @@ void LCD::draw_background()
 {
     if (m_control_reg.background_display)
     {
-        bool signed_tile_nos = m_control_reg.bgrnd_tile_data_addr == 0x0800;
-        
         //There is only one line of tiles we are interested in since we're only doing one scanline
         //Note that Y wraps
         const uint16_t tile_row = (uint8_t(m_curr_scanline + m_scroll_y) / TILE_WIDTH);
@@ -297,7 +297,7 @@ void LCD::draw_background()
             //Get actual value of index from the table
             uint8_t tile_index = m_data[m_control_reg.bgrnd_tile_table_addr+(TILES_PER_LINE*tile_row)+tile_row_offset];
             
-            if (signed_tile_nos)
+            if (m_control_reg.signed_tile_nos)
             {
                 tile_index += 128;
             }
@@ -305,8 +305,9 @@ void LCD::draw_background()
             //The final address to read pixel data from
             uint16_t tile_addr = tile_index*TILE_BYTES;
             
+            auto tile_row_index = (tile_addr + m_control_reg.bgrnd_tile_data_addr + (tile_pixel_row*2))/2;
             tile_row_to_pixels(
-               m_data.begin() + tile_addr + m_control_reg.bgrnd_tile_data_addr + (tile_pixel_row*2),
+               m_tile_rows[tile_row_index],
                x - (m_scroll_x % TILE_WIDTH), m_curr_scanline,
                false,
                false,
@@ -454,11 +455,10 @@ void LCD::tick(size_t curr_cycles)
 
 uint8_t LCD::read8(uint16_t addr)
 {
-    //printf("8 bit read from LCD addr: 0x%04x\n", addr);
-    
-    if ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END))
+    //Assume that no one is going to read the character RAM
+    if ((addr >= LCD_BGRND_DATA) && (addr < LCD_MEM_END))
     {
-        return m_data[addr-LCD_MEM_START];
+        return m_data[addr-LCD_BGRND_DATA];
     }
     else if ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END))
     {
@@ -492,11 +492,13 @@ uint8_t LCD::read8(uint16_t addr)
 
 void LCD::write8(uint16_t addr, uint8_t value)
 {
-    //printf("8 bit write to LCD addr: 0x%04x value: 0x%02x\n", addr, value);
-
-    if ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END))
+    if ((addr >= LCD_MEM_START) && (addr < LCD_BGRND_DATA))
     {
-        m_data[addr-LCD_MEM_START] = value;
+        update_tile_row(addr, value);
+    }
+    else if ((addr >= LCD_BGRND_DATA) && (addr < LCD_MEM_END))
+    {
+        m_data[addr-LCD_BGRND_DATA] = value;
     }
     else if ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
     {
@@ -561,9 +563,10 @@ void LCD::write8(uint16_t addr, uint8_t value)
 
 uint16_t LCD::read16(uint16_t addr)
 {
-    if ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END))
+    //Don't allow reads of OAM or character RMAM
+    if ((addr >= LCD_BGRND_DATA) && (addr < LCD_MEM_END))
     {
-        uint16_t offset = addr-LCD_MEM_START;
+        uint16_t offset = addr-LCD_BGRND_DATA;
         uint16_t ret = (uint16_t(m_data[offset+1]) << 8) | uint16_t(m_data[offset]);
         return ret;
     }
@@ -575,9 +578,14 @@ uint16_t LCD::read16(uint16_t addr)
 
 void LCD::write16(uint16_t addr, uint16_t value)
 {
-    if ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END))
+    if ((addr >= LCD_MEM_START) && (addr < LCD_BGRND_DATA))
     {
-        uint16_t offset = addr-LCD_MEM_START;
+        update_tile_row(addr, value & 0xff);
+        update_tile_row(addr+1, (value >> 8) & 0xff);
+    }
+    else if ((addr >= LCD_BGRND_DATA) && (addr < LCD_MEM_END))
+    {
+        uint16_t offset = addr-LCD_BGRND_DATA;
         m_data[offset] = value & 0xff;
         m_data[offset+1] = (value >> 8) & 0xff;
     }

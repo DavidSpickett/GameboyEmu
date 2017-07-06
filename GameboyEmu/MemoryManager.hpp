@@ -16,6 +16,7 @@
 
 const uint16_t LCD_MEM_START  = 0x8000;
 const uint16_t LCD_MEM_END    = 0xa000;
+const uint16_t LCD_BGRND_DATA = 0x9800;
 
 const uint16_t LCD_REGS_START = 0xff40;
 const uint16_t LCD_REGS_END   = 0xff4c;

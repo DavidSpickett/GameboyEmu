@@ -37,7 +37,7 @@ struct colour
 
 using LCDPalette = std::array<uint8_t, 4>;
 using OAMData = std::array<uint8_t, LCD_OAM_END-LCD_OAM_START>;
-using LCDData = std::array<uint8_t, LCD_MEM_END-LCD_MEM_START>;
+using LCDData = std::array<uint8_t, LCD_MEM_END-LCD_BGRND_DATA>;
 
 struct Sprite
 {
@@ -92,6 +92,41 @@ struct Sprite
 
 using LCDSprites = std::array<Sprite, 40>;
 
+struct TileRow
+{
+    TileRow():
+        m_colours{0, 0, 0, 0, 0, 0, 0, 0},
+        m_lsbs(0),
+        m_msbs(0)
+    {}
+    std::array<uint8_t, 8> m_colours;
+    
+    void update(uint16_t addr, uint8_t value)
+    {
+        if (addr & 1)
+        {
+            m_msbs = value;
+        }
+        else
+        {
+            m_lsbs = value;
+        }
+        
+        for (auto shift=0; shift<8; ++shift)
+        {
+            auto lsb = (m_lsbs >> shift) & 1;
+            auto msb = (m_msbs >> shift) & 1;
+            m_colours[shift] = (msb << 1) | lsb;
+        }
+    }
+    
+private:
+    uint8_t m_lsbs;
+    uint8_t m_msbs;
+};
+
+using TileRows = std::array<TileRow, (LCD_BGRND_DATA-LCD_MEM_START)/2>;
+
 struct LCDControlReg
 {
     LCDControlReg():
@@ -107,14 +142,15 @@ struct LCDControlReg
     {
         m_value=value;
         
-        lcd_operation = m_value & (1<<7);
-        window_tile_table_addr = (m_value & (1<<6)) ? 0x9C00-LCD_MEM_START : 0x9800-LCD_MEM_START;
-        window_display = m_value & (1<<5);
-        bgrnd_tile_data_addr = (m_value & (1<<4)) ? 0x8000-LCD_MEM_START : 0x8800-LCD_MEM_START;
-        bgrnd_tile_table_addr = (m_value & (1<<3)) ? 0x9c00-LCD_MEM_START : 0x9800-LCD_MEM_START;
-        sprite_size = (m_value & (1<<2)) ? 16 : 8;
-        colour_0_transparent = (m_value & (1<<1)) == 0;
-        background_display = (m_value) & 1;
+        lcd_operation          = m_value & (1<<7);
+        window_tile_table_addr = (m_value & (1<<6)) ? 0x9C00-LCD_BGRND_DATA : 0x9800-LCD_BGRND_DATA;
+        window_display         = m_value & (1<<5);
+        bgrnd_tile_data_addr   = (m_value & (1<<4)) ? 0x8000-LCD_MEM_START : 0x8800-LCD_MEM_START;
+        bgrnd_tile_table_addr  = (m_value & (1<<3)) ? 0x9c00-LCD_BGRND_DATA : 0x9800-LCD_BGRND_DATA;
+        sprite_size            = (m_value & (1<<2)) ? 16 : 8;
+        colour_0_transparent   = (m_value & (1<<1)) == 0;
+        background_display     = (m_value) & 1;
+        signed_tile_nos        = (m_value & (1<<4)) == 0;
     }
     
     bool lcd_operation;
@@ -125,6 +161,7 @@ struct LCDControlReg
     uint8_t sprite_size;
     bool colour_0_transparent;
     bool background_display;
+    bool signed_tile_nos;
     
 private:
     uint8_t m_value;
@@ -166,6 +203,7 @@ class LCD: public MemoryManager
         LCDControlReg m_control_reg;
         LCDData m_data;
         LCDSprites m_sprites;
+        TileRows m_tile_rows;
         std::array<colour, LCD_HEIGHT*LCD_WIDTH> m_pixel_data;
         size_t m_last_tick_cycles;
         size_t m_lcd_line_cycles;
@@ -187,13 +225,14 @@ class LCD: public MemoryManager
         void draw_window();
     
         void tile_row_to_pixels(
-            LCDData::const_iterator data_b,
+            TileRow& tile_row,
             int startx, int starty,
             bool is_sprite,
             bool flip_x,
             const LCDPalette& palette);
     
         void update_sprite(uint16_t addr, uint8_t value);
+        void update_tile_row(uint16_t addr, uint8_t value);
         void set_mode(uint8_t mode);
 
         LCDPalette make_palette(uint8_t addr);
