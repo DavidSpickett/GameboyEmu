@@ -717,11 +717,28 @@ namespace
 {
     bool get_jump_condition(Z80& proc, uint8_t b1, std::string& type)
     {
+        auto jump = false;
+        
         //Using carry if bit 4 is set
-        auto jump = b1 & 0x10 ? proc.f.get_c() : proc.f.get_z();
+        if (b1 & 0x10)
+        {
+            jump = proc.f.get_c();
+            type = "C";
+        }
+        else
+        {
+            jump = proc.f.get_z();
+            type = "Z";
+        }
         
         //Invert if bit 3 is not set
-        return b1 & 0x8 ? jump : !jump;
+        if ((b1 & 0x8) == 0)
+        {
+            jump = !jump;
+            type = "N" + type;
+        }
+        
+        return jump;
     }
 }
 
