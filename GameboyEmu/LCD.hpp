@@ -108,6 +108,11 @@ struct TileRow
         _update();
     }
     
+    uint8_t get(uint16_t addr)
+    {
+        return addr & 1 ? m_msbs : m_lsbs;
+    }
+    
     void update(uint16_t addr, uint8_t value)
     {
         if (addr & 1)
@@ -241,6 +246,11 @@ class LCD: public MemoryManager
             bool is_sprite,
             bool flip_x,
             const LCDPalette& palette);
+    
+        size_t tile_index(uint16_t addr)
+        {
+            return (addr - LCD_MEM_START)/2;
+        }
     
         void update_sprite(uint16_t addr, uint8_t value);
         template <typename T>

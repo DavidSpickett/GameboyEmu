@@ -2104,7 +2104,7 @@ inline uint8_t call_cc_nn(Z80& proc, uint8_t b1)
         proc.pc.write(addr);
     }
     
-    debug_print("call %s, 0x%04x\n", ctype.c_str(), addr);
+    debug_print("call %s, 0x%04x\n", type.c_str(), addr);
     return 12;
 }
 

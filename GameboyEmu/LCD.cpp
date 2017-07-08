@@ -166,8 +166,7 @@ void LCD::update_sprite(uint16_t addr, uint8_t value)
 template <typename T>
 void LCD::update_tile_row(uint16_t addr, T value)
 {
-    auto index = (addr-LCD_MEM_START) / 2;
-    m_tile_rows[index].update(addr, value);
+    m_tile_rows[tile_index(addr)].update(addr, value);
 }
 
 //Note that tile also means sprite here, colour data is in the same format.
@@ -456,8 +455,13 @@ void LCD::tick(size_t curr_cycles)
 
 uint8_t LCD::read8(uint16_t addr)
 {
-    //Assume that no one is going to read the character RAM
-    if ((addr >= LCD_BGRND_DATA) && (addr < LCD_MEM_END))
+    if ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END))
+    {
+        /*Race Drivin' reads character RAM. I *think* it's waiting for
+         an interrupt routine to fill in the data.*/
+        return m_tile_rows[tile_index(addr)].get(addr);
+    }
+    else if ((addr >= LCD_BGRND_DATA) && (addr < LCD_MEM_END))
     {
         return m_data[addr-LCD_BGRND_DATA];
     }
