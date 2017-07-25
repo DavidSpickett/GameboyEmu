@@ -455,7 +455,7 @@ void LCD::tick(size_t curr_cycles)
 
 uint8_t LCD::read8(uint16_t addr)
 {
-    if ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END))
+    if ((addr >= LCD_MEM_START) && (addr < LCD_BGRND_DATA))
     {
         /*Race Drivin' reads character RAM. I *think* it's waiting for
          an interrupt routine to fill in the data.*/
