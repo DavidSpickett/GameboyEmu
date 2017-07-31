@@ -139,7 +139,6 @@ public:
     
     uint8_t fetch_byte();
     uint16_t fetch_short();
-    std::vector<uint8_t> fetch_bytes(uint16_t num);
     
     uint16_t get_af() { return get_pair(a, f); }
     uint16_t get_bc() { return get_pair(b, c); }

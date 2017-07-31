@@ -91,17 +91,7 @@ uint8_t Z80::fetch_byte()
 
 uint16_t Z80::fetch_short()
 {
-    std::vector<uint8_t> bs = fetch_bytes(2);
-    return (uint16_t(bs[1]) << 8) | uint16_t(bs[0]);
-}
-
-std::vector<uint8_t> Z80::fetch_bytes(uint16_t num)
-{
-    std::vector<uint8_t> ret;
-    for (; num>0; --num)
-    {
-        ret.push_back(mem.read8(pc.read()));
-        pc.inc(1);
-    }
-    return ret;
+    auto b1 = fetch_byte();
+    auto b2 = fetch_byte();
+    return (b2 << 8) | b1;
 }
