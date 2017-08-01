@@ -403,7 +403,6 @@ uint8_t ROMHandler::read8(uint16_t addr)
     }
     
     uint8_t value = m_rom_contents[addr];
-    //printf("Read addr: 0x%04x from ROM got 0x%02x\n", addr, value);
     return value;
 }
 

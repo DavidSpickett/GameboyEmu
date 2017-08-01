@@ -43,8 +43,6 @@ void Z80::skip_bootstrap()
 
 void Z80::post_interrupt(uint8_t num)
 {
-    //printf("Interrupt posted 0x%x\n", num);
-    
     if (num > 5)
     {
         throw std::runtime_error("Can't raise interrupt > 5!");

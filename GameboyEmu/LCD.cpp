@@ -36,9 +36,9 @@ namespace
 }
 
 LCD::LCD(int scale_factor):
+m_display(scale_factor),
 m_last_tick_cycles(0),
 m_lcd_line_cycles(0),
-m_scale_factor(scale_factor),
 m_curr_scanline(145),
 m_colours{colour(0xff, 0xff, 0xff), colour(0xb9, 0xb9, 0xb9),
           colour(0x6b, 0x6b, 0x6b), colour(0x00, 0x00, 0x00)},
@@ -49,13 +49,9 @@ m_cmpline(0),
 m_winposy(0),
 m_winposx(0)
 {
-    m_sdl_width = LCD_WIDTH*m_scale_factor;
-    m_sdl_height = LCD_HEIGHT*m_scale_factor;
-    
     init_array(m_bgrd_pal);
     init_array(m_obj_pal_0);
     init_array(m_obj_pal_1);
-    init_array(m_pixel_data);
     init_array(m_data);
     
     set_mode(LCD_MODE_VBLANK);
@@ -64,58 +60,6 @@ m_winposx(0)
 void LCD::set_mode(uint8_t mode)
 {
     m_lcd_stat = (m_lcd_stat & ~3) | mode;
-}
-
-void LCD::SDLSaveImage(std::string filename)
-{
-    SDL_Surface *temp_sur = SDL_CreateRGBSurface(0, m_sdl_width, m_sdl_height, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
-    SDL_RenderReadPixels(m_renderer, NULL, SDL_PIXELFORMAT_ARGB8888,
-                         temp_sur->pixels, temp_sur->pitch);
-    
-    SDL_SaveBMP(temp_sur, filename.c_str());
-    SDL_FreeSurface(temp_sur);
-}
-
-void LCD::SDLClear()
-{
-    //Clear whole screen when LCD is disabled.
-    SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
-    
-    SDL_Rect r;
-    r.h = m_sdl_height;
-    r.w = m_sdl_width;
-    r.x = 0;
-    r.y = 0;
-    
-    SDL_RenderFillRect(m_renderer, &r);
-    SDL_RenderPresent(m_renderer);
-}
-
-void LCD::SDLDraw()
-{
-    SDL_Rect r;
-    r.h = m_scale_factor;
-    r.w = m_scale_factor;
-    r.x = 0;
-    r.y = m_curr_scanline*m_scale_factor;
-    
-    auto p_start(m_pixel_data.cbegin()+(m_curr_scanline*LCD_WIDTH));
-    auto p_end(p_start+LCD_WIDTH);
-    for ( ; p_start != p_end; ++p_start, r.x+=m_scale_factor)
-    {
-        SDL_SetRenderDrawColor(m_renderer, p_start->r, p_start->g, p_start->b, p_start->a);
-        SDL_RenderFillRect(m_renderer, &r);
-    }
-    
-    //Draw
-    //SDL_RenderPresent(m_renderer);
-    static auto delay = 0;
-    if (delay == 200)
-    {
-        SDL_RenderPresent(m_renderer);
-        delay = 0;
-    }
-    delay++;
 }
 
 LCDPalette LCD::make_palette(uint8_t value)
@@ -128,33 +72,6 @@ LCDPalette LCD::make_palette(uint8_t value)
     }
     
     return ret;
-}
-
-void LCD::SDLInit()
-{
-    //Initialize SDL
-    if(SDL_Init(SDL_INIT_VIDEO) < 0)
-    {
-        throw std::runtime_error(
-            formatted_string("SDL could not initialize! SDL_Error: %s\n",
-            SDL_GetError()));
-    }
-    
-    //Create window
-    m_window = SDL_CreateWindow("Gameboy Emulator",
-                                SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                m_sdl_width, m_sdl_height,
-                                SDL_WINDOW_SHOWN);
-    
-    if(m_window == NULL)
-    {
-        throw std::runtime_error(formatted_string(
-                                                  "Window could not be created! SDL_Error: %s\n", SDL_GetError()));
-    }
-    
-    m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED);
-    
-    SDLClear();
 }
 
 void LCD::update_sprite(uint16_t addr, uint8_t value)
@@ -198,7 +115,7 @@ void LCD::tile_row_to_pixels(
             continue;
         }
         
-        m_pixel_data[row_start+newx] = m_colours[palette[c]];
+        m_display.m_pixel_data[row_start+newx] = m_colours[palette[c]];
     }
 }
 
@@ -374,7 +291,7 @@ void LCD::tick(size_t curr_cycles)
                 */
                 if (m_control_reg.lcd_operation)
                 {
-                    SDLDraw();
+                    m_display.Draw(m_curr_scanline);
                 }
             }
             break;
@@ -519,13 +436,13 @@ void LCD::write8(uint16_t addr, uint8_t value)
                 break;
             case LCDCONTROL:
                 m_control_reg.write(value);
-                if (m_control_reg.lcd_operation && (m_window == NULL))
+                if (m_control_reg.lcd_operation)
                 {
-                    SDLInit();
+                    m_display.Init();
                 }
                 else if (!m_control_reg.lcd_operation)
                 {
-                    SDLClear();
+                    m_display.Clear();
                 }
                 break;
             case LCDSTAT:

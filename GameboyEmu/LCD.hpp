@@ -9,31 +9,11 @@
 #ifndef LCD_hpp
 #define LCD_hpp
 
-#include <SDL2/SDL.h>
 #include "MemoryManager.hpp"
+#include "SDLApp.hpp"
 
-const size_t LCD_WIDTH      = 160;
-const size_t LCD_HEIGHT     = 144;
 const int TILE_WIDTH        = 8;
 const int SPRITE_INFO_BYTES = 4;
-
-struct colour
-{
-    colour(uint8_t r, uint8_t g, uint8_t b):
-    a(SDL_ALPHA_OPAQUE), r(r), g(g), b(b)
-    {
-    }
-    
-    colour():
-    a(SDL_ALPHA_OPAQUE), r(255), g(255), b(255)
-    {
-    }
-    
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-    uint8_t a;
-};
 
 using LCDPalette = std::array<uint8_t, 4>;
 using OAMData = std::array<uint8_t, LCD_OAM_END-LCD_OAM_START>;
@@ -187,15 +167,6 @@ class LCD: public MemoryManager
 {
     public:
         explicit LCD(int scale_factor);
-        ~LCD()
-        {
-            if (m_window != NULL)
-            {
-                SDL_DestroyRenderer(m_renderer);
-                SDL_DestroyWindow(m_window);
-                SDL_Quit();
-            }
-        }
     
         void write8(uint16_t addr, uint8_t value);
         uint8_t read8(uint16_t addr);
@@ -203,24 +174,17 @@ class LCD: public MemoryManager
         uint16_t read16(uint16_t addr);
         void write16(uint16_t addr, uint16_t value);
     
-        void SDLSaveImage(std::string filename);
-    
         void tick(size_t curr_cycles);
+        void SaveImage(std::string filename) { m_display.SaveImage(filename); }
     
     private:
-        SDL_Renderer* m_renderer;
-        SDL_Window* m_window;
+        SDLApp m_display;
         std::array<colour, 4> m_colours;
-        int m_scale_factor;
-    
-        int m_sdl_height;
-        int m_sdl_width;
     
         LCDControlReg m_control_reg;
         LCDData m_data;
         LCDSprites m_sprites;
         TileRows m_tile_rows;
-        std::array<colour, LCD_HEIGHT*LCD_WIDTH> m_pixel_data;
         size_t m_last_tick_cycles;
         size_t m_lcd_line_cycles;
         uint8_t m_curr_scanline;
@@ -231,10 +195,6 @@ class LCD: public MemoryManager
         uint8_t m_cmpline;
         uint8_t m_winposy;
         uint8_t m_winposx;
-    
-        void SDLInit();
-        void SDLDraw();
-        void SDLClear();
     
         void draw_background();
         void draw_sprites();

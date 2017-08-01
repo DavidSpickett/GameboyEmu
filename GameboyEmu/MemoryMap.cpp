@@ -117,7 +117,6 @@ void MemoryMap::write8(uint16_t addr, uint8_t value)
         /*This potentially is wrong because we will count the cycles
          of this instruction against the timing of the DMA.*/
         m_dma_transfer = DMATransfer(uint16_t(value) << 8);
-        //printf("Setup DMA transfer from 0x%04x\n", m_dma_transfer.source_addr);
     }
     else
     {
@@ -147,7 +146,6 @@ void MemoryMap::tick(size_t curr_cycles)
         
         if (m_dma_transfer.cycles_remaining <= 0)
         {
-            //printf("Doing DMA transfer from 0x%04x\n", m_dma_transfer.source_addr);
             m_dma_transfer.cycles_remaining = -1;
             
             MemoryManager& source_m = get_mm(m_dma_transfer.source_addr);
