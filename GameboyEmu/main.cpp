@@ -21,6 +21,28 @@ void screenshot_and_exit(Z80& proc, const std::string& rom_name, bool& _continue
     _continue = false;
 }
 
+class InputPollTimer
+{
+public:
+    InputPollTimer():
+        m_last_polled(SDL_GetTicks())
+    {}
+    
+    bool ShouldPoll()
+    {
+        auto current = SDL_GetTicks();
+        if ((current - m_last_polled) >= (1000 / 60))
+        {
+            m_last_polled = current;
+            return true;
+        }
+        return false;
+    }
+    
+private:
+    uint32_t m_last_polled;
+};
+
 int main(int argc, const char * argv[]) {
     emu_args a = process_args(argc, argv);
     printf("%s", a.to_str().c_str());
@@ -37,26 +59,30 @@ int main(int argc, const char * argv[]) {
 
     SDL_Event event;
     bool run = true;
+    InputPollTimer input_timer;
     while(run)
     {
-        SDL_PollEvent(&event);
-        switch (event.type)
+        if (input_timer.ShouldPoll())
         {
-            case SDL_QUIT:
-                run = false;
-                break;
-            case SDL_KEYDOWN:
+            SDL_PollEvent(&event);
+            switch (event.type)
             {
-                const uint8_t *state = SDL_GetKeyboardState(NULL);
-                if (state[SDL_SCANCODE_S])
-                {
-                    screenshot_and_exit(proc, a.rom_name, run);
-                    break;
-                }
-                else if (state[SDL_SCANCODE_ESCAPE])
-                {
+                case SDL_QUIT:
                     run = false;
                     break;
+                case SDL_KEYDOWN:
+                {
+                    const uint8_t *state = SDL_GetKeyboardState(NULL);
+                    if (state[SDL_SCANCODE_S])
+                    {
+                        screenshot_and_exit(proc, a.rom_name, run);
+                        break;
+                    }
+                    else if (state[SDL_SCANCODE_ESCAPE])
+                    {
+                        run = false;
+                        break;
+                    }
                 }
             }
         }
