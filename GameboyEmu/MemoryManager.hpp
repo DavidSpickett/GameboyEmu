@@ -25,8 +25,9 @@ const uint16_t LCD_OAM_START = 0xfe00;
 const uint16_t LCD_OAM_SIZE  = 0xa0;
 const uint16_t LCD_OAM_END   = LCD_OAM_START+LCD_OAM_SIZE;
 
-const uint16_t ROM_START = 0x0100; //Before bootstrap turns off that is
-const uint16_t ROM_END   = 0x4000;
+const uint16_t ROM_START     = 0;
+const uint16_t BOOTSTRAP_END = 0x0100;
+const uint16_t ROM_END       = 0x4000;
 
 const uint16_t CART_RAM_START = 0xa000;
 const uint16_t CART_RAM_END   = 0xc000;

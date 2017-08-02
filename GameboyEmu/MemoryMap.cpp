@@ -66,7 +66,6 @@ void DefaultMemoryManager::AddFile(std::string path)
 }
 
 MemoryMap::MemoryMap(std::string& cartridge_name, bool bootstrap_skipped, int scale_factor):
-    m_bootstrap_in_mem(true),
     m_rom_handler(cartridge_name),
     m_lcd_handler(scale_factor),
     m_hardware_regs_handler(),
@@ -81,7 +80,10 @@ MemoryMap::MemoryMap(std::string& cartridge_name, bool bootstrap_skipped, int sc
         m_default_handler.AddFile("GameBoyBios.gb");
     }
     
-    AddMemoryRange(ROM_START, ROM_END, m_rom_handler);
+    //Initially handle reading from BIOS, handler changed later
+    AddMemoryRange(ROM_START, BOOTSTRAP_END, m_default_handler);
+    AddMemoryRange(BOOTSTRAP_END, ROM_END, m_rom_handler);
+    
     AddMemoryRange(SWITCHABLE_ROM_START, SWITCHABLE_ROM_END, m_rom_handler);
     AddMemoryRange(CART_RAM_START, CART_RAM_END, m_rom_handler);
     
@@ -125,27 +127,12 @@ void MemoryMap::AddMemoryRange(uint32_t start, uint32_t end, MemoryManager& mana
 
 MemoryManager& MemoryMap::get_mm(uint16_t addr)
 {
-    //TODO: make this work with memory ranges
-    if ((addr >= 0x0000) && (addr < 0x0100))
+    auto range = std::lower_bound(m_mem_ranges.begin(), m_mem_ranges.end(), addr);
+    if (range != m_mem_ranges.end())
     {
-        if (m_bootstrap_in_mem)
-        {
-            return m_default_handler;
-        }
-        else
-        {
-            return m_rom_handler;
-        }
+        return range->manager;
     }
-    else
-    {
-        auto range = std::lower_bound(m_mem_ranges.begin(), m_mem_ranges.end(), addr);
-        if (range != m_mem_ranges.end())
-        {
-            return range->manager;
-        }
-        throw std::runtime_error(formatted_string("Couldn't find memory manager for address 0x%04x", addr));
-    }
+    throw std::runtime_error(formatted_string("Couldn't find memory manager for address 0x%04x", addr));
 }
 
 uint8_t MemoryMap::read8(uint16_t addr)
@@ -156,10 +143,10 @@ uint8_t MemoryMap::read8(uint16_t addr)
 
 void MemoryMap::write8(uint16_t addr, uint8_t value)
 {
-    //Bodge to get the bootstrap out of memory
+    //Remove BIOS from ROM memory range
     if ((addr == 0xff50) && (value == 1))
     {
-        m_bootstrap_in_mem = false;
+        m_mem_ranges[0].manager = m_rom_handler;
     }
     //Start a DMA transfer
     else if (addr == 0xff46)

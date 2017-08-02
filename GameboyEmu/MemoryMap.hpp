@@ -87,7 +87,6 @@ private:
         uint16_t source_addr;
     } m_dma_transfer;
     
-    bool m_bootstrap_in_mem;
     size_t m_last_tick_cycles;
     MemoryRanges m_mem_ranges;
     
