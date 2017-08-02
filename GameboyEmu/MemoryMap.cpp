@@ -13,11 +13,6 @@
 
 MemoryRange& MemoryRange::operator=(const MemoryRange& other)
 {
-    if (&other == this)
-    {
-        return *this;
-    }
-    
     manager = other.manager;
     start = other.start;
     end = other.end;
