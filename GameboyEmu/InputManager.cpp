@@ -63,7 +63,6 @@ uint8_t InputManager::read8(uint16_t addr)
     
     m_joypad = get_joy_vaue(m_mode, SDL_GetKeyboardState(NULL));
     
-    //printf("Joypad: 0x%02x\n", m_joypad);
     return m_joypad;
 }
 

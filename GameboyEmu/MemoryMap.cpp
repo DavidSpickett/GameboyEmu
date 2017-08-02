@@ -8,7 +8,45 @@
 
 #include "MemoryMap.hpp"
 #include <fstream>
+#include <string>
 #include "utils.hpp"
+
+MemoryRange& MemoryRange::operator=(const MemoryRange& other)
+{
+    if (&other == this)
+    {
+        return *this;
+    }
+    
+    manager = other.manager;
+    start = other.start;
+    end = other.end;
+    
+    return *this;
+}
+
+bool MemoryRange::contains(uint32_t addr) const
+{
+    return (addr >= start) && (addr < end);
+}
+
+bool MemoryRange::operator<(const MemoryRange& rhs) const
+{
+    return start < rhs.start;
+}
+
+bool MemoryRange::operator<(int rhs) const
+{
+    return rhs >= end;
+}
+
+void swap(MemoryRange& lhs, MemoryRange& rhs)
+{
+    using std::swap;
+    swap(lhs.manager, rhs.manager);
+    swap(lhs.start, rhs.start);
+    swap(lhs.end, rhs.end);
+}
 
 void DefaultMemoryManager::AddFile(std::string path)
 {
@@ -27,8 +65,67 @@ void DefaultMemoryManager::AddFile(std::string path)
               m_mem.begin());
 }
 
+MemoryMap::MemoryMap(std::string& cartridge_name, bool bootstrap_skipped, int scale_factor):
+    m_bootstrap_in_mem(true),
+    m_rom_handler(cartridge_name),
+    m_lcd_handler(scale_factor),
+    m_hardware_regs_handler(),
+    m_input_handler(),
+    m_default_handler(),
+    m_null_handler(),
+    m_sound_handler(),
+    m_last_tick_cycles(0)
+{
+    if (!bootstrap_skipped)
+    {
+        m_default_handler.AddFile("GameBoyBios.gb");
+    }
+    
+    AddMemoryRange(ROM_START, ROM_END, m_rom_handler);
+    AddMemoryRange(SWITCHABLE_ROM_START, SWITCHABLE_ROM_END, m_rom_handler);
+    AddMemoryRange(CART_RAM_START, CART_RAM_END, m_rom_handler);
+    
+    AddMemoryRange(LCD_MEM_START, LCD_MEM_END, m_lcd_handler);
+    AddMemoryRange(LCD_REGS_START, LCD_REGS_END, m_lcd_handler);
+    AddMemoryRange(LCD_OAM_START, LCD_OAM_END, m_lcd_handler);
+    
+    AddMemoryRange(GB_RAM_START, GB_RAM_END, m_default_handler);
+    AddMemoryRange(ECHO_RAM_START, ECHO_RAM_END, m_default_handler);
+    AddMemoryRange(GB_HIGH_RAM_START, GB_HIGH_RAM_END, m_default_handler);
+    
+    AddMemoryRange(UNUSED_START, UNUSED_END, m_null_handler);
+    
+    AddMemoryRange(JOYPAD_REG, m_input_handler);
+    
+    //I assume these are Colour/Super GB regs
+    AddMemoryRange(UNUSED_IO_REGS_START, UNUSED_IO_REGS_END, m_null_handler);
+    
+    AddMemoryRange(SOUND_BEGIN, SOUND_END, m_sound_handler);
+    
+    AddMemoryRange(HARDWARE_REGS_START, HARDWARE_REGS_END, m_hardware_regs_handler);
+    
+    //Sort so we can lower bound later
+    std::sort(m_mem_ranges.begin(), m_mem_ranges.end());
+}
+
+void MemoryMap::AddMemoryRange(uint32_t start, uint32_t end, MemoryManager& manager)
+{
+    for (auto range : m_mem_ranges)
+    {
+        if ((range.start >= start) && (range.start < end))
+        {
+            throw std::runtime_error(formatted_string(
+              "Cannot add range from 0x%04x to 0x%04x, overlaps with range from 0x%04x to 0x%04x",
+              start, end, range.start, range.end));
+        }
+    }
+    
+    m_mem_ranges.push_back(MemoryRange(start, end, manager));
+}
+
 MemoryManager& MemoryMap::get_mm(uint16_t addr)
 {
+    //TODO: make this work with memory ranges
     if ((addr >= 0x0000) && (addr < 0x0100))
     {
         if (m_bootstrap_in_mem)
@@ -40,61 +137,14 @@ MemoryManager& MemoryMap::get_mm(uint16_t addr)
             return m_rom_handler;
         }
     }
-    else if (
-        ((addr >= ROM_START) && (addr < ROM_END)) ||
-        ((addr >= SWITCHABLE_ROM_START) && (addr < SWITCHABLE_ROM_END)) ||
-        ((addr >= CART_RAM_START) && (addr < CART_RAM_END)))
-    {
-        return m_rom_handler;
-    }
-    else if (
-      ((addr >= LCD_MEM_START) && (addr < LCD_MEM_END)) ||
-      ((addr >= LCD_REGS_START) && (addr < LCD_REGS_END)) ||
-      ((addr >= LCD_OAM_START) && (addr < LCD_OAM_END))
-    )
-    {
-        return m_lcd_handler;
-    }
-    else if (
-             (((addr >= HARDWARE_REGS_START) && (addr < HARDWARE_REGS_END)) &&
-             (addr != JOYPAD_REG)) ||
-             (addr == SERIAL_CONTROL) || (addr == SERIAL_DATA)
-             )
-    {
-        return m_hardware_regs_handler;
-    }
-    else if (
-        ((addr >= GB_RAM_START) && (addr < GB_RAM_END)) ||
-        ((addr >= ECHO_RAM_START) && (addr < ECHO_RAM_END)) ||
-        ((addr >= GB_HIGH_RAM_START) && (addr < GB_HIGH_RAM_END))
-        )
-    {
-        return m_default_handler;
-    }
-    else if ((addr >= UNUSED_START) && (addr < UNUSED_END))
-    {
-        return m_null_handler;
-    }
-    else if ((addr == INTERRUPT_FLAGS) || (addr == INTERRUPT_SWITCH))
-    {
-        return m_interrupt_handler;
-    }
-    else if (addr == JOYPAD_REG)
-    {
-        return m_input_handler;
-    }
-    else if ((addr >= UNUSED_IO_REGS_START) && (addr < UNUSED_IO_REGS_END))
-    {
-        //I assume these are Colour/Super GB regs
-        return m_null_handler;
-    }
-    else if ((addr >= SOUND_BEGIN) && (addr < SOUND_END))
-    {
-        return m_sound_handler;
-    }
     else
     {
-        throw std::runtime_error(formatted_string("Don't have a handler for addr 0x%04x!", addr));
+        auto range = std::lower_bound(m_mem_ranges.begin(), m_mem_ranges.end(), addr);
+        if (range != m_mem_ranges.end())
+        {
+            return range->manager;
+        }
+        throw std::runtime_error(formatted_string("Couldn't find memory manager for address 0x%04x", addr));
     }
 }
 
@@ -157,7 +207,6 @@ void MemoryMap::tick(size_t curr_cycles)
         }
     }
     
-    m_interrupt_handler.tick(curr_cycles);
     m_input_handler.tick(curr_cycles);
     m_lcd_handler.tick(curr_cycles);
     m_hardware_regs_handler.tick(curr_cycles);

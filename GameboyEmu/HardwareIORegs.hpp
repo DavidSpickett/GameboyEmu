@@ -25,7 +25,9 @@ public:
         m_time_mod(0),
         m_time_cnt(0),
         m_serial_data_recieved(0),
-        m_serial_control(0)
+        m_serial_control(0),
+        m_interrupt_flags(0),
+        m_interrupt_switch(0)
     {
     }
     
@@ -75,6 +77,9 @@ private:
     
     uint8_t m_serial_data_recieved;
     uint8_t m_serial_control;
+    
+    uint8_t m_interrupt_flags;
+    uint8_t m_interrupt_switch;
 };
 
 #endif /* HardwareIORegs_hpp */

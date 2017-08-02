@@ -10,6 +10,7 @@
 #define MemoryMap_hpp
 
 #include <stdint.h>
+#include <functional>
 #include "utils.hpp"
 #include "RomHandler.hpp"
 #include "LCD.hpp"
@@ -17,26 +18,29 @@
 #include "InputManager.hpp"
 #include "SoundHandler.hpp"
 
+struct MemoryRange
+{
+    MemoryRange(uint32_t start, uint32_t end, MemoryManager& manager):
+        start(start), end(end), manager(manager)
+    {}
+    
+    MemoryRange& operator=(const MemoryRange& other);
+    bool contains(uint32_t addr) const;
+    bool operator<(const MemoryRange& rhs) const;
+    bool operator<(int rhs) const;
+    
+    std::reference_wrapper<MemoryManager> manager;
+    uint32_t start;
+    uint32_t end;
+};
+void swap(MemoryRange& lhs, MemoryRange& rhs);
+
+using MemoryRanges = std::vector<MemoryRange>;
+
 class MemoryMap
 {
 public:
-    MemoryMap(std::string& cartridge_name, bool bootstrap_skipped, int scale_factor):
-    m_bootstrap_in_mem(true),
-    m_rom_handler(cartridge_name),
-    m_lcd_handler(scale_factor),
-    m_hardware_regs_handler(),
-    m_interrupt_handler(),
-    m_input_handler(),
-    m_default_handler(),
-    m_null_handler(),
-    m_sound_handler(),
-    m_last_tick_cycles(0)
-    {
-        if (!bootstrap_skipped)
-        {
-            m_default_handler.AddFile("GameBoyBios.gb");
-        }
-    }
+    MemoryMap(std::string& cartridge_name, bool bootstrap_skipped, int scale_factor);
     
     uint8_t read8(uint16_t addr);
     void write8(uint16_t addr, uint8_t value);
@@ -53,7 +57,6 @@ public:
     void set_int_callback(InterruptCallback callback)
     {
         m_rom_handler.post_int = callback;
-        m_interrupt_handler.post_int = callback;
         m_lcd_handler.post_int = callback;
         m_input_handler.post_int = callback;
         m_sound_handler.post_int = callback;
@@ -64,6 +67,12 @@ public:
     }
     
 private:
+    void AddMemoryRange(uint32_t start, uint32_t end, MemoryManager& manager);
+    void AddMemoryRange(uint32_t start, MemoryManager& manager)
+    {
+        AddMemoryRange(start, start+1, manager);
+    }
+    
     struct DMATransfer
     {
         explicit DMATransfer(uint16_t source_addr):
@@ -79,14 +88,16 @@ private:
     } m_dma_transfer;
     
     bool m_bootstrap_in_mem;
+    size_t m_last_tick_cycles;
+    MemoryRanges m_mem_ranges;
+    
     MemoryManager& get_mm(uint16_t addr);
-    InterruptManager m_interrupt_handler;
     ROMHandler m_rom_handler;
     HardwareIORegs m_hardware_regs_handler;
     DefaultMemoryManager m_default_handler;
     NullMemoryManager m_null_handler;
     SoundHandler m_sound_handler;
-    size_t m_last_tick_cycles;
+    
 };
 
 

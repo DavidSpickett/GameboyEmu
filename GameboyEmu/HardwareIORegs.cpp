@@ -34,6 +34,10 @@ uint8_t HardwareIORegs::read8(uint16_t addr)
             return m_time_cont;
         case DIVCOUNT:
             return m_divider_cnt;
+        case INTERRUPT_FLAGS:
+            return m_interrupt_flags;
+        case INTERRUPT_SWITCH:
+            return m_interrupt_switch;
         default:
             return 0;
     }
@@ -104,6 +108,12 @@ void HardwareIORegs::write8(uint16_t addr, uint8_t value)
         case DIVCOUNT:
             m_divider_cnt = 0;
             break;
+        case INTERRUPT_FLAGS:
+            m_interrupt_flags = value;
+            return;
+        case INTERRUPT_SWITCH:
+            m_interrupt_switch = value;
+            return;
         default:
             return;
     }
