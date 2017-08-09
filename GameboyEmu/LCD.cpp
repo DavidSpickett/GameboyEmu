@@ -99,9 +99,9 @@ void LCD::tile_row_to_pixels(
 {
     auto row_start = starty*LCD_WIDTH;
     
-    for (auto shift=7; shift>= 0; --shift)
+    for (auto shift=(TILE_SIDE-1); shift>= 0; --shift)
     {
-        auto shift_diff = flip_x ? shift : (7-shift);
+        auto shift_diff = flip_x ? shift : (TILE_SIDE-1-shift);
         auto newx = startx + shift_diff;
         if ((newx >= LCD_WIDTH) || (newx < 0))
         {
