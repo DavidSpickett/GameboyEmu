@@ -38,11 +38,9 @@ uint8_t InputManager::get_joy_vaue(InputMode mode, const uint8_t* state)
 
 bool InputManager::read_inputs()
 {
-    //Used to get the console out of a halted state.
-    const uint8_t *state = SDL_GetKeyboardState(NULL);
-    uint8_t dir = get_joy_vaue(DIR, state);
-    uint8_t but = get_joy_vaue(BUTTON, state);
-    return (dir == 0x0f) && (but == 0x0f);
+    //Used to get the console out of a stopped state
+    auto state = SDL_GetKeyboardState(NULL);
+    return (get_joy_vaue(DIR, state) != 0x0f) || (get_joy_vaue(BUTTON, state) != 0x0f);
 }
 
 uint8_t InputManager::read8(uint16_t addr)
