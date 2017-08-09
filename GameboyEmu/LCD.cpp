@@ -27,7 +27,13 @@ namespace
     const uint8_t VBLANK_SCANLINE = 144;
 
     const int TILE_BYTES        = 16;
+    const int TILE_SIDE         = 8;
     const int TILES_PER_LINE    = 32;
+    
+    inline uint8_t index_to_signed(uint8_t index)
+    {
+        return index + 128;
+    }
 }
 
 LCD::LCD(int scale_factor):
@@ -159,17 +165,18 @@ void LCD::draw_window()
         if (m_curr_scanline >= m_winposy)
         {
             auto x = m_winposx-7;
-            auto tile_index_row = (m_curr_scanline-m_winposy) / 8;
-            auto tile_row_offset = (m_curr_scanline-m_winposy) % 8;
+            auto tile_index_row = (m_curr_scanline-m_winposy) / TILE_SIDE;
+            auto tile_row_offset = (m_curr_scanline-m_winposy) % TILE_SIDE;
             
-            for (auto tile_no=0; x<(LCD_WIDTH+8); x+=TILE_WIDTH, ++tile_no)
+            for (auto tile_no=0; x<(LCD_WIDTH+TILE_SIDE); x+=TILE_WIDTH, ++tile_no)
             {
                 auto offset = m_control_reg.window_tile_table_addr+(tile_index_row*TILES_PER_LINE)+tile_no;
                 auto tile_index = m_data[offset];
                 
+                
                 if (m_control_reg.signed_tile_nos)
                 {
-                    tile_index += 128;
+                    tile_index = index_to_signed(tile_index);
                 }
                 
                 uint16_t tile_addr = tile_index*TILE_BYTES;
@@ -199,7 +206,7 @@ void LCD::draw_background()
         //Which row of pixels within the tile
         const uint8_t tile_pixel_row = (m_curr_scanline + m_scroll_y) % TILE_WIDTH;
         
-        for (uint8_t x=0; x<(LCD_WIDTH+8); x+=TILE_WIDTH, ++tile_row_offset)
+        for (auto x=0; x<(LCD_WIDTH+TILE_SIDE); x+=TILE_WIDTH, ++tile_row_offset)
         {
             if (tile_row_offset >= TILES_PER_LINE)
             {
@@ -211,7 +218,7 @@ void LCD::draw_background()
             
             if (m_control_reg.signed_tile_nos)
             {
-                tile_index += 128;
+                tile_index = index_to_signed(tile_index);
             }
             
             //The final address to read pixel data from
