@@ -45,11 +45,6 @@ bool InputManager::read_inputs()
 
 uint8_t InputManager::read8(uint16_t addr)
 {
-    if (addr != JOYPAD_REG)
-    {
-        throw std::runtime_error(formatted_string("Unknown read of address 0x%04x from input manager.", addr));
-    }
-    
     return get_joy_vaue(m_mode, SDL_GetKeyboardState(NULL));;
 }
 
