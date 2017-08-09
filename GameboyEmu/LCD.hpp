@@ -215,7 +215,15 @@ class LCD: public MemoryManager
         void update_sprite(uint16_t addr, uint8_t value);
         template <typename T>
         void update_tile_row(uint16_t addr, T value);
-        void set_mode(uint8_t mode);
+    
+        enum LCDMode
+        {
+            HBLANK,
+            VBLANK,
+            OAM_ACCESS,
+            BOTH_ACCESS
+        };
+        void set_mode(LCDMode mode);
 
         LCDPalette make_palette(uint8_t addr);
         LCDPalette m_bgrd_pal;

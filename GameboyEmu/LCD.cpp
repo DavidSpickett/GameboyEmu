@@ -23,12 +23,7 @@ namespace
     const uint16_t OBJPAL1    = 0xff49;
     const uint16_t WINPOSY    = 0xff4a; //Yes, Y is first.
     const uint16_t WINPOSX    = 0xff4b;
-
-    const uint8_t LCD_MODE_HBLANK      = 0;
-    const uint8_t LCD_MODE_VBLANK      = 1;
-    const uint8_t LCD_MODE_OAM_ACCESS  = 2;
-    const uint8_t LCD_MODE_BOTH_ACCESS = 3;
-
+    
     const uint8_t VBLANK_SCANLINE = 144;
 
     const int TILE_BYTES        = 16;
@@ -54,10 +49,10 @@ m_winposx(0)
     init_array(m_obj_pal_1);
     init_array(m_data);
     
-    set_mode(LCD_MODE_VBLANK);
+    set_mode(VBLANK);
 }
 
-void LCD::set_mode(uint8_t mode)
+void LCD::set_mode(LCDMode mode)
 {
     m_lcd_stat = (m_lcd_stat & ~3) | mode;
 }
@@ -259,7 +254,7 @@ void LCD::tick(size_t curr_cycles)
     const size_t CYCLES_MODE_3_BOTH_ACCESS = 43 + CYCLES_MODE_2_OAM_ACCESS;
     const size_t CYCLES_MODE_0_HBLANK      = 51 + CYCLES_MODE_3_BOTH_ACCESS;
     
-    uint8_t old_mode = m_lcd_stat & 3;
+    LCDMode old_mode = static_cast<LCDMode>(m_lcd_stat & 3);
     auto new_mode = old_mode;
     auto old_scanline = m_curr_scanline;
     
@@ -267,19 +262,19 @@ void LCD::tick(size_t curr_cycles)
     
     switch (old_mode)
     {
-        case LCD_MODE_OAM_ACCESS:
+        case OAM_ACCESS:
         {
             if (m_lcd_line_cycles >= CYCLES_MODE_2_OAM_ACCESS)
             {
-                new_mode = LCD_MODE_BOTH_ACCESS;
+                new_mode = BOTH_ACCESS;
                 //No interrupt for entering both accessed mode
             }
             break;
         }
-        case LCD_MODE_BOTH_ACCESS:
+        case BOTH_ACCESS:
             if (m_lcd_line_cycles >= CYCLES_MODE_3_BOTH_ACCESS)
             {
-                new_mode = LCD_MODE_HBLANK;
+                new_mode = HBLANK;
                 draw_background();
                 draw_window();
                 //TOOD: sprite priority
@@ -295,33 +290,33 @@ void LCD::tick(size_t curr_cycles)
                 }
             }
             break;
-        case LCD_MODE_HBLANK:
+        case HBLANK:
             if (m_lcd_line_cycles >= CYCLES_MODE_0_HBLANK)
             {
                 m_curr_scanline++;
                 if (m_curr_scanline == VBLANK_SCANLINE)
                 {
-                    new_mode = LCD_MODE_VBLANK;
+                    new_mode = VBLANK;
                     /*This interrupt type has a higher priority so it's
                      ok that the post_interrupt further down will be ignored.*/
                     post_int(LCD_VBLANK);
                 }
                 else
                 {
-                    new_mode = LCD_MODE_OAM_ACCESS;
+                    new_mode = OAM_ACCESS;
                     //Take away cycles per line so we don't loose any overflow cycles
                     m_lcd_line_cycles = 0;
                 }
             }
             break;
-        case LCD_MODE_VBLANK:
+        case VBLANK:
             if (m_lcd_line_cycles >= CYCLES_PER_SCAN_LINE)
             {
                 //Note that this is not 255! Backgrounds go to
                 //that but the LCD only has 10 lines of VBLANK.
                 if (m_curr_scanline == 153)
                 {
-                    new_mode = LCD_MODE_OAM_ACCESS;
+                    new_mode = OAM_ACCESS;
                     m_curr_scanline = 0;
                 }
                 else
@@ -345,25 +340,26 @@ void LCD::tick(size_t curr_cycles)
     if (old_mode != new_mode)
     {
         set_mode(new_mode);
-        if (new_mode != LCD_MODE_BOTH_ACCESS)
+        
+        int bit = 0;
+        switch (new_mode)
         {
-            int bit = 0;
-            switch (new_mode)
-            {
-                case LCD_MODE_OAM_ACCESS:
-                    bit = 5;
-                    break;
-                case LCD_MODE_HBLANK:
-                    bit = 3;
-                    break;
-                case LCD_MODE_VBLANK:
-                    bit = 4;
-            }
-            
-            if (m_lcd_stat & (1<<bit))
-            {
-                post_int(LCD_STAT);
-            }
+            case OAM_ACCESS:
+                bit = 5;
+                break;
+            case HBLANK:
+                bit = 3;
+                break;
+            case VBLANK:
+                bit = 4;
+                break;
+            case BOTH_ACCESS:
+                break;
+        }
+        
+        if (bit && (m_lcd_stat & (1<<bit)))
+        {
+            post_int(LCD_STAT);
         }
     }
     
@@ -432,7 +428,7 @@ void LCD::write8(uint16_t addr, uint8_t value)
         {
             case CURLINE:
                 m_curr_scanline = 0;
-                set_mode(LCD_MODE_OAM_ACCESS);
+                set_mode(OAM_ACCESS);
                 break;
             case LCDCONTROL:
                 m_control_reg.write(value);
