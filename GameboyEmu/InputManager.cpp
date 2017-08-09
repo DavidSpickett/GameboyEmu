@@ -19,16 +19,16 @@ InputManager::InputManager():
 
 uint8_t InputManager::get_joy_vaue(InputMode mode, const uint8_t* state)
 {
-    uint8_t new_pad_value = 0x0f;
-    
+    auto new_pad_value = 0;
     if (mode != INVALID)
     {
         auto button_codes = mode == DIR ? m_joypad_keycodes.begin() : m_button_keycodes.begin();
         for (auto i=0; i != 4; ++i, ++button_codes)
         {
-            if (state[*button_codes])
+            //Bit is set if the button is *NOT* held down
+            if (!state[*button_codes])
             {
-                new_pad_value = new_pad_value & ~(1<<i);
+                new_pad_value |= 1<<i;
             }
         }
     }
