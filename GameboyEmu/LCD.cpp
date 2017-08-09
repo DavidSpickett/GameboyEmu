@@ -443,7 +443,7 @@ void LCD::write8(uint16_t addr, uint8_t value)
                 {
                     m_display.Init();
                 }
-                else if (!m_control_reg.lcd_operation)
+                else
                 {
                     m_display.Clear();
                 }
