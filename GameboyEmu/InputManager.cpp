@@ -11,7 +11,6 @@
 #include "Z80.hpp"
 
 InputManager::InputManager():
-    m_joypad(0xff),
     m_mode(INVALID),
     m_joypad_keycodes{SDL_SCANCODE_RIGHT, SDL_SCANCODE_LEFT, SDL_SCANCODE_UP, SDL_SCANCODE_DOWN},
     m_button_keycodes{SDL_SCANCODE_X, SDL_SCANCODE_Z, SDL_SCANCODE_RSHIFT, SDL_SCANCODE_RETURN}
@@ -53,9 +52,7 @@ uint8_t InputManager::read8(uint16_t addr)
         throw std::runtime_error(formatted_string("Unknown read of address 0x%04x from input manager.", addr));
     }
     
-    m_joypad = get_joy_vaue(m_mode, SDL_GetKeyboardState(NULL));
-    
-    return m_joypad;
+    return get_joy_vaue(m_mode, SDL_GetKeyboardState(NULL));;
 }
 
 void InputManager::write8(uint16_t addr, uint8_t value)

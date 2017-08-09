@@ -36,7 +36,6 @@ private:
     
     uint8_t get_joy_vaue(InputMode mode, const uint8_t* state);
     
-    uint8_t m_joypad;
     const std::array<int, 4> m_joypad_keycodes;
     const std::array<int, 4> m_button_keycodes;
     InputMode m_mode;
