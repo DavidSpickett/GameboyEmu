@@ -50,16 +50,5 @@ uint8_t InputManager::read8(uint16_t addr)
 
 void InputManager::write8(uint16_t addr, uint8_t value)
 {
-    if ((value & 0x30) == 0x30)
-    {
-        m_mode = INVALID;
-    }
-    else if ((value & (1<<4)) == 0)
-    {
-        m_mode = DIR;
-    }
-    else if ((value & (1<<5)) == 0)
-    {
-        m_mode = BUTTON;
-    }
+    m_mode = static_cast<InputMode>((value >> 4) & 3);
 }

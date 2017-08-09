@@ -29,8 +29,8 @@ public:
 private:
     enum InputMode
     {
+        BUTTON = 1,
         DIR,
-        BUTTON,
         INVALID
     };
     
