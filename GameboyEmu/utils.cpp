@@ -20,7 +20,7 @@ emu_args process_args(int argc, const char* argv[])
 {
     emu_args a;
     
-    for (int i=1; i<argc; ++i)
+    for (auto i=1; i<argc; ++i)
     {
         std::string arg(argv[i]);
         

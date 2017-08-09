@@ -24,8 +24,6 @@ std::string Z80::status_string()
     std::string _3 = formatted_string("d: 0x%02x e: 0x%02x\n", d.read(), e.read());
     std::string _4 = formatted_string("h: 0x%02x l: 0x%02x\n", h.read(), l.read());
     
-    //fancy formatter for flag reg bits
-    
     return pc_+f.to_string()+sp_+_1+_2+_3+_4;
 }
 

@@ -27,8 +27,19 @@ public:
     void tick(size_t curr_cycles) {}
     
 private:
+    enum InputMode
+    {
+        DIR,
+        BUTTON,
+        INVALID
+    };
+    
+    uint8_t get_joy_vaue(InputMode mode, const uint8_t* state);
+    
     uint8_t m_joypad;
-    uint8_t m_mode;
+    const std::array<int, 4> m_joypad_keycodes;
+    const std::array<int, 4> m_button_keycodes;
+    InputMode m_mode;
 };
 
 #endif /* InputManager_hpp */
