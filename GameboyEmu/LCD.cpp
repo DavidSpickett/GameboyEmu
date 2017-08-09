@@ -348,7 +348,7 @@ void LCD::tick(size_t curr_cycles)
     {
         set_mode(new_mode);
         
-        int bit = 0;
+        auto bit = 0;
         switch (new_mode)
         {
             case OAM_ACCESS:
@@ -450,7 +450,7 @@ void LCD::write8(uint16_t addr, uint8_t value)
                 break;
             case LCDSTAT:
                 //Mode bits are read only
-                m_lcd_stat = m_lcd_stat | (value & ~3);
+                m_lcd_stat = (m_lcd_stat & 3) | (value & ~3);
                 break;
             case BGRDPAL:
                 m_bgrd_pal = make_palette(value);
