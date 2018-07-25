@@ -1183,6 +1183,9 @@ inline uint8_t xor_n(Z80& proc, uint8_t b1)
     
     temp8 ^= proc.a.read();
     proc.f.set_z(temp8==0);
+    proc.f.set_n(false);
+    proc.f.set_h(false);
+    proc.f.set_c(false);
     proc.a.write(temp8);
     
     debug_print("%s\n", prt.c_str());
