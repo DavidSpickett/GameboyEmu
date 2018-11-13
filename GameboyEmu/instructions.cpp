@@ -48,7 +48,7 @@ namespace
         uint8_t value;
         size_t cycles;
     };
-    InstrArg get_reg_arg(Z80& proc, uint8_t opcode) {
+    InstrArg get_single_arg(Z80& proc, uint8_t opcode) {
         const Register<uint8_t>* reg = nullptr;
         switch (opcode & 0x7) {
             case 0: reg = &proc.b; break;
@@ -82,7 +82,7 @@ namespace
 
 inline uint8_t add_a_n(Z80& proc, uint8_t b1)
 {
-    InstrArg arg = get_reg_arg(proc, b1);
+    InstrArg arg = get_single_arg(proc, b1);
     generic_add_a_n(proc, arg.value);
     
     debug_print("add a, %s\n", arg.name);
@@ -108,7 +108,7 @@ namespace
 
 inline uint8_t sub_n(Z80& proc, uint8_t b1)
 {
-    InstrArg arg = get_reg_arg(proc, b1);
+    InstrArg arg = get_single_arg(proc, b1);
     generic_sub_n(proc, arg.value);
     
     debug_print("sub %s\n", arg.name);
@@ -152,7 +152,7 @@ namespace
 
 inline uint8_t cp_n(Z80& proc, uint8_t b1)
 {
-    InstrArg arg = get_reg_arg(proc, b1);
+    InstrArg arg = get_single_arg(proc, b1);
     generic_cp_n(proc, arg.value);
     debug_print("cp %s\n", arg.name);
     
@@ -1038,7 +1038,7 @@ inline uint8_t xor_n(Z80& proc, uint8_t b1)
     proc.f.set_h(false);
     proc.f.set_c(false);
     
-    InstrArg arg = get_reg_arg(proc, b1);
+    InstrArg arg = get_single_arg(proc, b1);
     
     arg.value ^= proc.a.read();
     proc.f.set_z(arg.value==0);
@@ -1492,7 +1492,7 @@ namespace
 
 inline uint8_t and_n(Z80& proc, uint8_t b1)
 {
-    InstrArg arg = get_reg_arg(proc, b1);
+    InstrArg arg = get_single_arg(proc, b1);
     generic_and_n(proc, arg.value);
     
     debug_print("and %s\n", arg.name);
@@ -1542,7 +1542,7 @@ namespace {
 
 inline uint8_t or_n(Z80& proc, uint8_t b1)
 {
-    InstrArg arg = get_reg_arg(proc, b1);
+    InstrArg arg = get_single_arg(proc, b1);
     generic_or_n(proc, arg.value);
     
     debug_print("or %s\n", arg.name);
@@ -1582,7 +1582,7 @@ namespace {
 
 inline uint8_t adc_a_n(Z80& proc, uint8_t b1)
 {
-    InstrArg arg = get_reg_arg(proc, b1);
+    InstrArg arg = get_single_arg(proc, b1);
     generic_adc_a(proc, arg.value);
     
     debug_print("adc a, %s\n", arg.name);
@@ -1986,7 +1986,7 @@ namespace
 
 inline uint8_t sbc_a_n(Z80& proc, uint8_t b1)
 {
-    InstrArg arg = get_reg_arg(proc, b1);
+    InstrArg arg = get_single_arg(proc, b1);
     generic_sbc_n(proc, arg.value);
     
     debug_print("sbc a, %s\n", arg.name);

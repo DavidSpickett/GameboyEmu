@@ -76,6 +76,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--rom=&quot;LYC.gb&quot;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--rom=&quot;Alleyway (World).gb&quot;"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -89,7 +93,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;Tetris (world).gb&quot;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;Dr. Mario (World).gb&quot;"
@@ -97,14 +101,14 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;Super Mario Land (world).gb&quot;"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rom=&quot;opus5.gb&quot;"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--rom=&quot;gb-test-roms-master/cpu_instrs/individual/10-bit ops.gb&quot;"
+            argument = "--rom=&quot;gb-test-roms-master/cpu_instrs/individual/04-op r,imm.gb&quot;"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
