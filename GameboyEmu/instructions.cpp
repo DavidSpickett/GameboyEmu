@@ -1445,37 +1445,8 @@ inline uint8_t rst_n(Z80& proc, uint8_t b1)
     proc.sp.dec(2);
     proc.mem.write16(proc.sp.read(), proc.pc.read());
     
-    //Jump to addr
-    uint16_t offset = 0;
-    
-    switch (b1)
-    {
-        case 0xc7:
-            offset = 0x00;
-            break;
-        case 0xcf:
-            offset = 0x08;
-            break;
-        case 0xd7:
-            offset = 0x10;
-            break;
-        case 0xdf:
-            offset = 0x18;
-            break;
-        case 0xe7:
-            offset = 0x20;
-            break;
-        case 0xef:
-            offset = 0x28;
-            break;
-        case 0xf7:
-            offset = 0x30;
-            break;
-        case 0xff:
-            offset = 0x38;
-            break;
-    }
-    
+    //Bottom 2 bits of first nibble, top bit of the last
+    uint16_t offset = b1 & 0x38;
     proc.pc.write(offset);
     
     debug_print("rst 0x%04x\n", offset);
