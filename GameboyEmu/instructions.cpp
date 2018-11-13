@@ -1657,58 +1657,17 @@ inline uint8_t ret_cc(Z80& proc, uint8_t b1)
     return 8;
 }
 
-namespace {
-    uint8_t generic_sla(Z80& proc, uint8_t value)
-    {
-        uint8_t new_val = value << 1;
-        
-        proc.f.set_z(new_val==0);
-        proc.f.set_n(false);
-        proc.f.set_h(false);
-        proc.f.set_c(value>>7);
-        
-        return new_val;
-    }
-}
-
 inline uint8_t sla_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = nullptr;
+    InstrArg arg = get_single_CB_arg(proc, b1);
+    uint8_t new_val = arg.value << 1;
     
-    switch (b1)
-    {
-        case 0x27:
-            reg = &proc.a;
-            break;
-        case 0x20:
-            reg = &proc.b;
-            break;
-        case 0x21:
-            reg = &proc.c;
-            break;
-        case 0x22:
-            reg = &proc.d;
-            break;
-        case 0x23:
-            reg = &proc.e;
-            break;
-        case 0x24:
-            reg = &proc.h;
-            break;
-        case 0x25:
-            reg = &proc.l;
-            break;
-        //Hl as addr
-        case 0x26:
-        {
-            uint16_t addr = proc.get_hl();
-            uint8_t new_val = generic_sla(proc, proc.mem.read8(addr));
-            proc.mem.write8(addr, new_val);
-            return 16;
-        }
-    }
+    proc.f.set_z(new_val==0);
+    proc.f.set_n(false);
+    proc.f.set_h(false);
+    proc.f.set_c(arg.value>>7);
     
-    reg->write(generic_sla(proc, reg->read()));
+    arg.write(new_val);
     
     debug_print("sla %s\n", reg->name);
     return 8;
