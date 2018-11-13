@@ -26,7 +26,7 @@ public:
         strncpy(name, name_str.c_str(), 3);
     }
     
-    int_type read() {return m_value;}
+    int_type read() const {return m_value;}
     virtual void write(int_type val)
     {
         m_value = val;
@@ -140,10 +140,10 @@ public:
     uint8_t fetch_byte();
     uint16_t fetch_short();
     
-    uint16_t get_af() { return get_pair(a, f); }
-    uint16_t get_bc() { return get_pair(b, c); }
-    uint16_t get_de() { return get_pair(d, e); }
-    uint16_t get_hl() { return get_pair(h, l); }
+    uint16_t get_af() const { return get_pair(a, f); }
+    uint16_t get_bc() const { return get_pair(b, c); }
+    uint16_t get_de() const { return get_pair(d, e); }
+    uint16_t get_hl() const { return get_pair(h, l); }
     
     void set_af(uint16_t value) { return set_pair(a, f, value); }
     void set_bc(uint16_t value) { return set_pair(b, c, value); }
@@ -166,7 +166,7 @@ public:
 private:
     std::array<uint16_t, 5> m_interrupt_addrs;
     
-    uint16_t get_pair(Register<uint8_t> high, Register<uint8_t> low)
+    uint16_t get_pair(Register<uint8_t> high, Register<uint8_t> low) const
     {
         return (high.read() << 8) | low.read();
     }
