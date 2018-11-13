@@ -89,27 +89,20 @@ inline uint8_t add_a_n(Z80& proc, uint8_t b1)
     return 4;
 }
 
-namespace
-{
-    void generic_sub_n(Z80& proc, uint8_t value)
-    {
-        uint8_t orig_val = proc.a.read();
-        uint8_t new_value = orig_val - value;
-        
-        proc.f.set_z(new_value==0);
-        proc.f.set_n(true);
-        proc.f.set_h((orig_val & 0xF) < (value & 0xF));
-        //I think...acts as an underflow flag?
-        proc.f.set_c(orig_val<value);
-        
-        proc.a.write(new_value);
-    }
-}
-
 inline uint8_t sub_n(Z80& proc, uint8_t b1)
 {
     InstrArg arg = get_single_arg(proc, b1);
-    generic_sub_n(proc, arg.value);
+    
+    uint8_t orig_val = proc.a.read();
+    uint8_t new_value = orig_val - arg.value;
+    
+    proc.f.set_z(new_value==0);
+    proc.f.set_n(true);
+    proc.f.set_h((orig_val & 0xF) < (arg.value & 0xF));
+    //I think...acts as an underflow flag?
+    proc.f.set_c(orig_val < arg.value);
+    
+    proc.a.write(new_value);
     
     debug_print("sub %s\n", arg.name);
     return arg.cycles;
@@ -136,24 +129,18 @@ inline uint8_t jr_n(Z80& proc)
     return 8;
 }
 
-namespace
-{
-    void generic_cp_n(Z80& proc, uint8_t value)
-    {
-        uint8_t a = proc.a.read();
-        uint8_t res = value - a;
-        
-        proc.f.set_z(res==0);
-        proc.f.set_n(true);
-        proc.f.set_h((a & 0xF) > (value & 0xF));
-        proc.f.set_c(a<value);
-    }
-}
-
 inline uint8_t cp_n(Z80& proc, uint8_t b1)
 {
     InstrArg arg = get_single_arg(proc, b1);
-    generic_cp_n(proc, arg.value);
+    
+    uint8_t a = proc.a.read();
+    uint8_t res = arg.value - a;
+    
+    proc.f.set_z(res==0);
+    proc.f.set_n(true);
+    proc.f.set_h((a & 0xF) > (arg.value & 0xF));
+    proc.f.set_c(a < arg.value);
+    
     debug_print("cp %s\n", arg.name);
     
     return arg.cycles;
@@ -1476,24 +1463,17 @@ inline uint8_t rst_n(Z80& proc, uint8_t b1)
     return 16;
 }
 
-namespace
-{
-    void generic_and_n(Z80& proc, uint8_t value)
-    {
-        uint8_t res = proc.a.read() & value;
-        proc.a.write(res);
-        
-        proc.f.set_z(res==0);
-        proc.f.set_n(false);
-        proc.f.set_h(true);
-        proc.f.set_c(false);
-    }
-}
-
 inline uint8_t and_n(Z80& proc, uint8_t b1)
 {
     InstrArg arg = get_single_arg(proc, b1);
-    generic_and_n(proc, arg.value);
+    
+    uint8_t res = proc.a.read() & arg.value;
+    proc.a.write(res);
+    
+    proc.f.set_z(res==0);
+    proc.f.set_n(false);
+    proc.f.set_h(true);
+    proc.f.set_c(false);
     
     debug_print("and %s\n", arg.name);
     return arg.cycles;
@@ -1527,23 +1507,17 @@ inline uint8_t dec_nn(Z80& proc, uint8_t b1)
     return 8;
 }
 
-namespace {
-    void generic_or_n(Z80& proc, uint8_t value)
-    {
-        uint8_t res = proc.a.read() | value;
-        proc.a.write(res);
-        
-        proc.f.set_z(res==0);
-        proc.f.set_c(false);
-        proc.f.set_h(false);
-        proc.f.set_n(false);
-    }
-}
-
 inline uint8_t or_n(Z80& proc, uint8_t b1)
 {
     InstrArg arg = get_single_arg(proc, b1);
-    generic_or_n(proc, arg.value);
+    
+    uint8_t res = proc.a.read() | arg.value;
+    proc.a.write(res);
+    
+    proc.f.set_z(res==0);
+    proc.f.set_c(false);
+    proc.f.set_h(false);
+    proc.f.set_n(false);
     
     debug_print("or %s\n", arg.name);
     return arg.cycles;
@@ -1967,27 +1941,20 @@ inline uint8_t reti(Z80& proc)
     return 16;
 }
 
-namespace
-{
-    void generic_sbc_n(Z80& proc, uint8_t value)
-    {
-        uint8_t orig_val = proc.a.read();
-        uint8_t new_value = orig_val - value - uint8_t(proc.f.get_c());
-        
-        proc.f.set_z(new_value==0);
-        proc.f.set_n(true);
-        proc.f.set_h((orig_val & 0xF) < (value & 0xF));
-        //I think...acts as an underflow flag?
-        proc.f.set_c(orig_val<value);
-        
-        proc.a.write(new_value);
-    }
-}
-
 inline uint8_t sbc_a_n(Z80& proc, uint8_t b1)
 {
     InstrArg arg = get_single_arg(proc, b1);
-    generic_sbc_n(proc, arg.value);
+    
+    uint8_t orig_val = proc.a.read();
+    uint8_t new_value = orig_val - arg.value - uint8_t(proc.f.get_c());
+    
+    proc.f.set_z(new_value==0);
+    proc.f.set_n(true);
+    proc.f.set_h((orig_val & 0xF) < (arg.value & 0xF));
+    //I think...acts as an underflow flag?
+    proc.f.set_c(orig_val < arg.value);
+    
+    proc.a.write(new_value);
     
     debug_print("sbc a, %s\n", arg.name);
     return arg.cycles;
