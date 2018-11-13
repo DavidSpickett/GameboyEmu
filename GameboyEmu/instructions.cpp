@@ -1905,62 +1905,20 @@ inline uint8_t stop(Z80& proc)
     return 4;
 }
 
-namespace
-{
-    uint8_t generic_rr_n(Z80& proc, uint8_t value)
-    {
-        proc.f.set_c(value & 0x1);
-        value >>= 1;
-        
-        proc.f.set_z(value==0);
-        proc.f.set_n(false);
-        proc.f.set_h(false);
-        
-        return value;
-    }
-}
-
 inline uint8_t rr_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = NULL;
+    InstrArg arg = get_single_CB_arg(proc, b1);
     
-    switch (b1)
-    {
-        case 0x1f:
-            reg = &proc.a;
-            break;
-        case 0x18:
-            reg = &proc.b;
-            break;
-        case 0x19:
-            reg = &proc.c;
-            break;
-        case 0x1a:
-            reg = &proc.d;
-            break;
-        case 0x1b:
-            reg = &proc.e;
-            break;
-        case 0x1c:
-            reg = &proc.h;
-            break;
-        case 0x1d:
-            reg = &proc.l;
-            break;
-        case 0x1e:
-        {
-            //HL as addr
-            uint16_t addr = proc.get_hl();
-            uint8_t new_value = generic_rr_n(proc, proc.mem.read8(addr));
-            proc.mem.write8(addr, new_value);
-            
-            debug_print("rr (hl)\n");
-            return 16;
-        }
-    }
+    proc.f.set_c(arg.value & 0x1);
+    uint8_t new_value = arg.value >> 1;
     
-    reg->write(generic_rr_n(proc, reg->read()));
-    debug_print("rr %s\n", reg->name);
+    proc.f.set_z(new_value==0);
+    proc.f.set_n(false);
+    proc.f.set_h(false);
+    
+    arg.write(new_value);
+    
+    debug_print("rr %s\n", arg.name);
     return 8;
 }
 
