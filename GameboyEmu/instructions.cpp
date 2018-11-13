@@ -42,52 +42,47 @@ namespace
         proc.f.set_h(((original_value&0xf) + (value&0xf)) & 0x10);
         proc.f.set_c((uint16_t(original_value)+uint16_t(value)) > 0xff);
     }
+    
+    Register<uint8_t>* get_reg_arg(Z80& proc, uint8_t opcode) {
+        // TODO: std::optional
+        switch (opcode & 0x7) {
+            case 0: return &proc.b;
+            case 1: return &proc.c;
+            case 2: return &proc.d;
+            case 3: return &proc.e;
+            case 4: return &proc.h;
+            case 5: return &proc.l;
+            // 6 skipped for now, uses (HL) as an address
+            case 7: return &proc.a;
+        }
+        
+        return nullptr;
+    }
 }
 
 inline uint8_t add_a_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = nullptr;
-    
-    switch (b1)
-    {
-        case 0x87:
-            reg = &proc.a;
-            break;
-        case 0x80:
-            reg = &proc.b;
-            break;
-        case 0x81:
-            reg = &proc.c;
-            break;
-        case 0x82:
-            reg = &proc.d;
-            break;
-        case 0x83:
-            reg = &proc.e;
-            break;
-        case 0x84:
-            reg = &proc.h;
-            break;
-        case 0x85:
-            reg = &proc.l;
-            break;
-        //Use (hl) as addr
-        case 0x86:
+    Register<uint8_t>* reg = get_reg_arg(proc, b1);
+    if (!reg) {
+        switch (b1)
         {
-            uint16_t addr = proc.get_hl();
-            generic_add_a_n(proc, proc.mem.read8(addr));
-            
-            debug_print("%s", "add a, (hl)\n");
-            return 8;
-        }
-        //Use next byte as value
-        case 0xC6:
-        {
-            uint8_t value = proc.fetch_byte();
-            generic_add_a_n(proc, value);
-            
-            debug_print("add a, 0x%02x\n", value);
-            return 8;
+            case 0x86:
+            {
+                uint16_t addr = proc.get_hl();
+                generic_add_a_n(proc, proc.mem.read8(addr));
+                
+                debug_print("%s", "add a, (hl)\n");
+                return 8;
+            }
+                //Use next byte as value
+            case 0xC6:
+            {
+                uint8_t value = proc.fetch_byte();
+                generic_add_a_n(proc, value);
+                
+                debug_print("add a, 0x%02x\n", value);
+                return 8;
+            }
         }
     }
     
@@ -116,49 +111,29 @@ namespace
 
 inline uint8_t sub_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = nullptr;
-    
-    switch (b1)
-    {
-        case 0x97:
-            reg = &proc.a;
-            break;
-        case 0x90:
-            reg = &proc.b;
-            break;
-        case 0x91:
-            reg = &proc.c;
-            break;
-        case 0x92:
-            reg = &proc.d;
-            break;
-        case 0x93:
-            reg = &proc.e;
-            break;
-        case 0x94:
-            reg = &proc.h;
-            break;
-        case 0x95:
-            reg = &proc.l;
-            break;
-        //(hl) as an addr
-        case 0x96:
+    Register<uint8_t>* reg = get_reg_arg(proc, b1);
+    if (!reg) {
+        switch (b1)
         {
-            uint16_t addr = proc.get_hl();
-            uint8_t value = proc.mem.read8(addr);
-            generic_sub_n(proc, value);
-            
-            debug_print("%s", "sub (hl)\n");
-            return 8;
-        }
-        //Next byte is value
-        case 0xd6:
-        {
-            uint8_t value = proc.fetch_byte();
-            generic_sub_n(proc, value);
-            
-            debug_print("sub 0x%02x\n", value);
-            return 8;
+                //(hl) as an addr
+            case 0x96:
+            {
+                uint16_t addr = proc.get_hl();
+                uint8_t value = proc.mem.read8(addr);
+                generic_sub_n(proc, value);
+                
+                debug_print("%s", "sub (hl)\n");
+                return 8;
+            }
+                //Next byte is value
+            case 0xd6:
+            {
+                uint8_t value = proc.fetch_byte();
+                generic_sub_n(proc, value);
+                
+                debug_print("sub 0x%02x\n", value);
+                return 8;
+            }
         }
     }
     
@@ -205,45 +180,25 @@ namespace
 
 inline uint8_t cp_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = nullptr;
-    
-    switch (b1)
-    {
-        case 0xbf:
-            reg = &proc.a;
-            break;
-        case 0xb8:
-            reg = &proc.b;
-            break;
-        case 0xb9:
-            reg = &proc.c;
-            break;
-        case 0xba:
-            reg = &proc.d;
-            break;
-        case 0xbb:
-            reg = &proc.e;
-            break;
-        case 0xbc:
-            reg = &proc.h;
-            break;
-        case 0xbd:
-            reg = &proc.l;
-            break;
-        //Use (hl) as addr
-        case 0xbe:
+    Register<uint8_t>* reg = get_reg_arg(proc, b1);
+    if (!reg) {
+        switch (b1)
         {
-            generic_cp_n(proc, proc.mem.read8(proc.get_hl()));
-            debug_print("%s\n", "cp (hl)");
-            return 8;
-        }
-        //Compare with immediate byte
-        case 0xfe:
-        {
-            uint8_t value = proc.fetch_byte();
-            generic_cp_n(proc, value);
-            debug_print("cp 0x%02x\n", value);
-            return 8;
+                //Use (hl) as addr
+            case 0xbe:
+            {
+                generic_cp_n(proc, proc.mem.read8(proc.get_hl()));
+                debug_print("%s\n", "cp (hl)");
+                return 8;
+            }
+                //Compare with immediate byte
+            case 0xfe:
+            {
+                uint8_t value = proc.fetch_byte();
+                generic_cp_n(proc, value);
+                debug_print("cp 0x%02x\n", value);
+                return 8;
+            }
         }
     }
     
@@ -1128,57 +1083,34 @@ inline uint8_t xor_n(Z80& proc, uint8_t b1)
 {
     uint8_t cycles = 4;
     std::string prt = "xor %s";
+    uint8_t temp8;
     
     proc.f.set_n(false);
     proc.f.set_h(false);
     proc.f.set_c(false);
     
-    uint8_t temp8;
-    
-    switch (b1)
-    {
-        case 0xAF:
-            prt = formatted_string(prt.c_str(), "a");
-            temp8 = proc.a.read();
-            break;
-        case 0xA8:
-            prt = formatted_string(prt.c_str(), "b");
-            temp8 = proc.b.read();
-            break;
-        case 0xA9:
-            prt = formatted_string(prt.c_str(), "c");
-            temp8 = proc.c.read();
-            break;
-        case 0xAA:
-            prt = formatted_string(prt.c_str(), "d");
-            temp8 = proc.d.read();
-            break;
-        case 0xAB:
-            prt = formatted_string(prt.c_str(), "e");
-            temp8 = proc.e.read();
-            break;
-        case 0xAC:
-            prt = formatted_string(prt.c_str(), "h");
-            temp8 = proc.h.read();
-            break;
-        case 0xAD:
-            prt = formatted_string(prt.c_str(), "l");
-            temp8 = proc.l.read();
-            break;
-        case 0xAE:
-            //Use value of HL as an address
-            prt = formatted_string(prt.c_str(), "(hl)");
-            temp8 = proc.mem.read8(proc.get_hl());
-            prt += formatted_string(" (0x%02x)", temp8);
-            cycles = 8;
-            break;
-        case 0xEE:
-            temp8 = proc.fetch_byte();
-            prt = formatted_string("xor 0x%02x", temp8);
-            cycles = 8;
-            break;
-        default:
-            throw std::runtime_error(formatted_string("Unknown byte 0x%02x for opcode xor_n", b1));
+    Register<uint8_t>* reg = get_reg_arg(proc, b1);
+    if (!reg) {
+        switch (b1)
+        {
+            case 0xAE:
+                //Use value of HL as an address
+                prt = formatted_string(prt.c_str(), "(hl)");
+                temp8 = proc.mem.read8(proc.get_hl());
+                prt += formatted_string(" (0x%02x)", temp8);
+                cycles = 8;
+                break;
+            case 0xEE:
+                temp8 = proc.fetch_byte();
+                prt = formatted_string("xor 0x%02x", temp8);
+                cycles = 8;
+                break;
+            default:
+                throw std::runtime_error(formatted_string("Unknown byte 0x%02x for opcode xor_n", b1));
+        }
+    } else {
+        temp8 = reg->read();
+        prt = formatted_string(prt.c_str(), reg->name);
     }
     
     temp8 ^= proc.a.read();
@@ -1633,50 +1565,30 @@ namespace
 
 inline uint8_t and_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = nullptr;
-    
-    switch (b1)
-    {
-        case 0xa7:
-            reg = &proc.a;
-            break;
-        case 0xa0:
-            reg = &proc.b;
-            break;
-        case 0xa1:
-            reg = &proc.c;
-            break;
-        case 0xa2:
-            reg = &proc.d;
-            break;
-        case 0xa3:
-            reg = &proc.e;
-            break;
-        case 0xa4:
-            reg = &proc.h;
-            break;
-        case 0xa5:
-            reg = &proc.l;
-            break;
-        //hl as addr
-        case 0xa6:
+    Register<uint8_t>* reg = get_reg_arg(proc, b1);
+    if (!reg) {
+        switch (b1)
         {
-            uint8_t value = proc.mem.read8(proc.get_hl());
-            generic_and_n(proc, value);
-            
-            debug_print("%s\n", "and (hl)");
-            return 8;
-        }
-        case 0xe6:
-        {
-            uint8_t value = proc.fetch_byte();
-            generic_and_n(proc, value);
-            
-            debug_print("and 0x%02x\n", value);
-            return 8;
+            //hl as addr
+            case 0xa6:
+            {
+                uint8_t value = proc.mem.read8(proc.get_hl());
+                generic_and_n(proc, value);
+                
+                debug_print("%s\n", "and (hl)");
+                return 8;
+            }
+            case 0xe6:
+            {
+                uint8_t value = proc.fetch_byte();
+                generic_and_n(proc, value);
+                
+                debug_print("and 0x%02x\n", value);
+                return 8;
+            }
         }
     }
-    
+        
     generic_and_n(proc, reg->read());
     
     debug_print("and %s\n", reg->name);
@@ -1726,48 +1638,28 @@ namespace {
 
 inline uint8_t or_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = nullptr;
-    
-    switch (b1)
-    {
-        case 0xb7:
-            reg = &proc.a;
-            break;
-        case 0xb0:
-            reg = &proc.b;
-            break;
-        case 0xb1:
-            reg = &proc.c;
-            break;
-        case 0xb2:
-            reg = &proc.d;
-            break;
-        case 0xb3:
-            reg = &proc.e;
-            break;
-        case 0xb4:
-            reg = &proc.h;
-            break;
-        case 0xb5:
-            reg = &proc.l;
-            break;
-        //Use hl as addr
-        case 0xb6:
+    Register<uint8_t>* reg = get_reg_arg(proc, b1);
+    if (!reg) {
+        switch (b1)
         {
-            uint8_t value = proc.mem.read8(proc.get_hl());
-            generic_or_n(proc, value);
-            
-            debug_print("%s\n", "or (hl)");
-            return 8;
-        }
-        //Use next byte
-        case 0xf6:
-        {
-            uint8_t value = proc.fetch_byte();
-            generic_or_n(proc, value);
-            
-            debug_print("or 0x%02x\n", value);
-            return 8;
+                //Use hl as addr
+            case 0xb6:
+            {
+                uint8_t value = proc.mem.read8(proc.get_hl());
+                generic_or_n(proc, value);
+                
+                debug_print("%s\n", "or (hl)");
+                return 8;
+            }
+                //Use next byte
+            case 0xf6:
+            {
+                uint8_t value = proc.fetch_byte();
+                generic_or_n(proc, value);
+                
+                debug_print("or 0x%02x\n", value);
+                return 8;
+            }
         }
     }
     
@@ -1810,50 +1702,30 @@ namespace {
 
 inline uint8_t adc_a_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = nullptr;
-    
-    switch (b1)
-    {
-        case 0x8f:
-            reg = &proc.a;
-            break;
-        case 0x88:
-            reg = &proc.b;
-            break;
-        case 0x89:
-            reg = &proc.c;
-            break;
-        case 0x8a:
-            reg = &proc.d;
-            break;
-        case 0x8b:
-            reg = &proc.e;
-            break;
-        case 0x8c:
-            reg = &proc.h;
-            break;
-        case 0x8d:
-            reg = &proc.l;
-            break;
-        //Hl as addr
-        case 0x8e:
+    Register<uint8_t>* reg = get_reg_arg(proc, b1);
+    if (!reg) {
+        switch (b1)
         {
-            uint16_t addr = proc.get_hl();
-            generic_adc_a(proc, proc.mem.read8(addr));
-            
-            debug_print("%s", "adc a, (hl)\n");
-            return 8;
-        }
-        case 0xce:
-        {
-            uint8_t value = proc.fetch_byte();
-            generic_adc_a(proc, value);
-            
-            debug_print("adc a, 0x%02x\n", value);
-            return 8;
+            //Hl as addr
+            case 0x8e:
+            {
+                uint16_t addr = proc.get_hl();
+                generic_adc_a(proc, proc.mem.read8(addr));
+                
+                debug_print("%s", "adc a, (hl)\n");
+                return 8;
+            }
+            case 0xce:
+            {
+                uint8_t value = proc.fetch_byte();
+                generic_adc_a(proc, value);
+                
+                debug_print("adc a, 0x%02x\n", value);
+                return 8;
+            }
         }
     }
-    
+        
     generic_adc_a(proc, reg->read());
     
     debug_print("adc a, %s\n", reg->name);
@@ -2257,52 +2129,32 @@ namespace
 
 inline uint8_t sbc_a_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = nullptr;
-    
-    switch (b1)
-    {
-        case 0x9f:
-            reg = &proc.a;
-            break;
-        case 0x98:
-            reg = &proc.b;
-            break;
-        case 0x99:
-            reg = &proc.c;
-            break;
-        case 0x9a:
-            reg = &proc.d;
-            break;
-        case 0x9b:
-            reg = &proc.e;
-            break;
-        case 0x9c:
-            reg = &proc.h;
-            break;
-        case 0x9d:
-            reg = &proc.l;
-            break;
-        //hl as addr
-        case 0x9e:
+    Register<uint8_t>* reg = get_reg_arg(proc, b1);
+    if (!reg) {
+        switch (b1)
         {
-            uint16_t addr = proc.get_hl();
-            uint8_t val = proc.mem.read8(addr);
-            generic_sbc_n(proc, val);
-            
-            debug_print("%s\n", "sbc a, (hl)");
-            return 8;
-        }
-        case 0xde:
-        {
-            //Use byte given
-            uint8_t value = proc.fetch_byte();
-            generic_sbc_n(proc, value);
-            
-            debug_print("sbc a, 0x%02x\n", value);
-            return 8;
+            //hl as addr
+            case 0x9e:
+            {
+                uint16_t addr = proc.get_hl();
+                uint8_t val = proc.mem.read8(addr);
+                generic_sbc_n(proc, val);
+                
+                debug_print("%s\n", "sbc a, (hl)");
+                return 8;
+            }
+            case 0xde:
+            {
+                //Use byte given
+                uint8_t value = proc.fetch_byte();
+                generic_sbc_n(proc, value);
+                
+                debug_print("sbc a, 0x%02x\n", value);
+                return 8;
+            }
         }
     }
-    
+
     generic_sbc_n(proc, reg->read());
     
     debug_print("sbc a, %s\n", reg->name);
