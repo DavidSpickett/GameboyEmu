@@ -46,10 +46,13 @@ namespace
     struct InstrArg {
         std::string name;
         uint8_t value;
+        std::function<void(uint8_t)> write;
         size_t cycles;
     };
-    InstrArg get_single_arg(Z80& proc, uint8_t opcode) {
-        const Register<uint8_t>* reg = nullptr;
+    
+    InstrArg get_single_arg(Z80& proc, uint8_t opcode, bool isCB) {
+        Register<uint8_t>* reg = nullptr;
+        // = match ( would be just super here
         switch (opcode & 0x7) {
             case 0: reg = &proc.b; break;
             case 1: reg = &proc.c; break;
@@ -57,26 +60,42 @@ namespace
             case 3: reg = &proc.e; break;
             case 4: reg = &proc.h; break;
             case 5: reg = &proc.l; break;
-            // 6 skipped uses (HL) as an address
+            case 6: {
+                // Bottom 3 bits are 6 - 0b110, can be (hl) or d8 for non CB instrs
+                uint8_t top_nibble = opcode >> 4;
+                if (!isCB &&
+                    ((top_nibble <= 3) || (top_nibble >= 0xC))
+                    ){
+                    // Must be a d8
+                    uint8_t d8 = proc.fetch_byte();
+                    return InstrArg{formatted_string("0x%02x", d8),
+                        d8,
+                        // Won't be reached by a CB instr
+                        [](uint8_t v){},
+                        8};
+                } else {
+                    // Must be using (hl) as an address
+                    uint16_t addr = proc.get_hl();
+                    return InstrArg{"(hl)",
+                        proc.mem.read8(addr),
+                        [&](uint8_t v) { proc.mem.write8(addr, v); },
+                        8};
+                    }
+            }
             case 7: reg = &proc.a; break;
         }
         
-        if (reg) {
-            return InstrArg{reg->name, reg->read(), 4};
-        } else {
-            // Bottom 3 bits are 6 - 0b110, can be (hl) or d8
-            uint8_t top_nibble = opcode >> 4;
-            if ((top_nibble <= 3) || (top_nibble >= 0xC)) {
-                // Must be a d8
-                uint8_t d8 = proc.fetch_byte();
-                return InstrArg{formatted_string("0x%02x", d8), d8, 8};
-            } else {
-                // Must be using (hl) as an address
-                return InstrArg{"(hl)",
-                    proc.mem.read8(proc.get_hl()),
-                    8};
-            }
-        }
+        return InstrArg{reg->name,
+                        reg->read(),
+                        [=](uint8_t v) { reg->write(v); },
+                        4};
+    }
+    
+    InstrArg get_single_arg(Z80& proc, uint8_t opcode) {
+        return get_single_arg(proc, opcode, false);
+    }
+    InstrArg get_single_CB_arg(Z80& proc, uint8_t opcode) {
+        return get_single_arg(proc, opcode, true);
     }
 }
 
@@ -1563,61 +1582,17 @@ inline uint8_t adc_a_n(Z80& proc, uint8_t b1)
     return arg.cycles;
 }
 
-namespace {
-    uint8_t swap(uint8_t value)
-    {
-        return ((value & 0xf) << 4) | (value >> 4);
-    }
-}
-
 inline uint8_t swap_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = nullptr;
-    
     proc.f.set_c(false);
     proc.f.set_h(false);
     proc.f.set_c(false);
+
+    InstrArg arg = get_single_CB_arg(proc, b1);
     
-    switch (b1)
-    {
-        case 0x37:
-            reg = &proc.a;
-            break;
-        case 0x30:
-            reg = &proc.b;
-            break;
-        case 0x31:
-            reg = &proc.c;
-            break;
-        case 0x32:
-            reg = &proc.d;
-            break;
-        case 0x33:
-            reg = &proc.e;
-            break;
-        case 0x34:
-            reg = &proc.h;
-            break;
-        case 0x35:
-            reg = &proc.l;
-            break;
-        //Use hl as addr
-        case 0x36:
-        {
-            uint16_t addr = proc.get_hl();
-            uint8_t value = proc.mem.read8(addr);
-            value = swap(value);
-            proc.mem.write8(addr, value);
-            proc.f.set_z(value==0);
-            
-            debug_print("%s\n", "swap (hl)");
-            return 16;
-        }
-    }
-    
-    uint8_t value = swap(reg->read());
-    reg->write(value);
-    proc.f.set_z(value==0);
+    uint8_t new_value = ((arg.value & 0xf) << 4) | (arg.value >> 4);
+    arg.write(new_value);
+    proc.f.set_z(new_value==0);
     
     debug_print("swap %s\n", reg->name);
     return 8;
@@ -1670,58 +1645,13 @@ inline uint8_t jp_hl(Z80& proc)
     return 4;
 }
 
-namespace {
-    uint8_t reset_bit(uint8_t value, uint8_t bit)
-    {
-        return value & ~(1<<bit);
-    }
-}
-
 inline uint8_t res_b_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = nullptr;
     uint8_t bit = (b1-0x80)/8;
+    InstrArg arg = get_single_CB_arg(proc, b1);
+    arg.write(arg.value & ~(1 << bit));
     
-    switch (b1 % 8)
-    {
-        case 0x0:
-            reg = &proc.b;
-            break;
-        case 0x1:
-            reg = &proc.c;
-            break;
-        case 0x2:
-            reg = &proc.d;
-            break;
-        case 0x3:
-            reg = &proc.e;
-            break;
-        case 0x4:
-            reg = &proc.h;
-            break;
-        case 0x5:
-            reg = &proc.l;
-            break;
-        //use hl
-        case 0x6:
-        {
-            uint16_t addr = proc.get_hl();
-            uint8_t value = reset_bit(proc.mem.read8(addr), bit);
-            proc.mem.write8(addr, value);
-            
-            debug_print("res %d, (hl)\n", bit);
-            return 16;
-        }
-        case 0x7:
-            reg = &proc.a;
-            break;
-        default:
-            throw std::runtime_error("Couldn't decode res instr!");
-    }
-    
-    reg->write(reset_bit(reg->read(), bit));
-    
-    debug_print("res %d, %s\n", bit, reg->name);
+    debug_print("res %d, %s\n", bit, arg.name);
     return 8;
 }
 
@@ -1886,47 +1816,11 @@ namespace {
 
 inline uint8_t rlc_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = nullptr;
+    InstrArg arg = get_single_CB_arg(proc, b1);
+    uint8_t new_value = generic_rlc(proc, arg.value);
+    arg.write(new_value);
     
-    switch (b1)
-    {
-        case 0x07:
-            reg = &proc.a;
-            break;
-        case 0x00:
-            reg = &proc.b;
-            break;
-        case 0x01:
-            reg = &proc.c;
-            break;
-        case 0x02:
-            reg = &proc.d;
-            break;
-        case 0x03:
-            reg = &proc.e;
-            break;
-        case 0x04:
-            reg = &proc.h;
-            break;
-        case 0x05:
-            reg = &proc.l;
-            break;
-        //hl as addr
-        case 0x06:
-        {
-            uint16_t addr = proc.get_hl();
-            uint8_t new_value = generic_rlc(proc, proc.mem.read8(addr));
-            proc.mem.write8(addr, new_value);
-            
-            debug_print("%s\n", "rlc (hl)");
-            return 16;
-        }
-    }
-    
-    uint8_t new_value = generic_rlc(proc, reg->read());
-    reg->write(new_value);
-    
-    debug_print("rlc %s\n", reg->name);
+    debug_print("rlc %s\n", arg.name);
     return 8;
 }
 
@@ -1995,63 +1889,20 @@ inline uint8_t ld_sp_hl(Z80& proc)
     return 8;
 }
 
-namespace {
-    uint8_t generic_srl_n(Z80& proc, uint8_t value)
-    {
-        //Note that the MSB being 0 is the default behaviour on this platform
-        uint8_t new_value = value >> 1;
-        
-        proc.f.set_z(new_value==0);
-        proc.f.set_n(false);
-        proc.f.set_h(false);
-        proc.f.set_c(value & 0x1);
-        
-        return new_value;
-    }
-}
-
 inline uint8_t srl_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = nullptr;
+    InstrArg arg = get_single_CB_arg(proc, b1);
     
-    switch (b1)
-    {
-        case 0x3f:
-            reg = &proc.a;
-            break;
-        case 0x38:
-            reg = &proc.b;
-            break;
-        case 0x39:
-            reg = &proc.c;
-            break;
-        case 0x3a:
-            reg = &proc.d;
-            break;
-        case 0x3b:
-            reg = &proc.e;
-            break;
-        case 0x3c:
-            reg = &proc.h;
-            break;
-        case 0x3d:
-            reg = &proc.l;
-            break;
-        //HL as addr
-        case 0x3e:
-        {
-            uint16_t addr = proc.get_hl();
-            uint8_t new_value = generic_srl_n(proc, proc.mem.read8(addr));
-            proc.mem.write8(addr, new_value);
-            
-            debug_print("%s\n", "srl (hl)");
-            return 16;
-        }
-    }
+    uint8_t new_value = arg.value >> 1;
     
-    reg->write(generic_srl_n(proc, reg->read()));
+    proc.f.set_z(new_value==0);
+    proc.f.set_n(false);
+    proc.f.set_h(false);
+    proc.f.set_c(arg.value & 0x1);
     
-    debug_print("srl %s\n", reg->name);
+    arg.write(new_value);
+    
+    debug_print("srl %s\n", arg.name);
     return 8;
 }
 
@@ -2222,46 +2073,10 @@ inline uint8_t halt(Z80& proc)
 inline uint8_t set_b_r(Z80& proc, uint8_t b1)
 {
     uint8_t bit_no = (b1-0xc0)/8;
-    Register<uint8_t>* reg = NULL;
+    InstrArg arg = get_single_CB_arg(proc, b1);
+    arg.write(arg.value | (1 << bit_no));
     
-    switch (b1 % 8)
-    {
-        case 0:
-            reg = &proc.b;
-            break;
-        case 1:
-            reg = &proc.c;
-            break;
-        case 2:
-            reg = &proc.d;
-            break;
-        case 3:
-            reg = &proc.e;
-            break;
-        case 4:
-            reg = &proc.h;
-            break;
-        case 5:
-            reg = &proc.l;
-            break;
-        case 6:
-        {
-            //Use HL as addr
-            uint16_t addr = proc.get_hl();
-            uint8_t temp8 = proc.mem.read8(addr);
-            proc.mem.write8(addr, temp8 | (1<<bit_no));
-            
-            debug_print("set %d, (hl)\n", bit_no);
-            return 16;
-        }
-        case 7:
-            reg = &proc.a;
-            break;
-    }
-    
-    reg->write(reg->read() | (1<<bit_no));
-    
-    debug_print("set %d, %s\n", bit_no, reg->name);
+    debug_print("set %d, %s\n", bit_no, arg.name);
     return 8;
 }
 
@@ -2275,127 +2090,41 @@ uint8_t ccf(Z80& proc)
     return 4;
 }
 
-namespace
-{
-    uint8_t generic_rrc_n(Z80& proc, uint8_t value)
-    {
-        uint8_t res = value >> 1;
-        proc.f.set_c(value & 0x1);
-        proc.f.set_z(res == 0);
-        proc.f.set_n(false);
-        proc.f.set_h(false);
-        
-        return res;
-    }
-}
-
 uint8_t rrc_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = NULL;
+    InstrArg arg = get_single_CB_arg(proc, b1);
     
-    switch (b1)
-    {
-        case 0x0f:
-            reg = &proc.a;
-            break;
-        case 0x08:
-            reg = &proc.b;
-            break;
-        case 0x09:
-            reg = &proc.c;
-            break;
-        case 0x0A:
-            reg = &proc.d;
-            break;
-        case 0x0B:
-            reg = &proc.e;
-            break;
-        case 0x0c:
-            reg = &proc.h;
-            break;
-        case 0x0d:
-            reg = &proc.l;
-            break;
-        //HL as addr
-        case 0x0e:
-        {
-            uint16_t addr = proc.get_hl();
-            uint8_t value = generic_rrc_n(proc, proc.mem.read8(addr));
-            proc.mem.write8(addr, value);
-            
-            debug_print("rrc (hl)\n");
-            return 16;
-        }
-    }
+    uint8_t res = arg.value >> 1;
+    proc.f.set_c(arg.value & 0x1);
+    proc.f.set_z(res == 0);
+    proc.f.set_n(false);
+    proc.f.set_h(false);
     
-    reg->write(generic_rrc_n(proc, reg->read()));
+    arg.write(res);
     
-    debug_print("rrc %s\n", reg->name);
+    debug_print("rrc %s\n", arg.name);
     return 8;
-}
-
-namespace
-{
-    uint8_t generic_sra_n(Z80& proc, uint8_t value)
-    {
-        uint8_t res = value >> 1;
-        //MSB doesn't change
-        if (value & 0x80)
-        {
-            res |= 0x80;
-        }
-        
-        proc.f.set_z(res==0);
-        proc.f.set_n(false);
-        proc.f.set_h(false);
-        proc.f.set_c(value & 0x1);
-        
-        return res;
-    }
 }
 
 uint8_t sra_n(Z80& proc, uint8_t b1)
 {
-    Register<uint8_t>* reg = NULL;
+    InstrArg arg = get_single_CB_arg(proc, b1);
     
-    switch (b1)
+    uint8_t res = arg.value >> 1;
+    //MSB doesn't change
+    if (arg.value & 0x80)
     {
-        case 0x2f:
-            reg = &proc.a;
-            break;
-        case 0x28:
-            reg = &proc.b;
-            break;
-        case 0x29:
-            reg = &proc.c;
-            break;
-        case 0x2a:
-            reg = &proc.d;
-            break;
-        case 0x2b:
-            reg = &proc.e;
-            break;
-        case 0x2c:
-            reg = &proc.h;
-            break;
-        case 0x2d:
-            reg = &proc.l;
-            break;
-        //HL as addr
-        case 0x2e:
-        {
-            uint16_t addr = proc.get_hl();
-            uint8_t value = generic_sra_n(proc, proc.mem.read8(addr));
-            proc.mem.write8(addr, value);
-            
-            debug_print("sra (hl)\n");
-            return 16;
-        }
+        res |= 0x80;
     }
     
-    reg->write(generic_sra_n(proc, reg->read()));
+    proc.f.set_z(res==0);
+    proc.f.set_n(false);
+    proc.f.set_h(false);
+    proc.f.set_c(arg.value & 0x1);
     
-    debug_print("sra %s\n", reg->name);
+    arg.write(res);
+    
+    debug_print("sra %s\n", arg.name);
     return 8;
 }
 
